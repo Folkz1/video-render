@@ -1,0 +1,56 @@
+name: Render Videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: 'Composition ID to render'
+        required: true
+        default: 'Video2-Projetos'
+        type: choice
+        options:
+          - Video1-NVIDIA
+          - Video2-Projetos
+          - Video3-Meta
+      frames:
+        description: 'Total frames'
+        required: true
+        default: '7600'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chromium for Remotion
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+          npx remotion browser ensure
+
+      - name: Render video
+        run: |
+          echo "Rendering ${{ inputs.video_id }} (${{ inputs.frames }} frames)"
+          npx remotion render src/index.ts "${{ inputs.video_id }}" \
+            "output/${{ inputs.video_id }}.mp4" \
+            --concurrency=2 \
+            --log=verbose
+          ls -la output/
+
+      - name: Upload video artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.video_id }}
+          path: output/${{ inputs.video_id }}.mp4
+          retention-days: 7

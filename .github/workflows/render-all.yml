@@ -1,0 +1,53 @@
+name: Render All Videos (Parallel)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  render-video2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+          npx remotion browser ensure
+      - name: Render Video2-Projetos
+        run: |
+          npx remotion render src/index.ts Video2-Projetos output/video2-projetos.mp4 --concurrency=2
+          ls -la output/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Video2-Projetos
+          path: output/video2-projetos.mp4
+          retention-days: 7
+
+  render-video3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - name: Install Chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+          npx remotion browser ensure
+      - name: Render Video3-Meta
+        run: |
+          npx remotion render src/index.ts Video3-Meta output/video3-meta.mp4 --concurrency=2
+          ls -la output/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Video3-Meta
+          path: output/video3-meta.mp4
+          retention-days: 7
