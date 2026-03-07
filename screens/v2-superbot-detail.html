@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f; font-family: 'Inter', sans-serif; color: #fff;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,136,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,136,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .header {
+    position: absolute; top: 40px; left: 60px;
+    opacity: 0; animation: fadeSlide 0.8s ease forwards 0.3s;
+  }
+  @keyframes fadeSlide { to { opacity: 1; transform: translateY(0); } from { transform: translateY(-20px); } }
+  .header h1 { font-size: 42px; font-weight: 900; color: #0088ff; }
+  .header p { font-size: 18px; color: #667788; margin-top: 8px; }
+
+  .clients-row {
+    position: absolute; top: 140px; left: 60px; right: 60px;
+    display: flex; gap: 24px;
+  }
+  .client-card {
+    flex: 1; background: rgba(15,15,25,0.9); border: 1px solid rgba(0,136,255,0.15);
+    border-radius: 16px; padding: 28px; position: relative;
+    opacity: 0; transform: translateX(-30px);
+  }
+  .client-card::after {
+    content: 'ATIVO'; position: absolute; top: 16px; right: 16px;
+    padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700;
+    background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.3);
+  }
+  .client-1 { animation: slideIn 0.6s ease forwards 1s; }
+  .client-2 { animation: slideIn 0.6s ease forwards 1.4s; }
+  .client-3 { animation: slideIn 0.6s ease forwards 1.8s; }
+  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+
+  .client-name { font-size: 24px; font-weight: 800; color: #0088ff; margin-bottom: 8px; }
+  .client-type { font-size: 13px; color: #8899aa; margin-bottom: 16px; }
+
+  .agent-list { list-style: none; }
+  .agent-list li {
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px; color: #aabbcc; display: flex; align-items: center; gap: 8px;
+  }
+  .agent-list li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #00ff88; flex-shrink: 0; }
+  .agent-dot-web::before { background: #0088ff !important; }
+  .agent-dot-phone::before { background: #ffaa00 !important; }
+  .agent-dot-text::before { background: #00ff88 !important; }
+
+  .metrics-section {
+    position: absolute; top: 560px; left: 60px; right: 60px;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 3s;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } from { transform: translateY(20px); } }
+
+  .metric-card {
+    background: rgba(15,15,25,0.8); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 20px; text-align: center;
+  }
+  .metric-value { font-size: 36px; font-weight: 900; }
+  .metric-label { font-size: 12px; color: #667788; margin-top: 6px; }
+
+  .architecture-section {
+    position: absolute; top: 720px; left: 60px; right: 60px;
+    display: flex; align-items: center; gap: 16px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 4s;
+  }
+  .arch-node {
+    padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 700;
+    text-align: center; white-space: nowrap;
+  }
+  .arch-arrow { color: #334455; font-size: 24px; }
+  .arch-n8n { background: rgba(0,136,255,0.15); color: #0088ff; border: 1px solid rgba(0,136,255,0.3); }
+  .arch-eleven { background: rgba(255,170,0,0.15); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+  .arch-twilio { background: rgba(255,68,85,0.15); color: #ff4455; border: 1px solid rgba(255,68,85,0.3); }
+  .arch-whatsapp { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.3); }
+  .arch-claude { background: rgba(170,68,255,0.15); color: #aa44ff; border: 1px solid rgba(170,68,255,0.3); }
+  .arch-pg { background: rgba(0,180,255,0.15); color: #00b4ff; border: 1px solid rgba(0,180,255,0.3); }
+
+  .workflow-count {
+    position: absolute; bottom: 40px; right: 60px;
+    padding: 16px 28px; border-radius: 12px;
+    background: rgba(0,136,255,0.08); border: 1px solid rgba(0,136,255,0.2);
+    opacity: 0; animation: scaleIn 0.6s ease forwards 5s;
+  }
+  @keyframes scaleIn { to { opacity: 1; transform: scale(1); } from { transform: scale(0.8); opacity: 0; } }
+  .wf-value { font-size: 48px; font-weight: 900; color: #0088ff; }
+  .wf-label { font-size: 13px; color: #667788; }
+</style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+
+  <div class="header">
+    <h1>SUPERBOT - Agentes de Voz IA</h1>
+    <p>3 clientes ativos em producao | ElevenLabs + N8N + Twilio</p>
+  </div>
+
+  <div class="clients-row">
+    <div class="client-card client-1">
+      <div class="client-name">Pacific Surf</div>
+      <div class="client-type">E-commerce / Surf</div>
+      <ul class="agent-list">
+        <li class="agent-dot-web">Agente WEB - Atendimento site</li>
+        <li class="agent-dot-phone">Agente PHONE - Ligacoes inbound</li>
+        <li class="agent-dot-text">Agente TEXT - WhatsApp leads</li>
+        <li>Anti-robocall DTMF ativo</li>
+        <li>+35% conversao</li>
+      </ul>
+    </div>
+
+    <div class="client-card client-2">
+      <div class="client-name">Dentaly</div>
+      <div class="client-type">Clinica Odontologica</div>
+      <ul class="agent-list">
+        <li class="agent-dot-web">Agente WEB - Agendamento</li>
+        <li class="agent-dot-phone">Agente PHONE - Confirmacao</li>
+        <li class="agent-dot-text">Agente TEXT - Follow-up</li>
+        <li>Integrado CRM</li>
+        <li>Recall automatico</li>
+      </ul>
+    </div>
+
+    <div class="client-card client-3">
+      <div class="client-name">Famiglia Gianni</div>
+      <div class="client-type">Restaurante / Delivery</div>
+      <ul class="agent-list">
+        <li class="agent-dot-web">Agente WEB - Cardapio IA</li>
+        <li class="agent-dot-phone">Agente PHONE - Reservas</li>
+        <li class="agent-dot-text">Agente TEXT - Pedidos WhatsApp</li>
+        <li>Menu dinamico</li>
+        <li>Loyalty Club</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="metrics-section">
+    <div class="metric-card">
+      <div class="metric-value" style="color:#0088ff">15</div>
+      <div class="metric-label">AGENTES IA</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:#ffaa00">39</div>
+      <div class="metric-label">TOOLS INTEGRADAS</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:#00ff88">4</div>
+      <div class="metric-label">NUMEROS TWILIO</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:#ff4455">5s</div>
+      <div class="metric-label">TEMPO RESPOSTA</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="color:#aa44ff">24/7</div>
+      <div class="metric-label">DISPONIBILIDADE</div>
+    </div>
+  </div>
+
+  <div class="architecture-section">
+    <div class="arch-node arch-claude">Claude IA</div>
+    <div class="arch-arrow">&#x2192;</div>
+    <div class="arch-node arch-n8n">N8N (71 flows)</div>
+    <div class="arch-arrow">&#x2192;</div>
+    <div class="arch-node arch-eleven">ElevenLabs</div>
+    <div class="arch-arrow">&#x2192;</div>
+    <div class="arch-node arch-twilio">Twilio</div>
+    <div class="arch-arrow">&#x2192;</div>
+    <div class="arch-node arch-whatsapp">WhatsApp API</div>
+    <div class="arch-arrow">&#x2192;</div>
+    <div class="arch-node arch-pg">PostgreSQL</div>
+  </div>
+
+  <div class="workflow-count">
+    <div class="wf-value">71</div>
+    <div class="wf-label">WORKFLOWS N8N</div>
+  </div>
+</body>
+</html>

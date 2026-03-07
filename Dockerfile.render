@@ -1,0 +1,36 @@
+FROM node:22-slim
+
+# Install Chromium dependencies for Remotion
+RUN apt-get update && apt-get install -y \
+    chromium \
+    fonts-noto-cjk \
+    fonts-freefont-ttf \
+    libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
+    libxrandr2 libxrender1 libxtst6 libnss3 libatk1.0-0 \
+    libatk-bridge2.0-0 libcups2 libdrm2 libgbm1 libpango-1.0-0 \
+    libcairo2 libasound2 libxshmfence1 \
+    python3 nginx curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy package files and install deps
+COPY package.json ./
+RUN npm install --production=false
+
+# Copy all source and assets
+COPY src/ ./src/
+COPY public/ ./public/
+COPY screens/ ./screens/
+
+# Nginx to serve output
+RUN echo 'server { listen 80; location / { root /app/output; autoindex on; } }' > /etc/nginx/sites-available/default
+
+# Render script - VIDEO_ID env var determines which composition to render
+# VIDEO_ID: Video1-NVIDIA, Video2-Projetos, Video3-Meta
+COPY render-and-serve.sh ./
+RUN chmod +x render-and-serve.sh
+
+EXPOSE 80
+
+CMD ["./render-and-serve.sh"]

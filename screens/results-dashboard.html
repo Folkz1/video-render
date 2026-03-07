@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    color: #fff;
+  }
+  .grid-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(255,170,0,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,170,0,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .title {
+    position: absolute; top: 50px; left: 80px;
+    font-size: 44px; font-weight: 800;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 0.3s;
+  }
+  .title span { color: #ffaa00; }
+
+  /* Before/After comparison */
+  .comparison {
+    position: absolute; top: 160px; left: 80px; right: 80px;
+    display: flex; gap: 40px; height: 400px;
+  }
+
+  .card {
+    flex: 1; border-radius: 20px; padding: 40px;
+    opacity: 0;
+  }
+  .card-before {
+    background: linear-gradient(135deg, #1a0a0a, #2e1a1a);
+    border: 2px solid #ff4455;
+    animation: cardIn 0.6s ease forwards 1s;
+  }
+  .card-after {
+    background: linear-gradient(135deg, #0a1a0a, #1a2e1a);
+    border: 2px solid #00ff88;
+    animation: cardIn 0.6s ease forwards 2s;
+  }
+  @keyframes cardIn { to { opacity: 1; } }
+
+  .card-header {
+    font-size: 14px; text-transform: uppercase; letter-spacing: 3px;
+    margin-bottom: 30px; font-weight: 700;
+  }
+  .card-before .card-header { color: #ff4455; }
+  .card-after .card-header { color: #00ff88; }
+
+  .metric {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .metric-label { font-size: 16px; color: #8899aa; }
+  .metric-value { font-size: 28px; font-weight: 800; }
+  .card-before .metric-value { color: #ff6677; }
+  .card-after .metric-value { color: #44ffaa; }
+
+  /* Arrow between cards */
+  .vs-arrow {
+    position: absolute; top: 320px; left: 50%; transform: translateX(-50%);
+    font-size: 48px; color: #ffaa00; z-index: 10;
+    opacity: 0; animation: fadeIn 0.5s ease forwards 1.5s;
+  }
+
+  /* Bottom bar chart */
+  .chart-section {
+    position: absolute; bottom: 60px; left: 80px; right: 80px;
+    height: 360px;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 3s;
+  }
+  .chart-title {
+    font-size: 20px; font-weight: 600; color: #aab; margin-bottom: 20px;
+  }
+  .chart {
+    display: flex; align-items: flex-end; gap: 30px; height: 280px;
+    padding: 0 40px;
+  }
+  .bar-group {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+  }
+  .bars { display: flex; gap: 8px; align-items: flex-end; height: 220px; }
+  .bar {
+    width: 50px; border-radius: 6px 6px 0 0;
+    position: relative;
+  }
+  .bar-before {
+    background: linear-gradient(to top, #ff2233, #ff4455);
+    height: 0;
+  }
+  .bar-after {
+    background: linear-gradient(to top, #00cc66, #00ff88);
+    height: 0;
+  }
+  .bar-label {
+    font-size: 13px; color: #667; margin-top: 10px; text-align: center;
+  }
+  .bar-val {
+    position: absolute; top: -28px; left: 50%; transform: translateX(-50%);
+    font-size: 14px; font-weight: 700; white-space: nowrap;
+  }
+  .bar-before .bar-val { color: #ff6677; }
+  .bar-after .bar-val { color: #44ffaa; }
+
+  /* Animate bars */
+  .g1 .bar-before { animation: barGrow 1s ease forwards 3.5s; --h: 120px; }
+  .g1 .bar-after { animation: barGrow 1s ease forwards 3.8s; --h: 40px; }
+  .g2 .bar-before { animation: barGrow 1s ease forwards 3.7s; --h: 80px; }
+  .g2 .bar-after { animation: barGrow 1s ease forwards 4s; --h: 200px; }
+  .g3 .bar-before { animation: barGrow 1s ease forwards 3.9s; --h: 60px; }
+  .g3 .bar-after { animation: barGrow 1s ease forwards 4.2s; --h: 180px; }
+  .g4 .bar-before { animation: barGrow 1s ease forwards 4.1s; --h: 150px; }
+  .g4 .bar-after { animation: barGrow 1s ease forwards 4.4s; --h: 30px; }
+  .g5 .bar-before { animation: barGrow 1s ease forwards 4.3s; --h: 40px; }
+  .g5 .bar-after { animation: barGrow 1s ease forwards 4.6s; --h: 190px; }
+
+  @keyframes barGrow { to { height: var(--h); } }
+
+  /* Legend */
+  .legend {
+    position: absolute; bottom: 60px; right: 100px;
+    display: flex; gap: 24px; font-size: 14px;
+    opacity: 0; animation: fadeIn 0.5s ease forwards 3.5s;
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-dot.red { background: #ff4455; }
+  .legend-dot.green { background: #00ff88; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="title">Resultados <span>Reais</span> de Implementacao</div>
+
+<div class="comparison">
+  <div class="card card-before">
+    <div class="card-header">❌ Antes (Manual)</div>
+    <div class="metric"><span class="metric-label">Tempo de resposta</span><span class="metric-value">2h</span></div>
+    <div class="metric"><span class="metric-label">Leads atendidos/dia</span><span class="metric-value">50</span></div>
+    <div class="metric"><span class="metric-label">Taxa de conversao</span><span class="metric-value">8%</span></div>
+    <div class="metric"><span class="metric-label">Custo operacional/mes</span><span class="metric-value">R$6.500</span></div>
+    <div class="metric"><span class="metric-label">Horario de atendimento</span><span class="metric-value">8h-18h</span></div>
+  </div>
+
+  <div class="vs-arrow">→</div>
+
+  <div class="card card-after">
+    <div class="card-header">✅ Depois (Agente IA)</div>
+    <div class="metric"><span class="metric-label">Tempo de resposta</span><span class="metric-value">5s</span></div>
+    <div class="metric"><span class="metric-label">Leads atendidos/dia</span><span class="metric-value">500+</span></div>
+    <div class="metric"><span class="metric-label">Taxa de conversao</span><span class="metric-value">35%</span></div>
+    <div class="metric"><span class="metric-label">Custo operacional/mes</span><span class="metric-value">R$800</span></div>
+    <div class="metric"><span class="metric-label">Horario de atendimento</span><span class="metric-value">24/7</span></div>
+  </div>
+</div>
+
+<div class="chart-section">
+  <div class="chart-title">Evolucao Mensal (6 meses pos-implementacao)</div>
+  <div class="chart">
+    <div class="bar-group g1">
+      <div class="bars">
+        <div class="bar bar-before"><span class="bar-val">2h</span></div>
+        <div class="bar bar-after"><span class="bar-val">5s</span></div>
+      </div>
+      <div class="bar-label">Resposta</div>
+    </div>
+    <div class="bar-group g2">
+      <div class="bars">
+        <div class="bar bar-before"><span class="bar-val">8%</span></div>
+        <div class="bar bar-after"><span class="bar-val">35%</span></div>
+      </div>
+      <div class="bar-label">Conversao</div>
+    </div>
+    <div class="bar-group g3">
+      <div class="bars">
+        <div class="bar bar-before"><span class="bar-val">50</span></div>
+        <div class="bar bar-after"><span class="bar-val">500+</span></div>
+      </div>
+      <div class="bar-label">Leads/dia</div>
+    </div>
+    <div class="bar-group g4">
+      <div class="bars">
+        <div class="bar bar-before"><span class="bar-val">R$6.5K</span></div>
+        <div class="bar bar-after"><span class="bar-val">R$800</span></div>
+      </div>
+      <div class="bar-label">Custo</div>
+    </div>
+    <div class="bar-group g5">
+      <div class="bars">
+        <div class="bar bar-before"><span class="bar-val">10h</span></div>
+        <div class="bar bar-after"><span class="bar-val">24h</span></div>
+      </div>
+      <div class="bar-label">Horario</div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot red"></div> Antes (Manual)</div>
+  <div class="legend-item"><div class="legend-dot green"></div> Depois (Agente IA)</div>
+</div>
+</body>
+</html>

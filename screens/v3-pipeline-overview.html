@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f; font-family: 'Inter', sans-serif; color: #fff;
+  }
+
+  .scanlines {
+    position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,136,0.015) 2px, rgba(0,255,136,0.015) 4px);
+  }
+
+  .header {
+    position: absolute; top: 30px; left: 60px;
+    opacity: 0; animation: typeIn 1s ease forwards 0.5s;
+  }
+  @keyframes typeIn { to { opacity: 1; } }
+  .header h1 { font-size: 36px; font-weight: 900; }
+  .header h1 span { color: #00ff88; }
+  .header p { font-size: 16px; color: #667788; margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+
+  .pipeline {
+    position: absolute; top: 130px; left: 60px; right: 60px;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+
+  .stage {
+    flex: 1; background: rgba(15,15,25,0.95); border-radius: 16px;
+    padding: 20px; position: relative; min-height: 280px;
+    border: 1px solid rgba(255,255,255,0.06);
+    opacity: 0; transform: scale(0.9);
+  }
+  .stage-1 { animation: stageIn 0.5s ease forwards 1.0s; }
+  .stage-2 { animation: stageIn 0.5s ease forwards 1.5s; }
+  .stage-3 { animation: stageIn 0.5s ease forwards 2.0s; }
+  .stage-4 { animation: stageIn 0.5s ease forwards 2.5s; }
+  .stage-5 { animation: stageIn 0.5s ease forwards 3.0s; }
+  @keyframes stageIn { to { opacity: 1; transform: scale(1); } }
+
+  .stage-number {
+    position: absolute; top: -12px; left: 20px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900;
+  }
+  .s-green .stage-number { background: #00ff88; color: #0a0a0f; }
+  .s-blue .stage-number { background: #0088ff; color: #fff; }
+  .s-yellow .stage-number { background: #ffaa00; color: #0a0a0f; }
+  .s-red .stage-number { background: #ff4455; color: #fff; }
+  .s-purple .stage-number { background: #aa44ff; color: #fff; }
+
+  .stage-title { font-size: 16px; font-weight: 800; margin: 12px 0 8px; }
+  .s-green .stage-title { color: #00ff88; }
+  .s-blue .stage-title { color: #0088ff; }
+  .s-yellow .stage-title { color: #ffaa00; }
+  .s-red .stage-title { color: #ff4455; }
+  .s-purple .stage-title { color: #aa44ff; }
+
+  .stage-tool {
+    font-size: 12px; font-weight: 700; color: #334455;
+    font-family: 'JetBrains Mono', monospace; margin-bottom: 12px;
+  }
+
+  .code-block {
+    background: rgba(0,0,0,0.5); border-radius: 8px; padding: 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: #8899aa; line-height: 1.6; overflow: hidden;
+  }
+  .code-block .keyword { color: #aa44ff; }
+  .code-block .string { color: #00ff88; }
+  .code-block .comment { color: #445566; }
+  .code-block .func { color: #0088ff; }
+  .code-block .number { color: #ffaa00; }
+
+  .connector {
+    display: flex; align-items: center; padding-top: 120px;
+    opacity: 0;
+  }
+  .conn-1 { animation: connIn 0.3s ease forwards 1.3s; }
+  .conn-2 { animation: connIn 0.3s ease forwards 1.8s; }
+  .conn-3 { animation: connIn 0.3s ease forwards 2.3s; }
+  .conn-4 { animation: connIn 0.3s ease forwards 2.8s; }
+  @keyframes connIn { to { opacity: 1; } }
+  .connector span { color: #334455; font-size: 24px; font-weight: 900; }
+
+  .cost-section {
+    position: absolute; top: 450px; left: 60px; right: 60px;
+    display: flex; gap: 24px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 4s;
+  }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } from { transform: translateY(20px); } }
+
+  .cost-card {
+    flex: 1; background: rgba(15,15,25,0.8); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px;
+  }
+  .cost-icon { font-size: 36px; }
+  .cost-info h3 { font-size: 18px; font-weight: 800; }
+  .cost-info p { font-size: 13px; color: #667788; margin-top: 4px; }
+  .cost-price { font-size: 28px; font-weight: 900; margin-left: auto; }
+
+  .comparison {
+    position: absolute; top: 600px; left: 60px; right: 60px;
+    display: flex; gap: 24px; align-items: stretch;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 5s;
+  }
+  .comp-card {
+    flex: 1; border-radius: 16px; padding: 28px; text-align: center;
+  }
+  .comp-manual {
+    background: rgba(255,68,85,0.06); border: 1px solid rgba(255,68,85,0.2);
+  }
+  .comp-ai {
+    background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.2);
+  }
+  .comp-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+  .comp-manual .comp-title { color: #ff4455; }
+  .comp-ai .comp-title { color: #00ff88; }
+  .comp-value { font-size: 48px; font-weight: 900; }
+  .comp-manual .comp-value { color: #ff4455; }
+  .comp-ai .comp-value { color: #00ff88; }
+  .comp-label { font-size: 13px; color: #667788; margin-top: 8px; }
+  .comp-items { list-style: none; text-align: left; margin-top: 16px; }
+  .comp-items li { font-size: 13px; color: #8899aa; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+
+  .vs-badge {
+    display: flex; align-items: center; justify-content: center;
+    width: 50px; font-size: 20px; font-weight: 900; color: #445566;
+  }
+
+  .bottom-cta {
+    position: absolute; bottom: 30px; left: 60px; right: 60px;
+    display: flex; justify-content: space-between; align-items: center;
+    opacity: 0; animation: fadeUp 0.6s ease forwards 6s;
+  }
+  .cta-text { font-size: 20px; font-weight: 800; color: #00ff88; }
+  .cta-sub { font-size: 14px; color: #667788; }
+</style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <div class="header">
+    <h1>Como a <span>IA</span> Criou Este Video</h1>
+    <p>$ total_cost = R$1.50 // pipeline 100% automatizado</p>
+  </div>
+
+  <div class="pipeline">
+    <div class="stage s-green stage-1">
+      <div class="stage-number">1</div>
+      <div class="stage-title">ROTEIRO</div>
+      <div class="stage-tool">Claude Code (Opus)</div>
+      <div class="code-block">
+        <span class="comment">// IA escreve 10 segmentos</span><br>
+        <span class="keyword">const</span> script = <span class="func">claude</span>(<br>
+        &nbsp;&nbsp;<span class="string">"Escreva um roteiro<br>&nbsp;&nbsp;persuasivo sobre IA"</span><br>
+        );<br>
+        <span class="comment">// ~250s de narracao</span>
+      </div>
+    </div>
+
+    <div class="connector conn-1"><span>&#x2192;</span></div>
+
+    <div class="stage s-blue stage-2">
+      <div class="stage-number">2</div>
+      <div class="stage-title">VOZ</div>
+      <div class="stage-tool">ElevenLabs API</div>
+      <div class="code-block">
+        <span class="keyword">await</span> <span class="func">fetch</span>(<br>
+        &nbsp;&nbsp;<span class="string">"/text-to-speech"</span>,<br>
+        &nbsp;&nbsp;{ voice: <span class="string">"Carla"</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;speed: <span class="number">1.02</span>,<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;lang: <span class="string">"pt-BR"</span> }<br>
+        );<br>
+        <span class="comment">// Custo: R$0.30</span>
+      </div>
+    </div>
+
+    <div class="connector conn-2"><span>&#x2192;</span></div>
+
+    <div class="stage s-yellow stage-3">
+      <div class="stage-number">3</div>
+      <div class="stage-title">GRAVACAO</div>
+      <div class="stage-tool">Playwright</div>
+      <div class="code-block">
+        <span class="keyword">const</span> page = <span class="keyword">await</span><br>
+        &nbsp;&nbsp;browser.<span class="func">newPage</span>();<br>
+        page.<span class="func">goto</span>(<span class="string">"n8n.io"</span>);<br>
+        recorder.<span class="func">start</span>();<br>
+        <span class="comment">// Grava sites reais</span><br>
+        <span class="comment">// + telas custom HTML</span>
+      </div>
+    </div>
+
+    <div class="connector conn-3"><span>&#x2192;</span></div>
+
+    <div class="stage s-red stage-4">
+      <div class="stage-number">4</div>
+      <div class="stage-title">COMPOSICAO</div>
+      <div class="stage-tool">Remotion (React)</div>
+      <div class="code-block">
+        <span class="keyword">&lt;Sequence&gt;</span><br>
+        &nbsp;&nbsp;<span class="keyword">&lt;BrowserClip</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;src=<span class="string">"recording.webm"</span>/&gt;<br>
+        &nbsp;&nbsp;<span class="keyword">&lt;Audio</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;src=<span class="string">"narration.mp3"</span>/&gt;<br>
+        <span class="keyword">&lt;/Sequence&gt;</span><br>
+        <span class="comment">// 8400 frames</span>
+      </div>
+    </div>
+
+    <div class="connector conn-4"><span>&#x2192;</span></div>
+
+    <div class="stage s-purple stage-5">
+      <div class="stage-number">5</div>
+      <div class="stage-title">RENDER</div>
+      <div class="stage-tool">FFmpeg + h264</div>
+      <div class="code-block">
+        <span class="func">npx remotion render</span><br>
+        &nbsp;&nbsp;--codec h264<br>
+        &nbsp;&nbsp;--width <span class="number">1920</span><br>
+        &nbsp;&nbsp;--height <span class="number">1080</span><br>
+        <span class="comment">// Output: ~90MB MP4</span><br>
+        <span class="comment">// Tempo: ~5 min</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cost-section">
+    <div class="cost-card">
+      <div class="cost-icon">&#x1F399;</div>
+      <div class="cost-info">
+        <h3>ElevenLabs TTS</h3>
+        <p>10 segmentos de voz</p>
+      </div>
+      <div class="cost-price" style="color:#0088ff">R$0.30</div>
+    </div>
+    <div class="cost-card">
+      <div class="cost-icon">&#x1F3AC;</div>
+      <div class="cost-info">
+        <h3>Playwright + Remotion</h3>
+        <p>Gravacao + renderizacao</p>
+      </div>
+      <div class="cost-price" style="color:#00ff88">R$0.00</div>
+    </div>
+    <div class="cost-card">
+      <div class="cost-icon">&#x1F9E0;</div>
+      <div class="cost-info">
+        <h3>Claude Code</h3>
+        <p>Roteiro + orquestracao</p>
+      </div>
+      <div class="cost-price" style="color:#aa44ff">R$1.20</div>
+    </div>
+  </div>
+
+  <div class="comparison">
+    <div class="comp-card comp-manual">
+      <div class="comp-title">PRODUCAO TRADICIONAL</div>
+      <div class="comp-value">R$1.000</div>
+      <div class="comp-label">por video de 5 minutos</div>
+      <ul class="comp-items">
+        <li>1-2 semanas de producao</li>
+        <li>Roteirista + Editor + Narrador</li>
+        <li>Software de edicao pago</li>
+        <li>Revisoes e ajustes manuais</li>
+      </ul>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="comp-card comp-ai">
+      <div class="comp-title">PRODUCAO COM IA</div>
+      <div class="comp-value">R$1.50</div>
+      <div class="comp-label">por video de 5 minutos</div>
+      <ul class="comp-items">
+        <li>30 minutos de producao</li>
+        <li>Pipeline 100% automatizado</li>
+        <li>Ferramentas open source</li>
+        <li>Iteracao instantanea</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bottom-cta">
+    <div>
+      <div class="cta-text">Custo total: R$1.50 por video</div>
+      <div class="cta-sub">99.85% mais barato que producao tradicional</div>
+    </div>
+    <div style="font-size: 13px; color: #445566; font-family: 'JetBrains Mono', monospace;">
+      GUYFOLKZ // VIDEO FACTORY v2
+    </div>
+  </div>
+</body>
+</html>

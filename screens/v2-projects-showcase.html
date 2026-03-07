@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f; font-family: 'Inter', sans-serif; color: #fff;
+  }
+  .grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove { to { background-position: 60px 60px; } }
+
+  .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0; animation: orbPulse 4s ease-in-out infinite; }
+  .orb-1 { width: 400px; height: 400px; background: #00ff88; top: -100px; right: -100px; animation-delay: 0s; }
+  .orb-2 { width: 300px; height: 300px; background: #0088ff; bottom: -80px; left: -80px; animation-delay: 1s; }
+  .orb-3 { width: 250px; height: 250px; background: #ff4455; bottom: 200px; right: 300px; animation-delay: 2s; }
+  @keyframes orbPulse { 0%,100% { opacity: 0.08; transform: scale(1); } 50% { opacity: 0.15; transform: scale(1.1); } }
+
+  .header {
+    position: absolute; top: 40px; left: 60px; right: 60px;
+    display: flex; justify-content: space-between; align-items: center;
+    opacity: 0; animation: slideDown 0.8s ease forwards 0.5s;
+  }
+  @keyframes slideDown { to { opacity: 1; transform: translateY(0); } from { transform: translateY(-30px); } }
+
+  .header-title { font-size: 28px; font-weight: 900; color: #00ff88; letter-spacing: 3px; }
+  .header-badge {
+    padding: 8px 20px; border-radius: 20px;
+    background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3);
+    font-size: 14px; font-weight: 700; color: #00ff88;
+  }
+
+  .main-title {
+    position: absolute; top: 120px; left: 60px;
+    font-size: 52px; font-weight: 900; line-height: 1.15;
+    opacity: 0; animation: slideUp 1s ease forwards 1s;
+  }
+  @keyframes slideUp { to { opacity: 1; transform: translateY(0); } from { transform: translateY(40px); } }
+  .highlight-green { color: #00ff88; }
+  .highlight-red { color: #ff4455; }
+  .highlight-blue { color: #0088ff; }
+  .highlight-yellow { color: #ffaa00; }
+
+  .projects-grid {
+    position: absolute; top: 300px; left: 60px; right: 60px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+  }
+
+  .project-card {
+    background: rgba(15,15,25,0.9); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 24px; position: relative; overflow: hidden;
+    opacity: 0; transform: translateY(30px) scale(0.95);
+  }
+  .project-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+  .project-card.green::before { background: linear-gradient(90deg, #00ff88, #00cc66); }
+  .project-card.blue::before { background: linear-gradient(90deg, #0088ff, #0066cc); }
+  .project-card.yellow::before { background: linear-gradient(90deg, #ffaa00, #cc8800); }
+  .project-card.red::before { background: linear-gradient(90deg, #ff4455, #cc3344); }
+  .project-card.purple::before { background: linear-gradient(90deg, #aa44ff, #8833cc); }
+  .project-card.cyan::before { background: linear-gradient(90deg, #00ddff, #00aacc); }
+  .project-card.pink::before { background: linear-gradient(90deg, #ff44aa, #cc3388); }
+
+  .card-icon { font-size: 32px; margin-bottom: 12px; }
+  .card-name { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .card-desc { font-size: 13px; color: #8899aa; line-height: 1.4; margin-bottom: 12px; }
+  .card-metric { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; }
+  .card-metric-value { font-size: 22px; font-weight: 900; }
+  .card-metric-label { font-size: 11px; color: #667788; }
+  .card-stack { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .stack-tag {
+    padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+    background: rgba(255,255,255,0.05); color: #8899aa;
+  }
+
+  .bottom-bar {
+    position: absolute; bottom: 30px; left: 60px; right: 60px;
+    display: flex; justify-content: space-between; align-items: center;
+    opacity: 0; animation: fadeIn 1s ease forwards 6s;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .stat-box { text-align: center; }
+  .stat-value { font-size: 36px; font-weight: 900; color: #00ff88; }
+  .stat-label { font-size: 12px; color: #667788; margin-top: 4px; }
+
+  .card-1 { animation: cardIn 0.6s ease forwards 1.5s; }
+  .card-2 { animation: cardIn 0.6s ease forwards 1.8s; }
+  .card-3 { animation: cardIn 0.6s ease forwards 2.1s; }
+  .card-4 { animation: cardIn 0.6s ease forwards 2.4s; }
+  .card-5 { animation: cardIn 0.6s ease forwards 2.7s; }
+  .card-6 { animation: cardIn 0.6s ease forwards 3.0s; }
+  .card-7 { animation: cardIn 0.6s ease forwards 3.3s; }
+  @keyframes cardIn { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+  /* Phase 2: Revenue highlight */
+  .revenue-overlay {
+    position: absolute; bottom: 100px; right: 60px;
+    padding: 20px 30px; border-radius: 16px;
+    background: rgba(0,255,136,0.08); border: 2px solid rgba(0,255,136,0.3);
+    backdrop-filter: blur(20px);
+    opacity: 0; animation: scaleIn 0.8s ease forwards 5s;
+  }
+  @keyframes scaleIn { to { opacity: 1; transform: scale(1); } from { transform: scale(0.8); } }
+  .revenue-title { font-size: 14px; color: #8899aa; margin-bottom: 4px; }
+  .revenue-value { font-size: 42px; font-weight: 900; color: #00ff88; }
+  .revenue-sub { font-size: 13px; color: #667788; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="header">
+    <div class="header-title">GUYFOLKZ PORTFOLIO</div>
+    <div class="header-badge">7 PROJETOS EM 30 DIAS</div>
+  </div>
+
+  <div class="main-title">
+    <span class="highlight-green">7 Projetos</span> em Producao.<br>
+    Todos criados com <span class="highlight-blue">IA</span>.
+  </div>
+
+  <div class="projects-grid">
+    <div class="project-card green card-1">
+      <div class="card-icon">&#x1F4CA;</div>
+      <div class="card-name" style="color:#00ff88">LicitaAI</div>
+      <div class="card-desc">SaaS analise de licitacoes com IA. Motor de vendas + lead capture.</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#00ff88">2.907</span>
+        <span class="card-metric-label">licitacoes</span>
+      </div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#00ff88">R$5K</span>
+        <span class="card-metric-label">/mes</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">Next.js</span><span class="stack-tag">React</span><span class="stack-tag">PostgreSQL</span>
+      </div>
+    </div>
+
+    <div class="project-card blue card-2">
+      <div class="card-icon">&#x1F916;</div>
+      <div class="card-name" style="color:#0088ff">Superbot</div>
+      <div class="card-desc">Plataforma de agentes de voz. 3 clientes ativos em producao.</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#0088ff">15</span>
+        <span class="card-metric-label">agentes IA</span>
+      </div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#0088ff">39</span>
+        <span class="card-metric-label">tools</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">N8N</span><span class="stack-tag">ElevenLabs</span><span class="stack-tag">Twilio</span>
+      </div>
+    </div>
+
+    <div class="project-card yellow card-3">
+      <div class="card-icon">&#x1F3AF;</div>
+      <div class="card-name" style="color:#ffaa00">Orquestra</div>
+      <div class="card-desc">Hub de inteligencia pessoal. CTO virtual com memoria semantica.</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#ffaa00">24/7</span>
+        <span class="card-metric-label">autonomo</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">FastAPI</span><span class="stack-tag">pgvector</span><span class="stack-tag">React</span>
+      </div>
+    </div>
+
+    <div class="project-card red card-4">
+      <div class="card-icon">&#x2696;</div>
+      <div class="card-name" style="color:#ff4455">CRM Juridico</div>
+      <div class="card-desc">SaaS multi-tenant para advocacia. Mercado portugues.</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#ff4455">PT</span>
+        <span class="card-metric-label">Portugal</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">React</span><span class="stack-tag">Express</span><span class="stack-tag">Stripe</span>
+      </div>
+    </div>
+
+    <div class="project-card purple card-5">
+      <div class="card-icon">&#x26BD;</div>
+      <div class="card-name" style="color:#aa44ff">Fiel IA</div>
+      <div class="card-desc">Plataforma IA com assinaturas e RAG de videos YouTube.</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#aa44ff">19</span>
+        <span class="card-metric-label">videos RAG</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">Next.js</span><span class="stack-tag">Prisma</span><span class="stack-tag">Asaas</span>
+      </div>
+    </div>
+
+    <div class="project-card cyan card-6">
+      <div class="card-icon">&#x1F50D;</div>
+      <div class="card-name" style="color:#00ddff">IssueMapper</div>
+      <div class="card-desc">Deteccao automatica de erros em websites via screenshots.</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#00ddff">Auto</span>
+        <span class="card-metric-label">scan</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">N8N</span><span class="stack-tag">Apify</span><span class="stack-tag">Bitrix24</span>
+      </div>
+    </div>
+
+    <div class="project-card pink card-7">
+      <div class="card-icon">&#x1F3AC;</div>
+      <div class="card-name" style="color:#ff44aa">Video Factory</div>
+      <div class="card-desc">Producao automatizada de videos com IA. Este video!</div>
+      <div class="card-metric">
+        <span class="card-metric-value" style="color:#ff44aa">R$1.50</span>
+        <span class="card-metric-label">/video</span>
+      </div>
+      <div class="card-stack">
+        <span class="stack-tag">Remotion</span><span class="stack-tag">ElevenLabs</span><span class="stack-tag">Playwright</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="revenue-overlay">
+    <div class="revenue-title">RECEITA POTENCIAL MENSAL</div>
+    <div class="revenue-value">R$100K+</div>
+    <div class="revenue-sub">Motor 100K - Meta 2026</div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="stat-box">
+      <div class="stat-value">7</div>
+      <div class="stat-label">PROJETOS EM PRODUCAO</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">30</div>
+      <div class="stat-label">DIAS DE DESENVOLVIMENTO</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">90%</div>
+      <div class="stat-label">CODIGO GERADO POR IA</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-value">3</div>
+      <div class="stat-label">CLIENTES PAGANDO</div>
+    </div>
+  </div>
+</body>
+</html>

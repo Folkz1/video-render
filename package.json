@@ -1,0 +1,21 @@
+{
+  "name": "video-5min-guyfolkz",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "record": "node playwright-record.mjs",
+    "tts": "node generate-tts.mjs",
+    "studio": "npx remotion studio --port 3338",
+    "render": "npx remotion render src/index.ts AgentesIA output/agentes-ia.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.434",
+    "@remotion/player": "^4.0.434",
+    "@types/react": "^19.2.14",
+    "playwright": "^1.58.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remotion": "^4.0.434",
+    "typescript": "^5.9.3"
+  }
+}

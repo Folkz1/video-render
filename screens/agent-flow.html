@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    color: #fff;
+  }
+  .grid-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(0,136,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,136,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  .title {
+    position: absolute; top: 60px; left: 80px;
+    font-size: 48px; font-weight: 800; letter-spacing: -1px;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 0.3s;
+  }
+  .title span { color: #00ff88; }
+
+  .subtitle {
+    position: absolute; top: 120px; left: 80px;
+    font-size: 22px; color: #667; font-weight: 300;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 0.6s;
+  }
+
+  /* Flow diagram */
+  .flow {
+    position: absolute; top: 200px; left: 0; width: 100%; height: 600px;
+    display: flex; justify-content: center; align-items: center; gap: 40px;
+  }
+
+  .node {
+    width: 220px; height: 220px; border-radius: 20px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    position: relative; z-index: 2;
+    opacity: 0; transform: translateY(40px);
+  }
+  .node-1 { animation: nodeIn 0.6s ease forwards 1s; }
+  .node-2 { animation: nodeIn 0.6s ease forwards 1.8s; }
+  .node-3 { animation: nodeIn 0.6s ease forwards 2.6s; }
+  .node-4 { animation: nodeIn 0.6s ease forwards 3.4s; }
+  .node-5 { animation: nodeIn 0.6s ease forwards 4.2s; }
+
+  @keyframes nodeIn { to { opacity: 1; transform: translateY(0); } }
+
+  .node-icon { font-size: 60px; margin-bottom: 12px; }
+  .node-label { font-size: 20px; font-weight: 700; text-align: center; }
+  .node-desc { font-size: 13px; color: #aab; margin-top: 6px; text-align: center; padding: 0 10px; }
+
+  .node-lead { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #0088ff; }
+  .node-n8n { background: linear-gradient(135deg, #1a2e1a, #162e16); border: 2px solid #00ff88; }
+  .node-eleven { background: linear-gradient(135deg, #2e1a2e, #2e162e); border: 2px solid #ff44ff; }
+  .node-whatsapp { background: linear-gradient(135deg, #1a2e1a, #163e16); border: 2px solid #25d366; }
+  .node-result { background: linear-gradient(135deg, #2e2e1a, #3e3e16); border: 2px solid #ffaa00; }
+
+  /* Connecting arrows */
+  .arrow {
+    width: 60px; height: 4px; position: relative; z-index: 1;
+    opacity: 0;
+  }
+  .arrow::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 0; height: 100%; background: #00ff88; border-radius: 2px;
+  }
+  .arrow::after {
+    content: ''; position: absolute; top: -6px; right: -2px;
+    border: 8px solid transparent; border-left-color: #00ff88;
+    opacity: 0;
+  }
+  .arr-1 { animation: arrowShow 0.3s ease forwards 1.5s; }
+  .arr-1::before { animation: arrowGrow 0.5s ease forwards 1.5s; }
+  .arr-1::after { animation: fadeIn 0.2s ease forwards 1.9s; }
+
+  .arr-2 { animation: arrowShow 0.3s ease forwards 2.3s; }
+  .arr-2::before { animation: arrowGrow 0.5s ease forwards 2.3s; background: #ff44ff; }
+  .arr-2::after { animation: fadeIn 0.2s ease forwards 2.7s; border-left-color: #ff44ff; }
+
+  .arr-3 { animation: arrowShow 0.3s ease forwards 3.1s; }
+  .arr-3::before { animation: arrowGrow 0.5s ease forwards 3.1s; background: #25d366; }
+  .arr-3::after { animation: fadeIn 0.2s ease forwards 3.5s; border-left-color: #25d366; }
+
+  .arr-4 { animation: arrowShow 0.3s ease forwards 3.9s; }
+  .arr-4::before { animation: arrowGrow 0.5s ease forwards 3.9s; background: #ffaa00; }
+  .arr-4::after { animation: fadeIn 0.2s ease forwards 4.3s; border-left-color: #ffaa00; }
+
+  @keyframes arrowShow { to { opacity: 1; } }
+  @keyframes arrowGrow { to { width: 100%; } }
+
+  /* Bottom stats */
+  .bottom-stats {
+    position: absolute; bottom: 80px; left: 0; width: 100%;
+    display: flex; justify-content: center; gap: 100px;
+    opacity: 0; animation: slideUp 0.8s ease forwards 5s;
+  }
+  .bstat { text-align: center; }
+  .bstat-val { font-size: 48px; font-weight: 800; }
+  .bstat-val.green { color: #00ff88; }
+  .bstat-val.blue { color: #0088ff; }
+  .bstat-val.yellow { color: #ffaa00; }
+  .bstat-label { font-size: 16px; color: #667; margin-top: 4px; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="title">Como Funciona um <span>Agente de IA</span></div>
+<div class="subtitle">Pipeline automatizado: do lead ao fechamento em 5 segundos</div>
+
+<div class="flow">
+  <div class="node node-lead node-1">
+    <div class="node-icon">📩</div>
+    <div class="node-label">Lead Chega</div>
+    <div class="node-desc">WhatsApp, Instagram, site ou telefone</div>
+  </div>
+
+  <div class="arrow arr-1"></div>
+
+  <div class="node node-n8n node-2">
+    <div class="node-icon">⚡</div>
+    <div class="node-label">N8N Orquestra</div>
+    <div class="node-desc">Classifica, enriquece e roteia o lead</div>
+  </div>
+
+  <div class="arrow arr-2"></div>
+
+  <div class="node node-eleven node-3">
+    <div class="node-icon">🗣️</div>
+    <div class="node-label">ElevenLabs</div>
+    <div class="node-desc">Voz natural, atende ligacao, responde texto</div>
+  </div>
+
+  <div class="arrow arr-3"></div>
+
+  <div class="node node-whatsapp node-4">
+    <div class="node-icon">💬</div>
+    <div class="node-label">WhatsApp API</div>
+    <div class="node-desc">Envia mensagem, midia, agenda reuniao</div>
+  </div>
+
+  <div class="arrow arr-4"></div>
+
+  <div class="node node-result node-5">
+    <div class="node-icon">🎯</div>
+    <div class="node-label">Lead Qualificado</div>
+    <div class="node-desc">Vendedor recebe so leads quentes</div>
+  </div>
+</div>
+
+<div class="bottom-stats">
+  <div class="bstat">
+    <div class="bstat-val green">5s</div>
+    <div class="bstat-label">Tempo de resposta</div>
+  </div>
+  <div class="bstat">
+    <div class="bstat-val blue">24/7</div>
+    <div class="bstat-label">Disponibilidade</div>
+  </div>
+  <div class="bstat">
+    <div class="bstat-val yellow">+35%</div>
+    <div class="bstat-label">Conversao vs manual</div>
+  </div>
+</div>
+</body>
+</html>

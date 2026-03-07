@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f; font-family: 'JetBrains Mono', monospace; color: #c8d6e5;
+  }
+
+  .split-view { display: flex; height: 100%; }
+
+  .terminal-pane {
+    flex: 1; padding: 0; position: relative;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .preview-pane {
+    width: 520px; padding: 20px; display: flex; flex-direction: column;
+    background: rgba(8,8,15,0.95);
+  }
+
+  .terminal-bar {
+    height: 36px; background: rgba(30,30,45,0.95);
+    display: flex; align-items: center; padding: 0 12px; gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .dot-r { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+  .dot-y { width: 12px; height: 12px; border-radius: 50%; background: #febc2e; }
+  .dot-g { width: 12px; height: 12px; border-radius: 50%; background: #28c840; }
+  .terminal-title { margin-left: 12px; font-size: 12px; color: #556677; }
+
+  .terminal-body {
+    padding: 16px 20px; font-size: 13px; line-height: 1.7;
+    overflow: hidden; height: calc(100% - 36px);
+  }
+
+  .line { opacity: 0; white-space: pre; }
+  .l1 { animation: typeLine 0.3s ease forwards 0.5s; }
+  .l2 { animation: typeLine 0.3s ease forwards 1.0s; }
+  .l3 { animation: typeLine 0.3s ease forwards 1.5s; }
+  .l4 { animation: typeLine 0.3s ease forwards 2.0s; }
+  .l5 { animation: typeLine 0.3s ease forwards 2.5s; }
+  .l6 { animation: typeLine 0.3s ease forwards 3.0s; }
+  .l7 { animation: typeLine 0.3s ease forwards 3.5s; }
+  .l8 { animation: typeLine 0.3s ease forwards 4.0s; }
+  .l9 { animation: typeLine 0.3s ease forwards 4.5s; }
+  .l10 { animation: typeLine 0.3s ease forwards 5.0s; }
+  .l11 { animation: typeLine 0.3s ease forwards 5.5s; }
+  .l12 { animation: typeLine 0.3s ease forwards 6.0s; }
+  .l13 { animation: typeLine 0.3s ease forwards 6.5s; }
+  .l14 { animation: typeLine 0.3s ease forwards 7.0s; }
+  .l15 { animation: typeLine 0.3s ease forwards 7.5s; }
+  .l16 { animation: typeLine 0.3s ease forwards 8.0s; }
+  .l17 { animation: typeLine 0.3s ease forwards 8.5s; }
+  .l18 { animation: typeLine 0.3s ease forwards 9.0s; }
+  .l19 { animation: typeLine 0.3s ease forwards 9.5s; }
+  .l20 { animation: typeLine 0.3s ease forwards 10.0s; }
+  @keyframes typeLine { to { opacity: 1; } }
+
+  .prompt { color: #00ff88; }
+  .cmd { color: #0088ff; }
+  .str { color: #ffaa00; }
+  .comment { color: #445566; }
+  .success { color: #00ff88; }
+  .info { color: #0088ff; }
+  .warn { color: #ffaa00; }
+  .num { color: #ff44aa; }
+
+  .preview-title {
+    font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 900;
+    color: #00ff88; margin-bottom: 12px;
+    opacity: 0; animation: fadeIn 0.5s ease forwards 2s;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .preview-card {
+    background: rgba(15,15,25,0.9); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    opacity: 0;
+  }
+  .pc-1 { animation: slideIn 0.5s ease forwards 3s; }
+  .pc-2 { animation: slideIn 0.5s ease forwards 5s; }
+  .pc-3 { animation: slideIn 0.5s ease forwards 7s; }
+  .pc-4 { animation: slideIn 0.5s ease forwards 9s; }
+  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } from { transform: translateX(20px); } }
+
+  .pc-label { font-size: 11px; color: #556677; font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 6px; }
+  .pc-status { display: flex; align-items: center; gap: 8px; }
+  .pc-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .pc-dot-green { background: #00ff88; box-shadow: 0 0 8px rgba(0,255,136,0.5); }
+  .pc-dot-blue { background: #0088ff; box-shadow: 0 0 8px rgba(0,136,255,0.5); }
+  .pc-dot-yellow { background: #ffaa00; animation: blink 1s ease infinite; }
+  @keyframes blink { 50% { opacity: 0.4; } }
+  .pc-text { font-size: 13px; font-family: 'Inter', sans-serif; }
+
+  .progress-bar {
+    margin-top: 8px; height: 6px; background: rgba(255,255,255,0.04);
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    animation: progressGrow 3s ease forwards;
+  }
+  @keyframes progressGrow { from { width: 0; } }
+  .pf-1 { background: #00ff88; width: 100%; animation-delay: 3s; }
+  .pf-2 { background: #0088ff; width: 100%; animation-delay: 5s; }
+  .pf-3 { background: #ffaa00; width: 80%; animation-delay: 7s; }
+  .pf-4 { background: #aa44ff; width: 60%; animation-delay: 9s; }
+
+  .cost-total {
+    margin-top: auto; padding: 16px; border-radius: 12px;
+    background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.15);
+    text-align: center;
+    opacity: 0; animation: fadeIn 0.6s ease forwards 10s;
+  }
+  .cost-total-label { font-size: 12px; color: #667788; font-family: 'Inter', sans-serif; }
+  .cost-total-value { font-size: 36px; font-weight: 900; color: #00ff88; font-family: 'Inter', sans-serif; }
+</style>
+</head>
+<body>
+  <div class="split-view">
+    <div class="terminal-pane">
+      <div class="terminal-bar">
+        <div class="dot-r"></div><div class="dot-y"></div><div class="dot-g"></div>
+        <div class="terminal-title">video-factory ~ node generate-tts-v2.mjs all</div>
+      </div>
+      <div class="terminal-body">
+        <div class="line l1"><span class="prompt">$</span> <span class="cmd">node generate-tts-v2.mjs all</span></div>
+        <div class="line l2"></div>
+        <div class="line l3"><span class="info">=== VIDEO1 (10 segments) ===</span></div>
+        <div class="line l4">Voice: <span class="str">Carla - Authority VSL</span> | Speed: <span class="num">1.02</span></div>
+        <div class="line l5"></div>
+        <div class="line l6">  <span class="success">[TTS]</span> 01-hook: <span class="str">"Sessenta e oito bilhoes..."</span></div>
+        <div class="line l7">  <span class="success">[DONE]</span> 01-hook: <span class="num">0.42MB</span> (~<span class="num">27.5s</span>)</div>
+        <div class="line l8">  <span class="success">[TTS]</span> 02-problema: <span class="str">"O problema e simples..."</span></div>
+        <div class="line l9">  <span class="success">[DONE]</span> 02-problema: <span class="num">0.38MB</span> (~<span class="num">24.8s</span>)</div>
+        <div class="line l10">  <span class="success">[TTS]</span> 03-dados: <span class="str">"Os numeros sao chocantes..."</span></div>
+        <div class="line l11">  <span class="success">[DONE]</span> 03-dados: <span class="num">0.40MB</span> (~<span class="num">26.1s</span>)</div>
+        <div class="line l12"><span class="comment">  ... 7 more segments ...</span></div>
+        <div class="line l13"></div>
+        <div class="line l14"><span class="prompt">$</span> <span class="cmd">node playwright-record-v2.mjs</span></div>
+        <div class="line l15"><span class="info">[RECORD]</span> Recording <span class="num">7</span> scenes at <span class="str">1920x1080</span></div>
+        <div class="line l16"><span class="success">[DONE]</span> data-screen.webm <span class="num">2.4MB</span></div>
+        <div class="line l17"><span class="success">[DONE]</span> projects-showcase.webm <span class="num">3.1MB</span></div>
+        <div class="line l18"></div>
+        <div class="line l19"><span class="prompt">$</span> <span class="cmd">npx remotion render AgentesIA-v2</span></div>
+        <div class="line l20"><span class="warn">[RENDER]</span> <span class="num">8400</span> frames | <span class="str">1920x1080</span> | h264</div>
+      </div>
+    </div>
+
+    <div class="preview-pane">
+      <div class="preview-title">PIPELINE STATUS</div>
+
+      <div class="preview-card pc-1">
+        <div class="pc-label">1. ROTEIRO (Claude Code)</div>
+        <div class="pc-status">
+          <div class="pc-dot pc-dot-green"></div>
+          <div class="pc-text" style="color:#00ff88">10 segmentos gerados</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill pf-1"></div></div>
+      </div>
+
+      <div class="preview-card pc-2">
+        <div class="pc-label">2. VOZ (ElevenLabs)</div>
+        <div class="pc-status">
+          <div class="pc-dot pc-dot-green"></div>
+          <div class="pc-text" style="color:#00ff88">~250s de audio PT-BR</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill pf-2"></div></div>
+      </div>
+
+      <div class="preview-card pc-3">
+        <div class="pc-label">3. GRAVACAO (Playwright)</div>
+        <div class="pc-status">
+          <div class="pc-dot pc-dot-yellow"></div>
+          <div class="pc-text" style="color:#ffaa00">7 telas em 1920x1080</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill pf-3"></div></div>
+      </div>
+
+      <div class="preview-card pc-4">
+        <div class="pc-label">4. RENDER (Remotion)</div>
+        <div class="pc-status">
+          <div class="pc-dot pc-dot-blue"></div>
+          <div class="pc-text" style="color:#0088ff">8400 frames processando...</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill pf-4"></div></div>
+      </div>
+
+      <div class="cost-total">
+        <div class="cost-total-label">CUSTO TOTAL DO VIDEO</div>
+        <div class="cost-total-value">R$1.50</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

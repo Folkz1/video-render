@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    color: #fff;
+  }
+  .container { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+  /* Animated grid background */
+  .grid-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove { to { background-position: 60px 60px; } }
+
+  /* Glowing orbs */
+  .orb {
+    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.3;
+    animation: pulse 4s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 400px; height: 400px; background: #00ff88; top: -100px; right: -100px; }
+  .orb-2 { width: 300px; height: 300px; background: #0088ff; bottom: -100px; left: -50px; animation-delay: 2s; }
+  @keyframes pulse { from { opacity: 0.15; transform: scale(0.9); } to { opacity: 0.35; transform: scale(1.1); } }
+
+  .badge {
+    display: inline-block; padding: 8px 24px; border-radius: 6px;
+    font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 3px;
+    background: linear-gradient(135deg, #ff3344, #ff0055);
+    margin-bottom: 40px; opacity: 0;
+    animation: fadeIn 0.8s ease forwards 0.5s;
+  }
+
+  .main-number {
+    font-size: 180px; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, #00ff88, #00cc66);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    opacity: 0; transform: scale(0.5);
+    animation: popIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 1s;
+  }
+
+  .main-label {
+    font-size: 42px; font-weight: 300; color: #aab; margin-top: 10px;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 1.5s;
+  }
+
+  .divider {
+    width: 200px; height: 2px; background: linear-gradient(90deg, transparent, #00ff88, transparent);
+    margin: 40px 0; opacity: 0; animation: fadeIn 0.8s ease forwards 1.8s;
+  }
+
+  .stats-row {
+    display: flex; gap: 80px; margin-top: 20px;
+    opacity: 0; animation: slideUp 0.8s ease forwards 2.2s;
+  }
+
+  .stat { text-align: center; }
+  .stat-number { font-size: 64px; font-weight: 800; color: #ff4455; }
+  .stat-number.blue { color: #0088ff; }
+  .stat-label { font-size: 20px; color: #667; margin-top: 5px; }
+
+  .source {
+    position: absolute; bottom: 40px; right: 60px;
+    font-size: 14px; color: #445; opacity: 0;
+    animation: fadeIn 1s ease forwards 3s;
+  }
+
+  /* Scrolling ticker */
+  .ticker {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 48px;
+    background: rgba(0,255,136,0.08); border-top: 1px solid rgba(0,255,136,0.2);
+    display: flex; align-items: center; overflow: hidden;
+  }
+  .ticker-content {
+    white-space: nowrap; font-size: 16px; color: #00ff88; font-weight: 500;
+    animation: scroll 30s linear infinite;
+  }
+  @keyframes scroll { from { transform: translateX(100%); } to { transform: translateX(-200%); } }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes popIn { to { opacity: 1; transform: scale(1); } }
+
+  /* Phase 2: After 8 seconds, show second set of data */
+  .phase2 {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    opacity: 0; animation: fadeIn 1s ease forwards 8s;
+  }
+  .phase1 {
+    animation: fadeOutLate 1s ease forwards 7.5s;
+  }
+  @keyframes fadeOutLate { to { opacity: 0; } }
+
+  .phase2 .main-number {
+    font-size: 140px;
+    background: linear-gradient(135deg, #ff4455, #ff0055);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    opacity: 0; transform: scale(0.5);
+    animation: popIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards 9s;
+  }
+  .phase2 .main-label { animation: fadeIn 0.8s ease forwards 9.5s; }
+  .phase2 .stats-row { animation: slideUp 0.8s ease forwards 10s; }
+  .phase2 .stat-number { color: #ffaa00; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="grid-bg"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Phase 1: NVIDIA $68B -->
+  <div class="phase1" style="position:relative;z-index:2;text-align:center;">
+    <div class="badge">NVIDIA Q4 2025</div>
+    <div class="main-number">$68B</div>
+    <div class="main-label">Receita em UM trimestre</div>
+    <div class="divider"></div>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-number">-16.000</div>
+        <div class="stat-label">Demissoes Amazon</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number blue">40%</div>
+        <div class="stat-label">Apps com Agentes IA (Gartner 2026)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 2: $3.4T opportunity -->
+  <div class="phase2">
+    <div class="badge" style="background:linear-gradient(135deg,#0088ff,#0044ff);animation:fadeIn 0.8s ease forwards 8.5s;">MCKINSEY 2026</div>
+    <div class="main-number">$3.4T</div>
+    <div class="main-label">Valor economico estimado de agentes autonomos</div>
+    <div class="divider" style="animation:fadeIn 0.8s ease forwards 10s;"></div>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-number" style="color:#00ff88;">5-15K</div>
+        <div class="stat-label">Custo implementacao agente (R$)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number" style="color:#0088ff;">5s</div>
+        <div class="stat-label">Tempo de resposta do agente</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="source">Fontes: NVIDIA Investor Relations, Gartner, McKinsey Global Institute</div>
+
+  <div class="ticker">
+    <div class="ticker-content">
+      NVIDIA Q4 2025: $68B receita (+78% YoY) &nbsp;&nbsp;|&nbsp;&nbsp;
+      Amazon corta 16.000 posicoes em reestruturacao IA &nbsp;&nbsp;|&nbsp;&nbsp;
+      Gartner: 40% dos apps corporativos terao agentes IA ate 2026 &nbsp;&nbsp;|&nbsp;&nbsp;
+      McKinsey: Agentes autonomos podem gerar $3.4 trilhoes em valor &nbsp;&nbsp;|&nbsp;&nbsp;
+      Mercado de AI Agents cresce 45% ao ano (2024-2028) &nbsp;&nbsp;|&nbsp;&nbsp;
+    </div>
+  </div>
+</div>
+</body>
+</html>

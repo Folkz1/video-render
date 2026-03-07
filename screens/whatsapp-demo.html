@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px; overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    color: #fff;
+    display: flex; justify-content: center; align-items: center;
+  }
+
+  .phone-frame {
+    width: 420px; height: 860px; border-radius: 40px;
+    background: #111b21; border: 3px solid #2a3942;
+    overflow: hidden; position: relative;
+    box-shadow: 0 0 80px rgba(37,211,102,0.15);
+    opacity: 0; animation: phoneIn 0.8s ease forwards 0.5s;
+  }
+  @keyframes phoneIn { to { opacity: 1; } }
+
+  .wa-header {
+    background: #1f2c34; padding: 14px 20px; display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid #2a3942;
+  }
+  .wa-avatar {
+    width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #00ff88, #00aa55);
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .wa-name { font-size: 18px; font-weight: 600; }
+  .wa-status { font-size: 12px; color: #8696a0; }
+  .wa-online { color: #00ff88; }
+
+  .wa-chat {
+    padding: 16px 20px; height: 720px; overflow: hidden;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a2530' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .msg {
+    max-width: 320px; padding: 10px 14px; border-radius: 12px;
+    margin-bottom: 8px; font-size: 15px; line-height: 1.4;
+    opacity: 0; transform: translateY(20px);
+    position: relative;
+  }
+  .msg-time { font-size: 11px; color: #8696a0; float: right; margin-left: 10px; margin-top: 4px; }
+
+  .msg-in {
+    background: #1f2c34; margin-right: auto;
+    border-top-left-radius: 4px;
+  }
+  .msg-out {
+    background: #005c4b; margin-left: auto;
+    border-top-right-radius: 4px;
+  }
+
+  .msg-1 { animation: msgIn 0.4s ease forwards 1.5s; }
+  .msg-2 { animation: msgIn 0.4s ease forwards 3s; }
+  .msg-3 { animation: msgIn 0.4s ease forwards 4.5s; }
+  .msg-4 { animation: msgIn 0.4s ease forwards 6s; }
+  .msg-5 { animation: msgIn 0.4s ease forwards 7.5s; }
+  .msg-6 { animation: msgIn 0.4s ease forwards 9s; }
+  .msg-7 { animation: msgIn 0.4s ease forwards 10.5s; }
+  .msg-8 { animation: msgIn 0.4s ease forwards 12s; }
+
+  @keyframes msgIn { to { opacity: 1; transform: translateY(0); } }
+
+  /* Typing indicator */
+  .typing {
+    display: inline-flex; gap: 4px; padding: 12px 18px;
+    background: #1f2c34; border-radius: 12px; margin-bottom: 8px;
+    opacity: 0;
+  }
+  .typing-1 { animation: fadeIn 0.3s ease forwards 2s, fadeOut 0.3s ease forwards 2.8s; }
+  .typing-2 { animation: fadeIn 0.3s ease forwards 5s, fadeOut 0.3s ease forwards 5.8s; }
+  .typing-3 { animation: fadeIn 0.3s ease forwards 8s, fadeOut 0.3s ease forwards 8.8s; }
+  .typing-4 { animation: fadeIn 0.3s ease forwards 11s, fadeOut 0.3s ease forwards 11.8s; }
+
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #8696a0;
+    animation: bounce 1.2s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 80% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; height: 0; padding: 0; margin: 0; overflow: hidden; } }
+
+  /* Side annotations */
+  .annotation {
+    position: absolute; padding: 16px 24px; border-radius: 12px;
+    background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.3);
+    font-size: 16px; max-width: 380px; opacity: 0;
+  }
+  .ann-1 {
+    top: 160px; right: 100px;
+    animation: fadeIn 0.6s ease forwards 2s;
+  }
+  .ann-2 {
+    top: 340px; right: 100px;
+    animation: fadeIn 0.6s ease forwards 5s;
+  }
+  .ann-3 {
+    top: 520px; right: 100px;
+    animation: fadeIn 0.6s ease forwards 8s;
+  }
+  .ann-4 {
+    top: 700px; right: 100px;
+    animation: fadeIn 0.6s ease forwards 11s;
+  }
+  .ann-title { font-weight: 700; color: #00ff88; margin-bottom: 4px; }
+  .ann-desc { color: #aab; font-size: 14px; }
+
+  /* Left side: label */
+  .side-label {
+    position: absolute; top: 80px; left: 100px;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 0.5s;
+  }
+  .side-label h2 { font-size: 36px; font-weight: 800; }
+  .side-label h2 span { color: #25d366; }
+  .side-label p { font-size: 18px; color: #667; margin-top: 8px; }
+
+  .timer {
+    position: absolute; bottom: 80px; left: 100px;
+    opacity: 0; animation: fadeIn 0.8s ease forwards 12s;
+  }
+  .timer-val { font-size: 72px; font-weight: 900; color: #00ff88; }
+  .timer-label { font-size: 18px; color: #667; }
+</style>
+</head>
+<body>
+  <div class="side-label">
+    <h2>Agente IA no <span>WhatsApp</span></h2>
+    <p>Demonstracao de atendimento automatizado</p>
+  </div>
+
+  <div class="phone-frame">
+    <div class="wa-header">
+      <div class="wa-avatar">🤖</div>
+      <div>
+        <div class="wa-name">Assistente Pacific Surf</div>
+        <div class="wa-status wa-online">online</div>
+      </div>
+    </div>
+    <div class="wa-chat">
+      <div class="msg msg-in msg-1">
+        Oi, quero saber sobre aulas de surf pra iniciante
+        <span class="msg-time">14:32</span>
+      </div>
+
+      <div class="typing typing-1"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+      <div class="msg msg-out msg-2">
+        Oi! Tudo bem? 🏄 Temos aulas pra iniciantes todos os dias! O pacote individual e R$120 (1h30 com instrutor). Quer agendar pra qual dia?
+        <span class="msg-time">14:32</span>
+      </div>
+
+      <div class="msg msg-in msg-3">
+        Sabado de manha tem vaga?
+        <span class="msg-time">14:33</span>
+      </div>
+
+      <div class="typing typing-2"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+      <div class="msg msg-out msg-4">
+        Sabado as 8h ou 10h. As duas com vaga! A de 8h tem menos gente na praia, ideal pra primeira vez. Reservo pra voce?
+        <span class="msg-time">14:33</span>
+      </div>
+
+      <div class="msg msg-in msg-5">
+        8h! Pode reservar. Como pago?
+        <span class="msg-time">14:33</span>
+      </div>
+
+      <div class="typing typing-3"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+      <div class="msg msg-out msg-6">
+        Reservado! ✅ Sabado 8h, aula iniciante. Pix ou cartao no local. Vou te mandar a localizacao e o que trazer. Qual seu nome completo?
+        <span class="msg-time">14:33</span>
+      </div>
+
+      <div class="msg msg-in msg-7">
+        Lucas Mendes
+        <span class="msg-time">14:34</span>
+      </div>
+
+      <div class="typing typing-4"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+      <div class="msg msg-out msg-8">
+        Perfeito, Lucas! 🤙 Tudo agendado. Vou te enviar um lembrete na sexta. Ate sabado!
+        <span class="msg-time">14:34</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side annotations -->
+  <div class="annotation ann-1">
+    <div class="ann-title">1. Lead detectado</div>
+    <div class="ann-desc">Agente identifica intencao de compra em 0.3s</div>
+  </div>
+  <div class="annotation ann-2">
+    <div class="ann-title">2. Resposta personalizada</div>
+    <div class="ann-desc">IA consulta estoque, precos e disponibilidade em tempo real</div>
+  </div>
+  <div class="annotation ann-3">
+    <div class="ann-title">3. Qualificacao automatica</div>
+    <div class="ann-desc">Lead classificado como QUENTE - pronto pra converter</div>
+  </div>
+  <div class="annotation ann-4">
+    <div class="ann-title">4. Fechamento + CRM</div>
+    <div class="ann-desc">Reserva criada, dados salvos, follow-up agendado</div>
+  </div>
+
+  <div class="timer">
+    <div class="timer-val">2 min</div>
+    <div class="timer-label">Do primeiro contato ao agendamento</div>
+  </div>
+</body>
+</html>
