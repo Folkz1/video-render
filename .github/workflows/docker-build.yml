@@ -9,15 +9,18 @@ on:
       - 'public/**'
       - 'screens/**'
       - 'Dockerfile.render'
+      - 'Dockerfile.render-farm-worker'
       - 'render-and-serve.sh'
+      - 'render-farm/**'
       - 'package.json'
+      - 'package-lock.json'
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: folkz1/video-render
 
 jobs:
-  build:
+  build-render:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,3 +45,29 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+  build-worker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push worker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.render-farm-worker
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/folkz1/video-render-farm-worker:latest
+            ${{ env.REGISTRY }}/folkz1/video-render-farm-worker:${{ github.sha }}

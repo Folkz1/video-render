@@ -6,11 +6,17 @@
     "record": "node playwright-record.mjs",
     "tts": "node generate-tts.mjs",
     "studio": "npx remotion studio --port 3338",
-    "render": "npx remotion render src/index.ts AgentesIA output/agentes-ia.mp4"
+    "render": "npx remotion render src/index.ts AgentesIA output/agentes-ia.mp4",
+    "farm:worker": "node render-farm/worker.mjs",
+    "farm:render": "node render-farm/coordinator.mjs",
+    "farm:validate:easypanel": "node render-farm/validate-easypanel.mjs",
+    "farm:deploy:easypanel": "node render-farm/deploy-easypanel.mjs"
   },
   "dependencies": {
+    "@remotion/bundler": "^4.0.434",
     "@remotion/cli": "^4.0.434",
     "@remotion/player": "^4.0.434",
+    "@remotion/renderer": "^4.0.434",
     "@types/react": "^19.2.14",
     "playwright": "^1.58.2",
     "react": "^19.2.4",

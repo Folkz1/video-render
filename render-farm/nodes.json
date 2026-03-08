@@ -1,0 +1,83 @@
+{
+  "defaults": {
+    "audioCodec": "aac",
+    "codec": "h264",
+    "framesPerChunk": 450,
+    "pollIntervalMs": 5000
+  },
+  "nodes": [
+    {
+      "id": "contabo-main",
+      "kind": "http-worker",
+      "enabled": true,
+      "workerUrl": "http://37.60.249.36:3201",
+      "workerSlots": 1,
+      "renderConcurrency": 6,
+      "weight": 1.6,
+      "bootstrap": {
+        "kind": "ssh-build",
+        "sshHost": "root@37.60.249.36",
+        "sshKeyPath": "~/.ssh/contabo_eduardo",
+        "remoteProjectDir": "/root/render-farm-worker",
+        "remoteDataDir": "/root/render-farm-data",
+        "containerName": "render-farm-worker",
+        "publishedPort": 3201,
+        "containerPort": 3001,
+        "imageName": "video-render-farm-worker:latest",
+        "dockerfile": "Dockerfile.render-farm-worker"
+      }
+    },
+    {
+      "id": "easypanel-apps",
+      "kind": "http-worker",
+      "enabled": true,
+      "workerUrl": "http://72.60.243.4:3201",
+      "workerSlots": 1,
+      "renderConcurrency": 4,
+      "weight": 1,
+      "panel": {
+        "url": "http://72.60.243.4:3000",
+        "project": "apps",
+        "service": "render"
+      },
+      "notes": "Panel reachability validated. Project hint came from Orquestra message history."
+    },
+    {
+      "id": "easypanel-scrapers",
+      "kind": "http-worker",
+      "enabled": true,
+      "workerUrl": "http://72.61.32.25:3201",
+      "workerSlots": 1,
+      "renderConcurrency": 4,
+      "weight": 1,
+      "panel": {
+        "url": "http://72.61.32.25:3000",
+        "project": "scrapers",
+        "service": "render"
+      },
+      "notes": "Panel reachability validated. Render service still needs image and ingress confirmation."
+    },
+    {
+      "id": "easypanel-wordpress",
+      "kind": "http-worker",
+      "enabled": true,
+      "workerUrl": "http://95.111.249.160:3201",
+      "workerSlots": 1,
+      "renderConcurrency": 4,
+      "weight": 1,
+      "panel": {
+        "url": "http://95.111.249.160:3000",
+        "project": "wordpress",
+        "service": "render"
+      },
+      "notes": "Validated: render service exists but is currently missing source/image and ingress."
+    },
+    {
+      "id": "github-ubuntu",
+      "kind": "github-actions",
+      "enabled": false,
+      "weight": 0.7,
+      "notes": "Free burst capacity. Best used for committed code or a publicly reachable bundle."
+    }
+  ]
+}

@@ -1,4 +1,7 @@
 node_modules/
 output/*.mp4
 .DS_Store
-public/inputs/*.mkv
+.render-farm-cache/
+.render-farm-worker/
+output/farm/
+render-farm/*.log

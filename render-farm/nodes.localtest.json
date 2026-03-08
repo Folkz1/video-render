@@ -1,0 +1,19 @@
+{
+  "defaults": {
+    "audioCodec": "aac",
+    "codec": "h264",
+    "framesPerChunk": 30,
+    "pollIntervalMs": 2000
+  },
+  "nodes": [
+    {
+      "id": "local-worker",
+      "kind": "http-worker",
+      "enabled": true,
+      "workerUrl": "http://127.0.0.1:3001",
+      "workerSlots": 1,
+      "renderConcurrency": 2,
+      "weight": 1
+    }
+  ]
+}
