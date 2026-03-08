@@ -127,6 +127,70 @@ const getHealth = async (node) =>
     timeoutMs: 5_000,
   });
 
+const parsePositiveInteger = (value, fallback = 0) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsed);
+};
+
+const resolveNodeCapacity = (node, health) => {
+  const configuredWorkerSlots = Math.max(1, parsePositiveInteger(node.workerSlots ?? 1, 1));
+  const configuredRenderConcurrency = Math.max(
+    1,
+    parsePositiveInteger(node.renderConcurrency ?? 1, 1),
+  );
+  const safeWorkerSlots = parsePositiveInteger(
+    health?.limits?.safeWorkerSlots,
+    configuredWorkerSlots,
+  );
+  const safeRenderConcurrency = Math.max(
+    0,
+    parsePositiveInteger(health?.limits?.safeRenderConcurrency, configuredRenderConcurrency),
+  );
+  const effectiveWorkerSlots = Math.max(
+    0,
+    Math.min(configuredWorkerSlots, safeWorkerSlots),
+  );
+  const effectiveRenderConcurrency =
+    effectiveWorkerSlots > 0
+      ? Math.max(1, Math.min(configuredRenderConcurrency, safeRenderConcurrency || configuredRenderConcurrency))
+      : 0;
+
+  return {
+    ...node,
+    effectiveRenderConcurrency,
+    effectiveWorkerSlots,
+    health,
+  };
+};
+
+const describeNodeCapacity = (node) => {
+  const ratio = node.health?.limits?.maxFreeCapacityRatio;
+  const freeCpu = node.health?.system?.freeCpuCores;
+  const freeMemoryBytes = node.health?.system?.freeMemoryBytes;
+  const details = [
+    `slots ${node.effectiveWorkerSlots}/${node.workerSlots ?? 1}`,
+    `concurrency ${node.effectiveRenderConcurrency}/${node.renderConcurrency ?? 1}`,
+  ];
+
+  if (Number.isFinite(ratio)) {
+    details.push(`free-cap-ratio ${ratio}`);
+  }
+
+  if (Number.isFinite(freeCpu)) {
+    details.push(`free-cpu ${Number(freeCpu).toFixed(2)}`);
+  }
+
+  if (Number.isFinite(freeMemoryBytes)) {
+    details.push(`free-mem-gb ${(Number(freeMemoryBytes) / 1024 ** 3).toFixed(2)}`);
+  }
+
+  return `${node.id}: ${details.join(', ')}`;
+};
+
 const readBundleRegistration = async (node, bundleId) => {
   const response = await fetch(`${httpWorkerBase(node)}/api/v1/bundles/${bundleId}`, {
     signal: AbortSignal.timeout(15_000),
@@ -244,6 +308,11 @@ const bootstrapSshBuildNode = async (node, projectRoot) => {
         `--name ${bootstrap.containerName}`,
         `-p ${bootstrap.publishedPort}:${bootstrap.containerPort}`,
         `-v ${bootstrap.remoteDataDir}:/data`,
+        '-e WORKER_MAX_FREE_CAPACITY_RATIO=0.6',
+        '-e WORKER_BUNDLE_RETENTION_MS=7200000',
+        '-e WORKER_JOB_RETENTION_MS=1800000',
+        '-e WORKER_CLEANUP_INTERVAL_MS=300000',
+        '-e WORKER_MIN_FREE_MEMORY_PER_JOB_BYTES=2147483648',
         `-e PORT=${bootstrap.containerPort}`,
         `-e WORKER_NAME=${node.id}`,
         `-e WORKER_RENDER_CONCURRENCY=${node.renderConcurrency}`,
@@ -283,6 +352,30 @@ const ensureNodeReady = async (node, projectRoot) => {
 
     throw new Error(`Worker ${node.id} did not become healthy after bootstrap`);
   }
+};
+
+const refreshDispatchNodes = async (nodes) => {
+  const healthChecks = await Promise.allSettled(nodes.map((node) => getHealth(node)));
+  const dispatchNodes = [];
+
+  for (const [index, node] of nodes.entries()) {
+    const result = healthChecks[index];
+    if (result.status !== 'fulfilled') {
+      const reason = result.reason instanceof Error ? result.reason.message : String(result.reason);
+      console.log(`pausing dispatch to ${node.id}: ${reason}`);
+      continue;
+    }
+
+    const nextNode = resolveNodeCapacity(node, result.value);
+    if (nextNode.effectiveWorkerSlots < 1 || nextNode.effectiveRenderConcurrency < 1) {
+      console.log(`pausing dispatch to ${node.id}: no safe free capacity (${describeNodeCapacity(nextNode)})`);
+      continue;
+    }
+
+    dispatchNodes.push(nextNode);
+  }
+
+  return dispatchNodes.sort((left, right) => (right.weight ?? 1) - (left.weight ?? 1));
 };
 
 const main = async () => {
@@ -367,7 +460,12 @@ const main = async () => {
   console.log(`render plan: ${chunks.length} chunks across ${nodes.length} nodes`);
 
   const healthChecks = await Promise.allSettled(nodes.map((node) => ensureNodeReady(node, projectRoot)));
-  const readyNodes = nodes.filter((_, index) => healthChecks[index].status === 'fulfilled');
+  const readyNodes = nodes
+    .filter((_, index) => healthChecks[index].status === 'fulfilled')
+    .map((node, index) => {
+      const originalIndex = nodes.findIndex((item) => item.id === node.id);
+      return resolveNodeCapacity(node, healthChecks[originalIndex].value);
+    });
   const skippedNodes = nodes.filter((_, index) => healthChecks[index].status !== 'fulfilled');
 
   for (const [index, node] of skippedNodes.entries()) {
@@ -382,16 +480,32 @@ const main = async () => {
     console.log(`skipping node ${node.id}: ${reason}`);
   }
 
-  if (readyNodes.length === 0) {
+  for (const node of readyNodes) {
+    console.log(`node capacity ${describeNodeCapacity(node)}`);
+  }
+
+  const dispatchReadyNodes = readyNodes.filter(
+    (node) => node.effectiveWorkerSlots > 0 && node.effectiveRenderConcurrency > 0,
+  );
+
+  for (const node of readyNodes) {
+    if (dispatchReadyNodes.includes(node)) {
+      continue;
+    }
+
+    console.log(`skipping node ${node.id}: no safe free capacity (${describeNodeCapacity(node)})`);
+  }
+
+  if (dispatchReadyNodes.length === 0) {
     throw new Error('No workers are healthy');
   }
 
   if (!fileExists(bundleArchive)) {
     await createTarGz(bundleDir, bundleArchive);
   }
-  const pushNodes = readyNodes.filter((node) => bundleTransferMode(node) !== 'pull');
-  const pullNodes = readyNodes.filter((node) => bundleTransferMode(node) === 'pull');
-  const mirrorNodes = pushNodes.length > 0 ? pushNodes : readyNodes.slice(0, 1);
+  const pushNodes = dispatchReadyNodes.filter((node) => bundleTransferMode(node) !== 'pull');
+  const pullNodes = dispatchReadyNodes.filter((node) => bundleTransferMode(node) === 'pull');
+  const mirrorNodes = pushNodes.length > 0 ? pushNodes : dispatchReadyNodes.slice(0, 1);
 
   const mirrorBundleStates = await Promise.all(
     mirrorNodes.map(async (node) => ({
@@ -417,6 +531,8 @@ const main = async () => {
     await Promise.all(pullNodes.map((node) => registerBundleFromUrl(node, bundleId, archiveUrl)));
   }
 
+  const stableReadyNodes = dispatchReadyNodes;
+  let dispatchNodes = stableReadyNodes;
   const pendingChunks = [...chunks];
   const activeJobs = new Map();
   const completedChunks = new Map();
@@ -426,9 +542,11 @@ const main = async () => {
   const claimChunk = () => pendingChunks.shift() ?? null;
 
   const launchJobs = async () => {
-    for (const node of readyNodes) {
+    dispatchNodes = await refreshDispatchNodes(stableReadyNodes);
+
+    for (const node of dispatchNodes) {
       const nodeBusy = [...activeJobs.values()].filter((job) => job.node.id === node.id).length;
-      const capacity = Math.max(1, Number(node.workerSlots ?? 1)) - nodeBusy;
+      const capacity = Math.max(0, Number(node.effectiveWorkerSlots ?? 0) - nodeBusy);
 
       for (let slot = 0; slot < capacity; slot += 1) {
         const chunk = claimChunk();
@@ -445,10 +563,12 @@ const main = async () => {
           compositionId: options.composition,
           frameRange: chunk.frameRange,
           jobId,
-          renderConcurrency: node.renderConcurrency,
+          renderConcurrency: node.effectiveRenderConcurrency,
         };
 
-        console.log(`submit chunk ${chunk.chunkIndex} to ${node.id} (${chunk.frameRange[0]}-${chunk.frameRange[1]})`);
+        console.log(
+          `submit chunk ${chunk.chunkIndex} to ${node.id} (${chunk.frameRange[0]}-${chunk.frameRange[1]}) with concurrency ${node.effectiveRenderConcurrency}`,
+        );
         await submitChunk(node, payload);
         activeJobs.set(jobId, { chunk, jobId, node });
       }
@@ -459,7 +579,13 @@ const main = async () => {
     await launchJobs();
 
     if (activeJobs.size === 0) {
-      break;
+      if (pendingChunks.length === 0) {
+        break;
+      }
+
+      console.log('waiting for workers with safe free capacity');
+      await sleep(pollIntervalMs);
+      continue;
     }
 
     await sleep(pollIntervalMs);
