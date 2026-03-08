@@ -280,7 +280,10 @@ const getCapacitySnapshot = () => {
   const totalMemoryBytes = os.totalmem();
   const freeMemoryBytes = os.freemem();
   const freeMemoryBudgetBytes = Math.max(0, Math.floor(freeMemoryBytes * maxFreeCapacityRatio));
-  const safeWorkerSlotsByCpu = Math.floor(freeCpuBudgetCores);
+  const safeWorkerSlotsByCpu =
+    freeCpuBudgetCores > 0
+      ? Math.max(1, Math.floor(freeCpuBudgetCores))
+      : 0;
   const safeWorkerSlotsByMemory = Math.floor(freeMemoryBudgetBytes / minFreeMemoryPerJobBytes);
   const safeWorkerSlots = Math.max(
     0,
