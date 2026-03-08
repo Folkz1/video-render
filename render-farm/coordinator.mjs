@@ -127,6 +127,23 @@ const getHealth = async (node) =>
     timeoutMs: 5_000,
   });
 
+const readBundleRegistration = async (node, bundleId) => {
+  const response = await fetch(`${httpWorkerBase(node)}/api/v1/bundles/${bundleId}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  const text = await response.text();
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Bundle probe failed for ${node.id}: HTTP ${response.status} ${text}`);
+  }
+
+  return text ? JSON.parse(text) : {};
+};
+
 const uploadBundle = async (node, bundleId, archiveFile) => {
   const response = await fetch(`${httpWorkerBase(node)}/api/v1/bundles/${bundleId}`, {
     body: createReadStream(archiveFile),
@@ -376,11 +393,25 @@ const main = async () => {
   const pullNodes = readyNodes.filter((node) => bundleTransferMode(node) === 'pull');
   const mirrorNodes = pushNodes.length > 0 ? pushNodes : readyNodes.slice(0, 1);
 
-  console.log(`uploading bundle directly to ${mirrorNodes.length} node(s)`);
-  await Promise.all(mirrorNodes.map((node) => uploadBundle(node, bundleId, bundleArchive)));
+  const mirrorBundleStates = await Promise.all(
+    mirrorNodes.map(async (node) => ({
+      bundle: await readBundleRegistration(node, bundleId),
+      node,
+    })),
+  );
+  const nodesNeedingUpload = mirrorBundleStates
+    .filter((entry) => !entry.bundle)
+    .map((entry) => entry.node);
+
+  if (nodesNeedingUpload.length > 0) {
+    console.log(`uploading bundle directly to ${nodesNeedingUpload.length} node(s)`);
+    await Promise.all(nodesNeedingUpload.map((node) => uploadBundle(node, bundleId, bundleArchive)));
+  } else {
+    console.log(`bundle ${bundleId} already available on ${mirrorNodes.length} mirror node(s)`);
+  }
 
   if (pullNodes.length > 0) {
-    const mirrorNode = mirrorNodes[0];
+    const mirrorNode = mirrorBundleStates.find((entry) => entry.bundle)?.node ?? mirrorNodes[0];
     const archiveUrl = `${httpWorkerBase(mirrorNode)}/api/v1/bundles/${bundleId}/archive`;
     console.log(`registering bundle by URL on ${pullNodes.length} node(s) from ${mirrorNode.id}`);
     await Promise.all(pullNodes.map((node) => registerBundleFromUrl(node, bundleId, archiveUrl)));

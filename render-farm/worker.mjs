@@ -1,10 +1,11 @@
 import { getCompositions, renderMedia } from '@remotion/renderer';
 import { createReadStream } from 'node:fs';
-import { rm, stat } from 'node:fs/promises';
+import { readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  createTarGz,
   downloadToFile,
   ensureDir,
   extractTarGz,
@@ -56,7 +57,123 @@ const summarizeProgress = (progress) => {
 
 const getBundleDir = (bundleId) => path.join(bundlesDir, bundleId);
 const getUploadFile = (bundleId) => path.join(uploadsDir, `${bundleId}.tar.gz`);
+const getBundleMetadataFile = (bundleId) => path.join(uploadsDir, `${bundleId}.json`);
 const getJobDir = (jobId) => path.join(jobsDir, jobId);
+
+const summarizeCompositions = (compositions) =>
+  compositions.map((item) => ({
+    durationInFrames: item.durationInFrames,
+    fps: item.fps,
+    id: item.id,
+  }));
+
+const createBundleRecord = ({
+  archiveBytes = null,
+  bundleId,
+  compositions,
+  uploadedAt = new Date().toISOString(),
+}) => ({
+  archiveBytes,
+  bundleId,
+  compositions: summarizeCompositions(compositions),
+  uploadedAt,
+});
+
+const readBundleMetadata = async (bundleId) => {
+  const metadataFile = getBundleMetadataFile(bundleId);
+  if (!fileExists(metadataFile)) {
+    return null;
+  }
+
+  return JSON.parse(await readFile(metadataFile, 'utf8'));
+};
+
+const writeBundleMetadata = async (bundle) => {
+  await ensureDir(path.dirname(getBundleMetadataFile(bundle.bundleId)));
+  await writeFile(getBundleMetadataFile(bundle.bundleId), JSON.stringify(bundle, null, 2));
+};
+
+const loadBundle = async (bundleId) => {
+  if (state.bundles.has(bundleId)) {
+    return state.bundles.get(bundleId);
+  }
+
+  const bundleDir = getBundleDir(bundleId);
+  if (!fileExists(bundleDir)) {
+    return null;
+  }
+
+  const metadata = await readBundleMetadata(bundleId);
+  const compositions = await getBundleCompositions(bundleId);
+  const bundle = createBundleRecord({
+    archiveBytes: metadata?.archiveBytes ?? null,
+    bundleId,
+    compositions,
+    uploadedAt: metadata?.uploadedAt ?? new Date().toISOString(),
+  });
+  state.bundles.set(bundleId, bundle);
+  await writeBundleMetadata(bundle);
+  return bundle;
+};
+
+const ensureBundleArchive = async (bundleId) => {
+  const bundle = await loadBundle(bundleId);
+  if (!bundle) {
+    return null;
+  }
+
+  const archiveFile = getUploadFile(bundleId);
+  const archiveStats = fileExists(archiveFile) ? await stat(archiveFile) : null;
+
+  if (!archiveStats || bundle.archiveBytes == null || archiveStats.size !== bundle.archiveBytes) {
+    const tempArchive = `${archiveFile}.${Date.now()}.tmp`;
+    await createTarGz(getBundleDir(bundleId), tempArchive);
+    await rm(archiveFile, { force: true });
+    await rename(tempArchive, archiveFile);
+  }
+
+  const currentStats = await stat(archiveFile);
+  const nextBundle = {
+    ...bundle,
+    archiveBytes: currentStats.size,
+  };
+  state.bundles.set(bundleId, nextBundle);
+  await writeBundleMetadata(nextBundle);
+  return {
+    archiveFile,
+    bundle: nextBundle,
+  };
+};
+
+const registerBundle = async (bundleId, sourceHandler) => {
+  const archiveFile = getUploadFile(bundleId);
+  const tempArchiveFile = `${archiveFile}.${Date.now()}.part`;
+
+  try {
+    await sourceHandler(tempArchiveFile);
+    await extractTarGz(tempArchiveFile, getBundleDir(bundleId));
+    state.compositionCache.delete(bundleId);
+
+    const compositions = await getBundleCompositions(bundleId);
+    await rm(archiveFile, { force: true });
+    await rename(tempArchiveFile, archiveFile);
+    const archiveStats = await stat(archiveFile);
+    const bundle = createBundleRecord({
+      archiveBytes: archiveStats.size,
+      bundleId,
+      compositions,
+    });
+    state.bundles.set(bundleId, bundle);
+    await writeBundleMetadata(bundle);
+    return bundle;
+  } catch (error) {
+    await rm(tempArchiveFile, { force: true });
+    await rm(getBundleDir(bundleId), { recursive: true, force: true });
+    state.compositionCache.delete(bundleId);
+    state.bundles.delete(bundleId);
+    throw error;
+  }
+};
 
 const publicJob = (job) => ({
   artifacts: {
@@ -201,52 +318,40 @@ const route = async (req, res) => {
 
   if (req.method === 'POST' && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'bundles' && parts[3]) {
     const bundleId = parts[3];
-    const archiveFile = getUploadFile(bundleId);
     const contentType = req.headers['content-type'] ?? '';
+    const requestBody = contentType.includes('application/json') ? await parseJsonBody(req) : null;
 
-    if (contentType.includes('application/json')) {
-      const body = await parseJsonBody(req);
-      if (!body.archiveUrl) {
-        return jsonResponse(res, 400, { error: 'archiveUrl is required for JSON bundle registration' });
-      }
-
-      await downloadToFile(body.archiveUrl, archiveFile, {
-        timeoutMs: 60 * 60_000,
-      });
-    } else {
-      await saveRequestToFile(req, archiveFile);
+    if (requestBody && !requestBody.archiveUrl) {
+      return jsonResponse(res, 400, { error: 'archiveUrl is required for JSON bundle registration' });
     }
 
-    await extractTarGz(archiveFile, getBundleDir(bundleId));
-    state.compositionCache.delete(bundleId);
+    const bundle = await registerBundle(bundleId, async (archiveFile) => {
+      if (requestBody) {
+        await downloadToFile(requestBody.archiveUrl, archiveFile, {
+          timeoutMs: 60 * 60_000,
+        });
+        return;
+      }
 
-    const compositions = await getBundleCompositions(bundleId);
-    state.bundles.set(bundleId, {
-      bundleId,
-      compositions: compositions.map((item) => ({
-        durationInFrames: item.durationInFrames,
-        fps: item.fps,
-        id: item.id,
-      })),
-      uploadedAt: new Date().toISOString(),
+      await saveRequestToFile(req, archiveFile);
     });
 
-    return jsonResponse(res, 201, state.bundles.get(bundleId));
+    return jsonResponse(res, 201, bundle);
   }
 
   if (req.method === 'GET' && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'bundles' && parts[3]) {
     if (parts[4] === 'archive') {
-      const archiveFile = getUploadFile(parts[3]);
-      if (!fileExists(archiveFile)) {
+      const archive = await ensureBundleArchive(parts[3]);
+      if (!archive) {
         return jsonResponse(res, 404, { error: 'Bundle archive not found' });
       }
 
       res.writeHead(200, { 'content-type': 'application/gzip' });
-      createReadStream(archiveFile).pipe(res);
+      createReadStream(archive.archiveFile).pipe(res);
       return;
     }
 
-    const bundle = state.bundles.get(parts[3]);
+    const bundle = await loadBundle(parts[3]);
     if (!bundle) {
       return jsonResponse(res, 404, { error: 'Bundle not found' });
     }
@@ -262,7 +367,8 @@ const route = async (req, res) => {
       return jsonResponse(res, 400, { error: 'bundleId, compositionId, chunkIndex and frameRange are required' });
     }
 
-    if (!state.bundles.has(body.bundleId)) {
+    const bundle = await loadBundle(body.bundleId);
+    if (!bundle) {
       return jsonResponse(res, 404, { error: `Bundle ${body.bundleId} not found` });
     }
 

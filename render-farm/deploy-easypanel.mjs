@@ -25,10 +25,13 @@ const parseArgs = (argv) => {
   const options = {
     apiKey: process.env.EASYPANEL_API_KEY ?? '',
     certificateResolver: process.env.EASYPANEL_CERTIFICATE_RESOLVER ?? 'letsencrypt',
+    createService: parseBoolean(process.env.RENDER_FARM_CREATE_SERVICE, false),
     deploy: true,
     dockerfile: process.env.RENDER_FARM_DOCKERFILE ?? './Dockerfile.render-farm-worker',
+    dockerfileInline: process.env.RENDER_FARM_DOCKERFILE_INLINE ?? '',
     domainHost: process.env.RENDER_FARM_DOMAIN_HOST ?? '',
     domainPath: process.env.RENDER_FARM_DOMAIN_PATH ?? '/',
+    gitRepoUrl: process.env.RENDER_FARM_GIT_REPO_URL ?? '',
     githubOwner: process.env.GITHUB_REPO_OWNER ?? 'Folkz1',
     githubPath: process.env.GITHUB_REPO_PATH ?? '/',
     githubRef: process.env.GITHUB_REPO_REF ?? 'master',
@@ -83,6 +86,11 @@ const parseArgs = (argv) => {
       continue;
     }
 
+    if (token === '--create-service') {
+      options.createService = true;
+      continue;
+    }
+
     if (token === '--github-owner') {
       options.githubOwner = next;
       index += 1;
@@ -113,6 +121,12 @@ const parseArgs = (argv) => {
       continue;
     }
 
+    if (token === '--dockerfile-inline') {
+      options.dockerfileInline = next;
+      index += 1;
+      continue;
+    }
+
     if (token === '--image') {
       options.image = next;
       index += 1;
@@ -127,6 +141,12 @@ const parseArgs = (argv) => {
 
     if (token === '--image-password') {
       options.imagePassword = next;
+      index += 1;
+      continue;
+    }
+
+    if (token === '--git-repo-url') {
+      options.gitRepoUrl = next;
       index += 1;
       continue;
     }
@@ -248,6 +268,21 @@ const inspectService = async (options) => {
   return response.result?.data?.json ?? response;
 };
 
+const createService = async (options) =>
+  trpcRequest(
+    options.panelUrl,
+    options.apiKey,
+    'services.app.createService',
+    {
+      projectName: options.project,
+      serviceName: options.service,
+    },
+    {
+      method: 'POST',
+      timeoutMs: 60_000,
+    },
+  );
+
 const listDomains = async (options) => {
   const response = await trpcRequest(
     options.panelUrl,
@@ -296,6 +331,56 @@ const updateGithubSource = async (options) => {
     },
   );
 };
+
+const remoteGitDockerfile = (options) => {
+  const repoUrl = options.gitRepoUrl || `https://github.com/${options.githubOwner}/${options.githubRepo}.git`;
+  const cacheBust = Date.now();
+
+  return `FROM node:22-slim
+
+RUN apt-get update && apt-get install -y \\
+    git \\
+    chromium \\
+    ffmpeg \\
+    fonts-noto-cjk \\
+    fonts-freefont-ttf \\
+    libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \\
+    libxrandr2 libxrender1 libxtst6 libnss3 libatk1.0-0 \\
+    libatk-bridge2.0-0 libcups2 libdrm2 libgbm1 libpango-1.0-0 \\
+    libcairo2 libasound2 libxshmfence1 \\
+    python3 curl \\
+    && rm -rf /var/lib/apt/lists/*
+
+ARG CACHE_BUST=${cacheBust}
+RUN echo "$CACHE_BUST" && git clone --depth 1 --branch ${options.githubRef} ${repoUrl} /app
+
+WORKDIR /app
+
+RUN npm install --production=false
+
+ENV PORT=${options.internalPort}
+ENV WORKER_DATA_DIR=/data
+
+EXPOSE ${options.internalPort}
+
+CMD ["node", "render-farm/worker.mjs"]`;
+};
+
+const updateInlineDockerfileSource = async (options) =>
+  trpcRequest(
+    options.panelUrl,
+    options.apiKey,
+    'services.app.updateSourceDockerfile',
+    {
+      dockerfile: options.dockerfileInline || remoteGitDockerfile(options),
+      projectName: options.project,
+      serviceName: options.service,
+    },
+    {
+      method: 'POST',
+      timeoutMs: 60_000,
+    },
+  );
 
 const updateImageSource = async (options) => {
   const payload = {
@@ -420,8 +505,21 @@ const main = async () => {
     throw new Error('Use EASYPANEL_URL, EASYPANEL_PROJECT, EASYPANEL_SERVICE and EASYPANEL_API_KEY or pass them as flags');
   }
 
+  if (options.createService) {
+    try {
+      await createService(options);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('Service already exists.')) {
+        throw error;
+      }
+    }
+  }
+
   if (options.source === 'github') {
     await updateGithubSource(options);
+  } else if (options.source === 'dockerfile-inline') {
+    await updateInlineDockerfileSource(options);
   } else if (options.source === 'image') {
     if (!options.image) {
       throw new Error('--image is required when --source image');
