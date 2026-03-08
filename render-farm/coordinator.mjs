@@ -11,6 +11,7 @@ import {
   ensureDir,
   execCommand,
   expandHomePath,
+  fileExists,
   fetchJson,
   hashText,
   readJsonFile,
@@ -21,6 +22,7 @@ import {
 const parseArgs = (argv) => {
   const options = {
     audioCodec: null,
+    bundleId: null,
     codec: null,
     composition: null,
     config: 'render-farm/nodes.json',
@@ -37,6 +39,12 @@ const parseArgs = (argv) => {
 
     if (token === '--composition') {
       options.composition = next;
+      index += 1;
+      continue;
+    }
+
+    if (token === '--bundle-id') {
+      options.bundleId = next;
       index += 1;
       continue;
     }
@@ -138,6 +146,16 @@ const uploadBundle = async (node, bundleId, archiveFile) => {
   return text ? JSON.parse(text) : {};
 };
 
+const registerBundleFromUrl = async (node, bundleId, archiveUrl) =>
+  fetchJson(`${httpWorkerBase(node)}/api/v1/bundles/${bundleId}`, {
+    body: JSON.stringify({ archiveUrl }),
+    headers: {
+      'content-type': 'application/json',
+    },
+    method: 'POST',
+    timeoutMs: 60 * 60_000,
+  });
+
 const submitChunk = async (node, payload) =>
   fetchJson(`${httpWorkerBase(node)}/api/v1/jobs`, {
     body: JSON.stringify(payload),
@@ -152,6 +170,8 @@ const readChunkStatus = async (node, jobId) =>
   fetchJson(`${httpWorkerBase(node)}/api/v1/jobs/${jobId}`, {
     timeoutMs: 10_000,
   });
+
+const bundleTransferMode = (node) => node.bundleTransfer ?? 'push';
 
 const deleteChunk = async (node, jobId) =>
   fetchJson(`${httpWorkerBase(node)}/api/v1/jobs/${jobId}`, {
@@ -279,18 +299,33 @@ const main = async () => {
   await ensureDir(uploadsRoot);
   await ensureDir(chunksRoot);
 
-  const bundleId = `${safeSlug(options.composition)}-${hashText(`${options.composition}-${Date.now()}`)}`.slice(0, 48);
+  const bundleId =
+    options.bundleId ??
+    `${safeSlug(options.composition)}-${hashText(`${options.composition}-${Date.now()}`)}`.slice(0, 48);
   const bundleDir = path.join(bundleRoot, bundleId);
   const bundleArchive = path.join(uploadsRoot, `${bundleId}.tar.gz`);
 
-  console.log(`bundling ${options.composition} into ${bundleId}`);
-  await bundle({
-    entryPoint: path.join(projectRoot, 'src', 'index.ts'),
-    onProgress: () => undefined,
-    outDir: bundleDir,
-  });
+  let compositions;
+  if (options.bundleId) {
+    if (!fileExists(bundleDir)) {
+      throw new Error(`Bundle directory not found for --bundle-id ${bundleId}: ${bundleDir}`);
+    }
 
-  const compositions = await getCompositions(bundleDir, {
+    console.log(`reusing local bundle ${bundleId}`);
+    if (!fileExists(bundleArchive)) {
+      console.log(`creating archive for reused bundle ${bundleId}`);
+      await createTarGz(bundleDir, bundleArchive);
+    }
+  } else {
+    console.log(`bundling ${options.composition} into ${bundleId}`);
+    await bundle({
+      entryPoint: path.join(projectRoot, 'src', 'index.ts'),
+      onProgress: () => undefined,
+      outDir: bundleDir,
+    });
+  }
+
+  compositions = await getCompositions(bundleDir, {
     logLevel: 'error',
   });
   const composition = compositions.find((item) => item.id === options.composition);
@@ -334,9 +369,22 @@ const main = async () => {
     throw new Error('No workers are healthy');
   }
 
-  await createTarGz(bundleDir, bundleArchive);
-  console.log(`uploading bundle to ${readyNodes.length} nodes`);
-  await Promise.all(readyNodes.map((node) => uploadBundle(node, bundleId, bundleArchive)));
+  if (!fileExists(bundleArchive)) {
+    await createTarGz(bundleDir, bundleArchive);
+  }
+  const pushNodes = readyNodes.filter((node) => bundleTransferMode(node) !== 'pull');
+  const pullNodes = readyNodes.filter((node) => bundleTransferMode(node) === 'pull');
+  const mirrorNodes = pushNodes.length > 0 ? pushNodes : readyNodes.slice(0, 1);
+
+  console.log(`uploading bundle directly to ${mirrorNodes.length} node(s)`);
+  await Promise.all(mirrorNodes.map((node) => uploadBundle(node, bundleId, bundleArchive)));
+
+  if (pullNodes.length > 0) {
+    const mirrorNode = mirrorNodes[0];
+    const archiveUrl = `${httpWorkerBase(mirrorNode)}/api/v1/bundles/${bundleId}/archive`;
+    console.log(`registering bundle by URL on ${pullNodes.length} node(s) from ${mirrorNode.id}`);
+    await Promise.all(pullNodes.map((node) => registerBundleFromUrl(node, bundleId, archiveUrl)));
+  }
 
   const pendingChunks = [...chunks];
   const activeJobs = new Map();

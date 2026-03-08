@@ -5,6 +5,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  downloadToFile,
   ensureDir,
   extractTarGz,
   fileExists,
@@ -201,8 +202,21 @@ const route = async (req, res) => {
   if (req.method === 'POST' && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'bundles' && parts[3]) {
     const bundleId = parts[3];
     const archiveFile = getUploadFile(bundleId);
+    const contentType = req.headers['content-type'] ?? '';
 
-    await saveRequestToFile(req, archiveFile);
+    if (contentType.includes('application/json')) {
+      const body = await parseJsonBody(req);
+      if (!body.archiveUrl) {
+        return jsonResponse(res, 400, { error: 'archiveUrl is required for JSON bundle registration' });
+      }
+
+      await downloadToFile(body.archiveUrl, archiveFile, {
+        timeoutMs: 60 * 60_000,
+      });
+    } else {
+      await saveRequestToFile(req, archiveFile);
+    }
+
     await extractTarGz(archiveFile, getBundleDir(bundleId));
     state.compositionCache.delete(bundleId);
 
@@ -221,6 +235,17 @@ const route = async (req, res) => {
   }
 
   if (req.method === 'GET' && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'bundles' && parts[3]) {
+    if (parts[4] === 'archive') {
+      const archiveFile = getUploadFile(parts[3]);
+      if (!fileExists(archiveFile)) {
+        return jsonResponse(res, 404, { error: 'Bundle archive not found' });
+      }
+
+      res.writeHead(200, { 'content-type': 'application/gzip' });
+      createReadStream(archiveFile).pipe(res);
+      return;
+    }
+
     const bundle = state.bundles.get(parts[3]);
     if (!bundle) {
       return jsonResponse(res, 404, { error: 'Bundle not found' });

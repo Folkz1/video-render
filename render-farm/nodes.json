@@ -28,24 +28,25 @@
       }
     },
     {
-      "id": "easypanel-apps",
+      "id": "easypanel-plataforma",
       "kind": "http-worker",
       "enabled": true,
-      "workerUrl": "http://72.60.243.4:3201",
+      "workerUrl": "https://plataforma-render-farm.klx2s6.easypanel.host",
+      "bundleTransfer": "pull",
       "workerSlots": 1,
       "renderConcurrency": 4,
       "weight": 1,
       "panel": {
         "url": "http://72.60.243.4:3000",
-        "project": "apps",
-        "service": "render"
+        "project": "plataforma",
+        "service": "render-farm"
       },
-      "notes": "Panel reachability validated. Project hint came from Orquestra message history."
+      "notes": "Deployed and health-checked via inline Dockerfile source backed by the public video-render repository."
     },
     {
       "id": "easypanel-scrapers",
       "kind": "http-worker",
-      "enabled": true,
+      "enabled": false,
       "workerUrl": "http://72.61.32.25:3201",
       "workerSlots": 1,
       "renderConcurrency": 4,
@@ -55,22 +56,23 @@
         "project": "scrapers",
         "service": "render"
       },
-      "notes": "Panel reachability validated. Render service still needs image and ingress confirmation."
+      "notes": "Panel reachability validated, but API auth for automated deploy is still missing."
     },
     {
       "id": "easypanel-wordpress",
       "kind": "http-worker",
       "enabled": true,
-      "workerUrl": "http://95.111.249.160:3201",
+      "workerUrl": "https://wordpress-render-farm.jz9bd8.easypanel.host",
+      "bundleTransfer": "pull",
       "workerSlots": 1,
       "renderConcurrency": 4,
       "weight": 1,
       "panel": {
         "url": "http://95.111.249.160:3000",
         "project": "wordpress",
-        "service": "render"
+        "service": "render-farm"
       },
-      "notes": "Validated: render service exists but is currently missing source/image and ingress."
+      "notes": "Deployed and health-checked via inline Dockerfile source backed by the public video-render repository."
     },
     {
       "id": "github-ubuntu",
