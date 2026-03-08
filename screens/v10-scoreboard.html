@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.title {
+  font-size: 42px; font-weight: 900; margin-bottom: 60px;
+  text-transform: uppercase; letter-spacing: 4px;
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.board {
+  display: flex; gap: 40px;
+  perspective: 1000px;
+}
+
+.contestant {
+  width: 480px; padding: 40px 30px;
+  border-radius: 16px; text-align: center;
+  position: relative; overflow: hidden;
+  animation: slideUp 0.8s ease-out both;
+}
+
+.contestant:nth-child(1) { animation-delay: 0.2s; }
+.contestant:nth-child(2) { animation-delay: 0.5s; }
+.contestant:nth-child(3) { animation-delay: 0.8s; }
+
+.copilot { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 2px solid #0088ff44; }
+.cursor { background: linear-gradient(135deg, #1a1a2e, #1a2e1a); border: 2px solid #aa44ff44; }
+.claude { background: linear-gradient(135deg, #1a1a2e, #2e1a1a); border: 2px solid #D4A57444; }
+
+.logo-icon {
+  font-size: 48px; margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px currentColor);
+}
+
+.copilot .logo-icon { color: #0088ff; }
+.cursor .logo-icon { color: #aa44ff; }
+.claude .logo-icon { color: #D4A574; }
+
+.name {
+  font-size: 28px; font-weight: 800; margin-bottom: 8px;
+}
+.copilot .name { color: #0088ff; }
+.cursor .name { color: #aa44ff; }
+.claude .name { color: #D4A574; }
+
+.price {
+  font-size: 16px; color: #8899aa; margin-bottom: 30px;
+}
+
+.metrics { display: flex; flex-direction: column; gap: 16px; }
+
+.metric {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 16px; border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+}
+
+.metric-label { font-size: 14px; color: #8899aa; }
+.metric-value { font-size: 20px; font-weight: 800; }
+
+.copilot .metric-value { color: #0088ff; }
+.cursor .metric-value { color: #aa44ff; }
+.claude .metric-value { color: #D4A574; }
+
+.winner-badge {
+  position: absolute; top: -2px; right: -2px;
+  background: linear-gradient(135deg, #FFD700, #ff8800);
+  color: #0a0a0f; font-size: 12px; font-weight: 900;
+  padding: 6px 16px; border-radius: 0 14px 0 14px;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+
+.vs {
+  font-size: 36px; font-weight: 900; color: #333;
+  align-self: center;
+}
+
+.footer {
+  margin-top: 50px; font-size: 18px; color: #556;
+  letter-spacing: 2px;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.glow { animation: glow 2s ease-in-out infinite alternate; }
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(212,165,116,0.1); }
+  to { box-shadow: 0 0 40px rgba(212,165,116,0.3); }
+}
+</style>
+</head>
+<body>
+  <div class="title">O Teste Definitivo</div>
+
+  <div class="board">
+    <div class="contestant copilot">
+      <div class="logo-icon">&#9881;</div>
+      <div class="name">GitHub Copilot</div>
+      <div class="price">$10/mes | VS Code</div>
+      <div class="metrics">
+        <div class="metric">
+          <span class="metric-label">Tempo</span>
+          <span class="metric-value">45 min</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Linhas</span>
+          <span class="metric-value">342</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Bugs</span>
+          <span class="metric-value">8</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Deploy</span>
+          <span class="metric-value">Manual</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="contestant cursor">
+      <div class="logo-icon">&#9670;</div>
+      <div class="name">Cursor</div>
+      <div class="price">$20/mes | Editor proprio</div>
+      <div class="metrics">
+        <div class="metric">
+          <span class="metric-label">Tempo</span>
+          <span class="metric-value">28 min</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Linhas</span>
+          <span class="metric-value">287</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Bugs</span>
+          <span class="metric-value">4</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Deploy</span>
+          <span class="metric-value">Manual</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="contestant claude glow">
+      <div class="winner-badge">Vencedor</div>
+      <div class="logo-icon">&#9733;</div>
+      <div class="name">Claude Code</div>
+      <div class="price">$20/mes Max | Terminal</div>
+      <div class="metrics">
+        <div class="metric">
+          <span class="metric-label">Tempo</span>
+          <span class="metric-value">12 min</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Linhas</span>
+          <span class="metric-value">198</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Bugs</span>
+          <span class="metric-value">1</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Deploy</span>
+          <span class="metric-value">Auto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  position: relative;
+}
+
+/* Background grid */
+body::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridPulse 4s ease-in-out infinite alternate;
+}
+@keyframes gridPulse {
+  from { opacity: 0.3; }
+  to { opacity: 0.8; }
+}
+
+.logos-row {
+  display: flex; gap: 80px; align-items: center;
+  margin-bottom: 50px; z-index: 1;
+}
+
+.tool-logo {
+  display: flex; flex-direction: column; align-items: center;
+  animation: scaleIn 0.6s ease-out both;
+}
+.tool-logo:nth-child(1) { animation-delay: 0.2s; }
+.tool-logo:nth-child(2) { animation-delay: 0.5s; }
+.tool-logo:nth-child(3) { animation-delay: 0.8s; }
+
+.logo-circle {
+  width: 140px; height: 140px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px; font-weight: 900;
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.copilot .logo-circle {
+  background: radial-gradient(circle, #007acc33, #007acc11);
+  border: 3px solid #007acc88;
+  color: #007acc;
+  box-shadow: 0 0 40px #007acc33;
+}
+.cursor .logo-circle {
+  background: radial-gradient(circle, #aa44ff33, #aa44ff11);
+  border: 3px solid #aa44ff88;
+  color: #aa44ff;
+  box-shadow: 0 0 40px #aa44ff33;
+}
+.claude .logo-circle {
+  background: radial-gradient(circle, #D4A57433, #D4A57411);
+  border: 3px solid #D4A57488;
+  color: #D4A574;
+  box-shadow: 0 0 40px #D4A57433;
+}
+
+.logo-name {
+  font-size: 22px; font-weight: 700; letter-spacing: 1px;
+}
+.copilot .logo-name { color: #007acc; }
+.cursor .logo-name { color: #aa44ff; }
+.claude .logo-name { color: #D4A574; }
+
+.vs-divider {
+  font-size: 32px; font-weight: 900; color: #333;
+  animation: fadeIn 1s ease-out 0.4s both;
+}
+
+/* Stopwatch */
+.stopwatch {
+  font-size: 120px; font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 6px;
+  background: linear-gradient(135deg, #fff, #aabbcc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 40px; z-index: 1;
+  animation: fadeIn 1s ease-out 1s both;
+  position: relative;
+}
+.stopwatch::after {
+  content: '';
+  position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+  width: 200px; height: 3px;
+  background: linear-gradient(90deg, transparent, #00ff88, transparent);
+  animation: scanline 2s ease-in-out infinite;
+}
+@keyframes scanline {
+  0%, 100% { opacity: 0.3; width: 100px; }
+  50% { opacity: 1; width: 300px; }
+}
+
+/* Title with glitch */
+.title-glitch {
+  font-size: 58px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 8px;
+  position: relative; z-index: 1;
+  margin-bottom: 50px;
+  animation: fadeIn 0.8s ease-out 1.3s both;
+}
+.title-glitch span {
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.title-glitch::before,
+.title-glitch::after {
+  content: 'O TESTE DEFINITIVO';
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.title-glitch::before {
+  animation: glitch1 3s infinite linear alternate-reverse;
+  clip-path: polygon(0 0, 100% 0, 100% 33%, 0 33%);
+}
+.title-glitch::after {
+  animation: glitch2 3s infinite linear alternate-reverse;
+  clip-path: polygon(0 67%, 100% 67%, 100% 100%, 0 100%);
+}
+@keyframes glitch1 {
+  0%, 90% { transform: translate(0); }
+  92% { transform: translate(-4px, -2px); }
+  94% { transform: translate(4px, 1px); }
+  96% { transform: translate(-2px, 3px); }
+  98% { transform: translate(3px, -1px); }
+  100% { transform: translate(0); }
+}
+@keyframes glitch2 {
+  0%, 88% { transform: translate(0); }
+  90% { transform: translate(3px, 2px); }
+  93% { transform: translate(-5px, -1px); }
+  95% { transform: translate(2px, -3px); }
+  97% { transform: translate(-3px, 1px); }
+  100% { transform: translate(0); }
+}
+
+/* Progress bars */
+.progress-bars {
+  display: flex; gap: 80px; z-index: 1;
+  margin-bottom: 40px;
+  animation: fadeIn 0.8s ease-out 1.5s both;
+}
+.progress-item {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.progress-label { font-size: 13px; color: #667; font-weight: 600; }
+.progress-track {
+  width: 200px; height: 8px; border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.progress-fill {
+  width: 0%; height: 100%; border-radius: 4px;
+  transition: width 2s ease-out;
+}
+.copilot .progress-fill { background: linear-gradient(90deg, #007acc, #007accaa); }
+.cursor .progress-fill { background: linear-gradient(90deg, #aa44ff, #aa44ffaa); }
+.claude .progress-fill { background: linear-gradient(90deg, #D4A574, #D4A574aa); }
+.progress-pct { font-size: 14px; font-weight: 800; color: #556; }
+
+/* Zero Patrocinio stamp */
+.stamp {
+  position: absolute; top: 60px; right: 80px;
+  border: 4px solid #ff3344;
+  color: #ff3344;
+  font-size: 18px; font-weight: 900;
+  padding: 10px 24px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  transform: rotate(12deg);
+  opacity: 0;
+  animation: stampIn 0.4s ease-out 2s both;
+  z-index: 2;
+}
+.stamp::before {
+  content: '';
+  position: absolute; inset: -2px;
+  border: 2px dashed #ff334466;
+  border-radius: 2px;
+}
+@keyframes stampIn {
+  0% { opacity: 0; transform: rotate(12deg) scale(2); }
+  60% { opacity: 1; transform: rotate(12deg) scale(0.9); }
+  100% { opacity: 0.9; transform: rotate(12deg) scale(1); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+  <div class="stamp">ZERO PATROCINIO</div>
+
+  <div class="logos-row">
+    <div class="tool-logo copilot">
+      <div class="logo-circle">&#9881;</div>
+      <div class="logo-name">Copilot</div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="tool-logo cursor">
+      <div class="logo-circle">&#9670;</div>
+      <div class="logo-name">Cursor</div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="tool-logo claude">
+      <div class="logo-circle">&#9733;</div>
+      <div class="logo-name">Claude Code</div>
+    </div>
+  </div>
+
+  <div class="stopwatch" id="timer">00:00</div>
+
+  <div class="title-glitch"><span>O TESTE DEFINITIVO</span></div>
+
+  <div class="progress-bars">
+    <div class="progress-item copilot">
+      <div class="progress-label">COPILOT</div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+      <div class="progress-pct">0%</div>
+    </div>
+    <div class="progress-item cursor">
+      <div class="progress-label">CURSOR</div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+      <div class="progress-pct">0%</div>
+    </div>
+    <div class="progress-item claude">
+      <div class="progress-label">CLAUDE CODE</div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+      <div class="progress-pct">0%</div>
+    </div>
+  </div>
+
+  <script>
+    // Animate stopwatch
+    const timer = document.getElementById('timer');
+    let seconds = 0;
+    setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      timer.textContent = m + ':' + s;
+    }, 1000);
+  </script>
+</body>
+</html>

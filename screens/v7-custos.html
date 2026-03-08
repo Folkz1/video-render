@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.title {
+  font-size: 42px; font-weight: 900; text-align: center;
+  margin-bottom: 50px;
+  opacity: 0; animation: slideDown 0.8s ease-out forwards 0.3s;
+}
+.title .green { color: #00ff88; }
+.title .red { color: #ff4455; }
+
+.tables-container {
+  display: flex; gap: 60px; align-items: flex-start;
+}
+
+/* Bot cost table */
+.cost-table {
+  width: 520px; border-radius: 16px; overflow: hidden;
+  border: 2px solid rgba(0,255,136,0.2);
+  background: #0d1117;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(0,255,136,0.05);
+  opacity: 0; animation: slideRight 0.8s ease-out forwards 0.5s;
+}
+
+.table-title {
+  padding: 20px 28px; font-size: 18px; font-weight: 900;
+  letter-spacing: 2px; text-transform: uppercase;
+  text-align: center;
+}
+.table-title.green-bg {
+  background: rgba(0,255,136,0.08); color: #00ff88;
+  border-bottom: 1px solid rgba(0,255,136,0.15);
+}
+.table-title.red-bg {
+  background: rgba(255,68,85,0.08); color: #ff4455;
+  border-bottom: 1px solid rgba(255,68,85,0.15);
+}
+
+.cost-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 28px; border-bottom: 1px solid #1a1a2e;
+  opacity: 0;
+}
+
+.bot-table .cost-row:nth-child(1) { animation: rowIn 0.4s ease-out forwards 1.0s; }
+.bot-table .cost-row:nth-child(2) { animation: rowIn 0.4s ease-out forwards 1.4s; }
+.bot-table .cost-row:nth-child(3) { animation: rowIn 0.4s ease-out forwards 1.8s; }
+.bot-table .cost-row:nth-child(4) { animation: rowIn 0.4s ease-out forwards 2.2s; }
+
+.cost-item {
+  display: flex; align-items: center; gap: 12px;
+}
+.cost-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.cost-name { font-size: 16px; font-weight: 600; color: #ccddee; }
+.cost-desc { font-size: 12px; color: #556677; }
+
+.cost-value { font-size: 20px; font-weight: 900; }
+.cost-value.green { color: #00ff88; }
+.cost-value.free { color: #00ff88; }
+.cost-value.gold { color: #FFD700; }
+
+.total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 28px;
+  background: rgba(0,255,136,0.05);
+  opacity: 0; animation: rowIn 0.6s ease-out forwards 2.6s;
+}
+.total-label { font-size: 18px; font-weight: 900; color: #ccddee; }
+.total-value { font-size: 32px; font-weight: 900; color: #00ff88; }
+
+/* CLT table */
+.clt-table {
+  width: 520px; border-radius: 16px; overflow: hidden;
+  border: 2px solid rgba(255,68,85,0.2);
+  background: #0d1117;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  opacity: 0; animation: slideLeft 0.8s ease-out forwards 0.8s;
+}
+
+.clt-table .cost-row:nth-child(1) { animation: rowIn 0.4s ease-out forwards 1.2s; }
+.clt-table .cost-row:nth-child(2) { animation: rowIn 0.4s ease-out forwards 1.6s; }
+.clt-table .cost-row:nth-child(3) { animation: rowIn 0.4s ease-out forwards 2.0s; }
+
+.cost-value.red { color: #ff4455; }
+
+.total-row-red {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 22px 28px;
+  background: rgba(255,68,85,0.05);
+  opacity: 0; animation: rowIn 0.6s ease-out forwards 2.8s;
+}
+.total-value-red { font-size: 32px; font-weight: 900; color: #ff4455; }
+
+/* VS badge */
+.vs-badge {
+  position: absolute;
+  font-size: 48px; font-weight: 900;
+  color: #334455; letter-spacing: 4px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.6s;
+}
+
+/* Economy banner */
+.economy {
+  margin-top: 50px; display: flex; align-items: center; gap: 30px;
+  padding: 24px 50px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0,255,136,0.1), rgba(0,255,136,0.02));
+  border: 2px solid rgba(0,255,136,0.3);
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 3.5s;
+  box-shadow: 0 0 60px rgba(0,255,136,0.1);
+}
+.economy-label { font-size: 18px; color: #8899aa; font-weight: 700; }
+.economy-value {
+  font-size: 64px; font-weight: 900; color: #00ff88;
+  text-shadow: 0 0 40px rgba(0,255,136,0.4);
+}
+.economy-detail { font-size: 16px; color: #667788; }
+
+.footer {
+  position: absolute; bottom: 30px;
+  font-size: 14px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideLeft { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes rowIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.5); }
+  60% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+  <div class="title">
+    <span class="green">Bot IA</span> vs <span class="red">Funcionario CLT</span>
+  </div>
+
+  <div class="vs-badge">VS</div>
+
+  <div class="tables-container">
+    <div class="cost-table bot-table">
+      <div class="table-title green-bg">Bot WhatsApp IA</div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(0,136,255,0.15); color:#0088ff">S</div>
+          <div>
+            <div class="cost-name">VPS (Servidor)</div>
+            <div class="cost-desc">Contabo / Hetzner</div>
+          </div>
+        </div>
+        <div class="cost-value gold">R$25/mes</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(0,255,136,0.15); color:#00ff88">E</div>
+          <div>
+            <div class="cost-name">Evolution API</div>
+            <div class="cost-desc">Open Source</div>
+          </div>
+        </div>
+        <div class="cost-value free">R$0</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(255,109,90,0.15); color:#ff6d5a">N</div>
+          <div>
+            <div class="cost-name">N8N</div>
+            <div class="cost-desc">Self-hosted</div>
+          </div>
+        </div>
+        <div class="cost-value free">R$0</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(147,51,234,0.15); color:#9333ea">A</div>
+          <div>
+            <div class="cost-name">LLM (Claude/GPT)</div>
+            <div class="cost-desc">~1000 msgs/mes</div>
+          </div>
+        </div>
+        <div class="cost-value gold">R$4/mes</div>
+      </div>
+      <div class="total-row">
+        <div class="total-label">TOTAL MENSAL</div>
+        <div class="total-value">R$29/mes</div>
+      </div>
+    </div>
+
+    <div class="cost-table clt-table">
+      <div class="table-title red-bg">Atendente CLT</div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(255,68,85,0.15); color:#ff4455">$</div>
+          <div>
+            <div class="cost-name">Salario</div>
+            <div class="cost-desc">Atendente junior</div>
+          </div>
+        </div>
+        <div class="cost-value red">R$2.000</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(255,68,85,0.15); color:#ff4455">%</div>
+          <div>
+            <div class="cost-name">Encargos CLT</div>
+            <div class="cost-desc">INSS, FGTS, ferias, 13o</div>
+          </div>
+        </div>
+        <div class="cost-value red">R$1.200</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-item">
+          <div class="cost-icon" style="background:rgba(255,68,85,0.15); color:#ff4455">+</div>
+          <div>
+            <div class="cost-name">VR + VT + Beneficios</div>
+            <div class="cost-desc">Custos operacionais</div>
+          </div>
+        </div>
+        <div class="cost-value red">R$300</div>
+      </div>
+      <div class="total-row-red">
+        <div class="total-label">TOTAL MENSAL</div>
+        <div class="total-value-red">R$3.500/mes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="economy">
+    <div>
+      <div class="economy-label">ECONOMIA</div>
+      <div class="economy-detail">Bot vs CLT por mes</div>
+    </div>
+    <div class="economy-value">99.2%</div>
+    <div>
+      <div class="economy-detail" style="font-size:20px; color:#ccddee; font-weight:700;">R$3.471/mes</div>
+      <div class="economy-detail">de economia + atende 24/7</div>
+    </div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

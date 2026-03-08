@@ -4,18 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       video_id:
-        description: 'Composition ID to render'
+        description: 'Composition ID to render (ex: Video12-EP01-Short01)'
         required: true
-        default: 'Video2-Projetos'
-        type: choice
-        options:
-          - Video1-NVIDIA
-          - Video2-Projetos
-          - Video3-Meta
-      frames:
-        description: 'Total frames'
-        required: true
-        default: '7600'
+        default: 'Video12-EP01-Short01'
+        type: string
+      concurrency:
+        description: 'Remotion concurrency'
+        required: false
+        default: '2'
+        type: string
 
 jobs:
   render:
@@ -41,11 +38,9 @@ jobs:
 
       - name: Render video
         run: |
-          echo "Rendering ${{ inputs.video_id }} (${{ inputs.frames }} frames)"
-          npx remotion render src/index.ts "${{ inputs.video_id }}" \
-            "output/${{ inputs.video_id }}.mp4" \
-            --concurrency=2 \
-            --log=verbose
+          mkdir -p output
+          echo "Rendering ${{ inputs.video_id }} with concurrency=${{ inputs.concurrency }}"
+          npx remotion render src/index.ts "${{ inputs.video_id }}" "output/${{ inputs.video_id }}.mp4" --concurrency="${{ inputs.concurrency }}" --log=verbose
           ls -la output/
 
       - name: Upload video artifact

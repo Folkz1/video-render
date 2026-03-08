@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.title {
+  font-size: 42px; font-weight: 900; text-align: center;
+  margin-bottom: 60px;
+  opacity: 0; animation: slideDown 0.8s ease-out forwards 0.3s;
+}
+.title .gold { color: #FFD700; }
+
+.calculator {
+  width: 900px; border-radius: 20px; overflow: hidden;
+  background: #0d1117; border: 1px solid #1a2233;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(255,215,0,0.05);
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.5s;
+}
+
+.calc-header {
+  background: #161b22; padding: 18px 30px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid #1a2233;
+}
+.calc-dot { width: 14px; height: 14px; border-radius: 50%; }
+.calc-title {
+  flex: 1; text-align: center; font-size: 14px;
+  color: #556677; font-weight: 600; font-family: 'Consolas', monospace;
+}
+
+.calc-body { padding: 40px; }
+
+.calc-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 0; border-bottom: 1px solid #0d1520;
+  opacity: 0;
+}
+.calc-row:nth-child(1) { animation: rowSlide 0.5s ease-out forwards 1.0s; }
+.calc-row:nth-child(2) { animation: rowSlide 0.5s ease-out forwards 1.6s; }
+.calc-row:nth-child(3) { animation: rowSlide 0.5s ease-out forwards 2.2s; }
+.calc-row:nth-child(4) { animation: rowSlide 0.5s ease-out forwards 2.8s; }
+
+.calc-label { font-size: 18px; color: #8899aa; }
+.calc-value { font-size: 24px; font-weight: 900; }
+.calc-value.gold { color: #FFD700; }
+.calc-value.green { color: #00ff88; }
+.calc-value.cyan { color: #00ddff; }
+
+.calc-operator {
+  text-align: center; padding: 8px; color: #334455;
+  font-size: 22px; font-weight: 700; font-family: 'Consolas', monospace;
+  opacity: 0;
+}
+.op-1 { animation: fadeIn 0.3s ease-out forwards 1.4s; }
+.op-2 { animation: fadeIn 0.3s ease-out forwards 2.0s; }
+.op-3 { animation: fadeIn 0.3s ease-out forwards 2.6s; }
+
+.calc-result {
+  margin-top: 20px; padding: 24px 0;
+  border-top: 2px solid rgba(255,215,0,0.2);
+  display: flex; justify-content: space-between; align-items: center;
+  opacity: 0; animation: rowSlide 0.6s ease-out forwards 3.4s;
+}
+.result-label { font-size: 20px; font-weight: 900; color: #ccddee; }
+.result-value {
+  font-size: 36px; font-weight: 900; color: #FFD700;
+  text-shadow: 0 0 30px rgba(255,215,0,0.3);
+}
+
+.vs-section {
+  display: flex; gap: 40px; margin-top: 40px; justify-content: center;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 4s;
+}
+
+.vs-card {
+  padding: 24px 36px; border-radius: 14px; text-align: center;
+  min-width: 250px;
+}
+.vs-card.revenue {
+  background: rgba(0,255,136,0.06); border: 2px solid rgba(0,255,136,0.2);
+}
+.vs-card.cost {
+  background: rgba(255,68,85,0.06); border: 2px solid rgba(255,68,85,0.2);
+}
+.vs-card-label { font-size: 14px; color: #667788; font-weight: 700; margin-bottom: 8px; }
+.vs-card-value { font-size: 36px; font-weight: 900; }
+.vs-card-value.green { color: #00ff88; }
+.vs-card-value.red { color: #ff4455; }
+.vs-card-detail { font-size: 13px; color: #556677; margin-top: 6px; }
+
+.vs-arrow {
+  display: flex; align-items: center; font-size: 32px; color: #334455;
+}
+
+/* ROI Big Display */
+.roi-display {
+  margin-top: 40px; text-align: center;
+  opacity: 0; animation: scaleIn 1s ease-out forwards 5s;
+}
+.roi-label {
+  font-size: 16px; color: #FFD700; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase; margin-bottom: 8px;
+}
+.roi-value {
+  font-size: 100px; font-weight: 900; color: #FFD700;
+  text-shadow: 0 0 80px rgba(255,215,0,0.4);
+  animation: pulseGold 2s ease-in-out infinite;
+  line-height: 1;
+}
+.roi-subtitle {
+  font-size: 18px; color: #8899aa; margin-top: 8px;
+}
+
+.footer {
+  position: absolute; bottom: 30px;
+  font-size: 14px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes rowSlide { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulseGold {
+  0%, 100% { text-shadow: 0 0 60px rgba(255,215,0,0.3); }
+  50% { text-shadow: 0 0 120px rgba(255,215,0,0.6); }
+}
+</style>
+</head>
+<body>
+
+  <div class="title">
+    Calculadora de <span class="gold">ROI</span>
+  </div>
+
+  <div class="calculator">
+    <div class="calc-header">
+      <div class="calc-dot" style="background:#ff4455"></div>
+      <div class="calc-dot" style="background:#ffaa00"></div>
+      <div class="calc-dot" style="background:#00ff88"></div>
+      <div class="calc-title">roi_calculator.py -- Cenario conservador</div>
+    </div>
+    <div class="calc-body">
+      <div class="calc-row">
+        <div class="calc-label">Ticket medio do seu servico</div>
+        <div class="calc-value gold">R$500</div>
+      </div>
+      <div class="calc-operator op-1">x</div>
+      <div class="calc-row">
+        <div class="calc-label">Leads extras convertidos por mes (com bot)</div>
+        <div class="calc-value green">+1 lead/mes</div>
+      </div>
+      <div class="calc-operator op-2">x</div>
+      <div class="calc-row">
+        <div class="calc-label">Meses no ano</div>
+        <div class="calc-value cyan">12</div>
+      </div>
+      <div class="calc-operator op-3">=</div>
+      <div class="calc-result">
+        <div class="result-label">RECEITA EXTRA ANUAL</div>
+        <div class="result-value">R$6.000</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vs-section">
+    <div class="vs-card revenue">
+      <div class="vs-card-label">RECEITA EXTRA/ANO</div>
+      <div class="vs-card-value green">R$6.000</div>
+      <div class="vs-card-detail">apenas 1 lead extra/mes</div>
+    </div>
+    <div class="vs-arrow">-</div>
+    <div class="vs-card cost">
+      <div class="vs-card-label">INVESTIMENTO/ANO</div>
+      <div class="vs-card-value red">R$348</div>
+      <div class="vs-card-detail">R$29/mes x 12</div>
+    </div>
+  </div>
+
+  <div class="roi-display">
+    <div class="roi-label">RETORNO SOBRE INVESTIMENTO</div>
+    <div class="roi-value">1.624%</div>
+    <div class="roi-subtitle">Cenario CONSERVADOR -- com apenas 1 lead extra por mes</div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

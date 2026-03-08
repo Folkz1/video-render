@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: #0a0a0f; color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chart-container {
+    width: 1400px; height: 800px;
+    border-left: 4px solid #333;
+    border-bottom: 4px solid #333;
+    position: relative;
+    display: flex; align-items: flex-end; justify-content: space-around;
+    padding-bottom: 20px;
+    padding-top: 100px;
+  }
+  
+  .line-red {
+    position: absolute;
+    top: 150px; left: 0; width: 100%; height: 600px;
+    background: linear-gradient(to bottom right, transparent 48%, #ff4455 49%, #ff4455 51%, transparent 52%);
+    z-index: 10;
+  }
+  
+  .bar-container { display: flex; flex-direction: column; align-items: center; z-index: 5; }
+  .bar { width: 120px; border-radius: 8px 8px 0 0; }
+  .bar-work { background: #333; }
+  .bar-projects { background: #00ddff; box-shadow: 0 0 20px rgba(0,221,255,0.3); }
+  
+  .label { font-size: 24px; color: #8899aa; margin-top: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+  .value { font-size: 48px; font-weight: 900; color: #fff; margin-bottom: 20px; }
+  .value-red { color: #ff4455; text-shadow: 0 0 20px rgba(255, 68, 85, 0.4); }
+  
+  .anim-rise { animation: rise 2s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; transform-origin: bottom; transform: scaleY(0); }
+  @keyframes rise { to { transform: scaleY(1); } }
+  
+  .point { position: absolute; width: 30px; height: 30px; background: #ff4455; border-radius: 50%; box-shadow: 0 0 30px #ff4455; }
+  .p1 { top: 135px; left: -15px; }
+  .p2 { top: 735px; right: -15px; }
+
+  .burnout { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); font-size: 64px; font-weight: 900; color: #ff4455; letter-spacing: 12px; opacity: 0; animation: fade 1s 2s forwards; }
+  @keyframes fade { to { opacity: 1; } }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="chart-container">
+    <div class="line-red"></div>
+    <div class="point p1"></div>
+    <div class="point p2"></div>
+    <div class="burnout">GARGALO HUMANO</div>
+    
+    <div class="bar-container">
+      <div class="value value-red">14H</div>
+      <div class="bar bar-work anim-rise" style="height: 600px;"></div>
+      <div class="label">TRABALHO</div>
+    </div>
+    
+    <div class="bar-container">
+      <div class="value">2</div>
+      <div class="bar bar-projects anim-rise" style="height: 200px; animation-delay: 0.5s;"></div>
+      <div class="label">PROJETOS</div>
+    </div>
+  </div>
+</body>
+</html>

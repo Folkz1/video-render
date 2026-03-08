@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: #0a0a0f; color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dashboard {
+    width: 1600px; height: 800px;
+    background: #111; border: 1px solid #333; border-radius: 20px;
+    padding: 60px;
+    display: flex; flex-direction: column; gap: 40px;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+  }
+  .header { display: flex; justify-content: space-between; border-bottom: 2px solid #222; padding-bottom: 30px; }
+  .title { font-size: 36px; font-weight: 800; color: #8899aa; letter-spacing: 2px; }
+  
+  .metrics { display: flex; gap: 40px; }
+  .card {
+    flex: 1; background: #1a1a24; border-radius: 16px; padding: 40px;
+    position: relative; overflow: hidden;
+    border-top: 4px solid #333;
+  }
+  .c-projects { border-top-color: #aa44ff; }
+  .c-cost { border-top-color: #00ddff; }
+  .c-revenue { border-top-color: #00ff88; }
+  
+  .card-label { font-size: 24px; color: #8899aa; font-weight: 700; text-transform: uppercase; margin-bottom: 20px; }
+  .card-value { font-size: 80px; font-weight: 900; color: #fff; }
+  
+  .val-cost { color: #00ddff; text-shadow: 0 0 30px rgba(0,221,255,0.4); }
+  .val-rev { color: #00ff88; text-shadow: 0 0 30px rgba(0,255,136,0.4); }
+  
+  .projects-list { display: flex; gap: 20px; margin-top: 20px; }
+  .tag { padding: 10px 20px; background: rgba(170, 68, 255, 0.2); color: #aa44ff; border-radius: 8px; font-weight: 800; font-size: 20px; }
+  
+  .anim-pop { opacity: 0; transform: scale(0.9); animation: popIn 0.8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards; }
+  .d1 { animation-delay: 0.2s; }
+  .d2 { animation-delay: 0.6s; }
+  .d3 { animation-delay: 1.0s; }
+  
+  @keyframes popIn { 100% { opacity: 1; transform: scale(1); } }
+  
+  .bg-glow { position: absolute; bottom: -50px; right: -50px; width: 200px; height: 200px; background: rgba(0,255,136,0.2); border-radius: 50%; filter: blur(50px); }
+  .c-cost .bg-glow { background: rgba(0,221,255,0.2); }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="dashboard">
+    <div class="header">
+      <div class="title">PORTFÓLIO DE OPERAÇÃO</div>
+    </div>
+    
+    <div class="metrics">
+      <div class="card c-projects anim-pop d1">
+        <div class="card-label">PROJETOS ATIVOS</div>
+        <div class="card-value">7</div>
+        <div class="projects-list">
+          <div class="tag">LicitaAI</div>
+          <div class="tag">Superbot</div>
+          <div class="tag">Orquestra</div>
+        </div>
+      </div>
+      
+      <div class="card c-cost anim-pop d2">
+        <div class="bg-glow"></div>
+        <div class="card-label">CUSTO CLAUDE API</div>
+        <div class="card-value val-cost">R$ 110<span style="font-size:32px;color:#8899aa">/mês</span></div>
+      </div>
+      
+      <div class="card c-revenue anim-pop d3">
+        <div class="bg-glow"></div>
+        <div class="card-label">RECEITA GERADA</div>
+        <div class="card-value val-rev">R$ 18k<span style="font-size:32px;color:#8899aa">/mês</span></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

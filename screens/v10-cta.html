@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center; align-items: center;
+  gap: 60px;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 50%, #00ff8808 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 50%, #D4A57408 0%, transparent 60%);
+}
+
+/* Left: Offer */
+.offer-panel {
+  width: 800px;
+  z-index: 1;
+  animation: slideUp 0.6s ease-out both;
+}
+
+.offer-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  color: #0a0a0f;
+  font-size: 14px; font-weight: 900;
+  padding: 8px 20px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+}
+
+.offer-title {
+  font-size: 52px; font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.offer-title .highlight {
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.offer-subtitle {
+  font-size: 22px; color: #8899aa;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+/* Pricing */
+.pricing {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 24px;
+}
+.old-price {
+  font-size: 28px; font-weight: 700;
+  color: #ff3344;
+  text-decoration: line-through;
+  position: relative;
+}
+.old-price::after {
+  content: '';
+  position: absolute;
+  left: -4px; right: -4px;
+  top: 50%;
+  height: 3px;
+  background: #ff3344;
+  transform: rotate(-8deg);
+}
+.new-price {
+  font-size: 72px; font-weight: 900;
+  color: #00ff88;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-shadow: 0 0 40px #00ff8833;
+}
+.new-price span {
+  font-size: 28px; color: #00ff88aa;
+}
+.price-note {
+  font-size: 16px; color: #556;
+  font-weight: 600;
+}
+
+/* Vagas counter */
+.vagas-counter {
+  display: flex; align-items: center; gap: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #ff334444;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  animation: vagasPulse 2s ease-in-out infinite alternate;
+}
+@keyframes vagasPulse {
+  from { border-color: #ff334444; box-shadow: none; }
+  to { border-color: #ff3344; box-shadow: 0 0 20px #ff334422; }
+}
+.vagas-number {
+  font-size: 42px; font-weight: 900;
+  color: #ff3344;
+  font-variant-numeric: tabular-nums;
+}
+.vagas-text {
+  font-size: 16px; font-weight: 700;
+  color: #ff6677;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.vagas-sub {
+  font-size: 13px; color: #556; font-weight: 500;
+}
+.vagas-dots {
+  display: flex; gap: 8px; margin-left: auto;
+}
+.vaga-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #00ff88;
+  animation: dotFade 3s ease-in-out infinite;
+}
+.vaga-dot:nth-child(1) { animation-delay: 0s; }
+.vaga-dot:nth-child(2) { animation-delay: 0.3s; }
+.vaga-dot:nth-child(3) { animation-delay: 0.6s; }
+.vaga-dot:nth-child(4) { animation-delay: 0.9s; }
+.vaga-dot:nth-child(5) { animation-delay: 1.2s; }
+@keyframes dotFade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Guarantee */
+.guarantee {
+  display: flex; align-items: center; gap: 16px;
+  background: #00ff8808;
+  border: 2px solid #00ff8833;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease-out 0.8s both;
+}
+.guarantee-icon {
+  font-size: 40px;
+  flex-shrink: 0;
+  animation: shieldGlow 2s ease-in-out infinite alternate;
+}
+@keyframes shieldGlow {
+  from { filter: drop-shadow(0 0 5px #00ff8833); }
+  to { filter: drop-shadow(0 0 15px #00ff8866); }
+}
+.guarantee-text {
+  font-size: 20px; font-weight: 800;
+  color: #00ff88;
+}
+.guarantee-sub {
+  font-size: 13px; color: #00ff88aa;
+  font-weight: 500;
+}
+
+/* Includes list */
+.includes {
+  display: flex; flex-direction: column; gap: 8px;
+  animation: fadeIn 0.5s ease-out 1s both;
+}
+.include-item {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; color: #8899aa;
+  font-weight: 600;
+}
+.include-check { color: #00ff88; font-size: 18px; }
+
+/* Right: WhatsApp mockup */
+.whatsapp-panel {
+  width: 440px;
+  z-index: 1;
+  animation: slideUp 0.6s ease-out 0.5s both;
+}
+
+.phone-frame {
+  background: #111;
+  border-radius: 36px;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  border: 2px solid #222;
+}
+
+.phone-screen {
+  background: #0b141a;
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+/* WA Header */
+.wa-header {
+  background: #1f2c34;
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.wa-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D4A574, #a67c52);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900; color: #0a0a0f;
+}
+.wa-name {
+  font-size: 16px; font-weight: 700; color: #e9edef;
+}
+.wa-status {
+  font-size: 12px; color: #8696a0;
+}
+.wa-icons {
+  margin-left: auto; display: flex; gap: 20px;
+  color: #aebac1; font-size: 18px;
+}
+
+/* Chat area */
+.wa-chat {
+  padding: 16px;
+  min-height: 340px;
+  background:
+    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='60' height='60' fill='%230b141a'/%3E%3Ccircle cx='30' cy='30' r='1' fill='%23ffffff05'/%3E%3C/svg%3E");
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.wa-msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  animation: msgAppear 0.3s ease-out both;
+}
+.wa-msg-time {
+  font-size: 11px; color: #8696a0;
+  text-align: right; margin-top: 4px;
+}
+.wa-msg-out {
+  background: #005c4b;
+  color: #e9edef;
+  align-self: flex-end;
+  border-radius: 8px 0 8px 8px;
+}
+.wa-msg-in {
+  background: #202c33;
+  color: #e9edef;
+  align-self: flex-start;
+  border-radius: 0 8px 8px 8px;
+}
+
+.wa-msg:nth-child(1) { animation-delay: 1.5s; }
+.wa-msg:nth-child(2) { animation-delay: 2.2s; }
+.wa-msg:nth-child(3) { animation-delay: 3.0s; }
+.wa-msg:nth-child(4) { animation-delay: 3.8s; }
+
+@keyframes msgAppear {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Typing indicator */
+.wa-typing {
+  align-self: flex-start;
+  background: #202c33;
+  padding: 10px 16px;
+  border-radius: 0 8px 8px 8px;
+  display: flex; gap: 4px;
+  animation: fadeIn 0.3s ease-out 4.5s both;
+}
+.typing-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #8696a0;
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-6px); }
+}
+
+/* WA Input */
+.wa-input {
+  background: #1f2c34;
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.wa-input-field {
+  flex: 1; background: #2a3942;
+  border-radius: 20px;
+  padding: 10px 16px;
+  font-size: 14px; color: #e9edef;
+  display: flex; align-items: center;
+}
+.wa-typing-text {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing 2s steps(12) 5s both;
+  width: 0;
+  color: #e9edef;
+  font-weight: 600;
+}
+@keyframes typing {
+  to { width: 130px; }
+}
+.wa-send-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #00a884;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #fff;
+}
+
+/* GuyFolkz branding */
+.branding {
+  position: absolute;
+  bottom: 40px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  z-index: 1;
+  animation: fadeIn 0.6s ease-out 1.5s both;
+}
+.brand-name {
+  font-size: 28px; font-weight: 900;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #D4A574, #a67c52);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-sub {
+  font-size: 13px; color: #556;
+  letter-spacing: 2px; font-weight: 600;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>
+</head>
+<body>
+  <div class="offer-panel">
+    <div class="offer-badge">Oferta Exclusiva</div>
+
+    <div class="offer-title">
+      Consultoria<br>
+      <span class="highlight">1 Hora Individual</span>
+    </div>
+    <div class="offer-subtitle">Setup completo de IA para seu workflow</div>
+
+    <div class="pricing">
+      <div class="old-price">R$2.000 - R$5.000</div>
+      <div class="new-price">R$500<span>/sessao</span></div>
+    </div>
+
+    <div class="vagas-counter">
+      <div class="vagas-number">5</div>
+      <div>
+        <div class="vagas-text">Vagas / Semana</div>
+        <div class="vagas-sub">Agenda limitada - primeiro contato, primeiro atendido</div>
+      </div>
+      <div class="vagas-dots">
+        <div class="vaga-dot"></div>
+        <div class="vaga-dot"></div>
+        <div class="vaga-dot"></div>
+        <div class="vaga-dot"></div>
+        <div class="vaga-dot"></div>
+      </div>
+    </div>
+
+    <div class="guarantee">
+      <div class="guarantee-icon">&#128737;</div>
+      <div>
+        <div class="guarantee-text">100% MONEY BACK</div>
+        <div class="guarantee-sub">Se nao gostar, devolvo o dinheiro. Sem perguntas.</div>
+      </div>
+    </div>
+
+    <div class="includes">
+      <div class="include-item"><span class="include-check">&#10003;</span> Analise do seu projeto atual</div>
+      <div class="include-item"><span class="include-check">&#10003;</span> Setup Claude Code + Cursor otimizado</div>
+      <div class="include-item"><span class="include-check">&#10003;</span> Workflow personalizado de IA</div>
+      <div class="include-item"><span class="include-check">&#10003;</span> Acesso ao grupo exclusivo pos-sessao</div>
+    </div>
+  </div>
+
+  <div class="whatsapp-panel">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="wa-header">
+          <div class="wa-avatar">GF</div>
+          <div>
+            <div class="wa-name">GuyFolkz</div>
+            <div class="wa-status">online</div>
+          </div>
+          <div class="wa-icons">
+            <span>&#128222;</span>
+            <span>&#8942;</span>
+          </div>
+        </div>
+
+        <div class="wa-chat">
+          <div class="wa-msg wa-msg-out">
+            Opa! Vi seu video sobre Claude Code vs Cursor
+            <div class="wa-msg-time">10:32 &#10003;&#10003;</div>
+          </div>
+          <div class="wa-msg wa-msg-in">
+            Fala! Bora agendar tua consultoria? 60 min de setup completo
+            <div class="wa-msg-time">10:33</div>
+          </div>
+          <div class="wa-msg wa-msg-out">
+            Quero sim! Qual o proximo horario?
+            <div class="wa-msg-time">10:33 &#10003;&#10003;</div>
+          </div>
+          <div class="wa-msg wa-msg-in">
+            Amanha 14h funciona? Vou montar um plano personalizado pro teu projeto
+            <div class="wa-msg-time">10:34</div>
+          </div>
+          <div class="wa-typing">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+
+        <div class="wa-input">
+          <div class="wa-input-field">
+            <span class="wa-typing-text">CONSULTORIA</span>
+          </div>
+          <div class="wa-send-btn">&#10148;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="branding">
+    <div class="brand-name">GUYFOLKZ</div>
+    <div class="brand-sub">IA &bull; AUTOMACAO &bull; LICITACOES</div>
+  </div>
+</body>
+</html>

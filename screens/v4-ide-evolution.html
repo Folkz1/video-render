@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.title {
+  font-size: 42px; font-weight: 900; text-align: center;
+  margin-bottom: 60px;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 0.2s;
+}
+.title .red { color: #ff4455; }
+
+.timeline {
+  display: flex; align-items: center; gap: 0;
+  position: relative; margin-bottom: 80px;
+}
+
+.timeline-line {
+  position: absolute; top: 50%; left: 60px; right: 60px;
+  height: 3px; background: #1a1a2e;
+  transform: translateY(-50%);
+}
+.timeline-line-fill {
+  position: absolute; top: 50%; left: 60px;
+  height: 3px; width: 0;
+  background: linear-gradient(90deg, #444, #ff4455, #ff4455, #ff4455, #00ff88);
+  transform: translateY(-50%);
+  animation: lineFill 3s ease-out forwards 0.5s;
+}
+
+.era {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; width: 260px; position: relative; z-index: 2;
+  opacity: 0;
+}
+.era:nth-child(3) { animation: fadeIn 0.5s ease-out forwards 0.8s; }
+.era:nth-child(4) { animation: fadeIn 0.5s ease-out forwards 1.3s; }
+.era:nth-child(5) { animation: fadeIn 0.5s ease-out forwards 1.8s; }
+.era:nth-child(6) { animation: fadeIn 0.5s ease-out forwards 2.3s; }
+.era:nth-child(7) { animation: fadeIn 0.5s ease-out forwards 2.8s; }
+
+.era-icon {
+  width: 100px; height: 100px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px; position: relative;
+  transition: all 0.5s;
+}
+
+.era-notepad { background: linear-gradient(135deg, #2a2a3e, #3a3a5e); }
+.era-eclipse { background: linear-gradient(135deg, #2e1a3e, #5a2d82); }
+.era-vscode { background: linear-gradient(135deg, #003d7a, #007acc); }
+.era-copilot { background: linear-gradient(135deg, #003d7a, #007acc); border: 2px solid #00ddff; }
+.era-terminal { background: linear-gradient(135deg, #1a2e1a, #D4A574); border: 2px solid #00ff88; box-shadow: 0 0 30px rgba(0,255,136,0.3); }
+
+.era-name { font-size: 16px; font-weight: 800; color: #ccddee; }
+.era-years { font-size: 13px; color: #556677; }
+
+.dead-x {
+  position: absolute; top: -10px; right: -10px;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #ff4455; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 900;
+  opacity: 0; transform: scale(0);
+}
+.era:nth-child(3) .dead-x { animation: stampX 0.4s ease-out forwards 1.5s; }
+.era:nth-child(4) .dead-x { animation: stampX 0.4s ease-out forwards 2.0s; }
+.era:nth-child(5) .dead-x { animation: stampX 0.4s ease-out forwards 2.5s; }
+.era:nth-child(6) .dead-x { animation: stampX 0.4s ease-out forwards 3.0s; }
+
+.era-dead .era-icon { filter: grayscale(1) brightness(0.5); }
+
+.crown {
+  position: absolute; top: -20px; font-size: 28px;
+  animation: float 2s ease-in-out infinite;
+}
+
+.tombstone {
+  margin-top: 10px; padding: 40px 60px;
+  background: linear-gradient(180deg, #1a1a2e, #111118);
+  border-radius: 60px 60px 12px 12px; border: 2px solid #333;
+  text-align: center; position: relative;
+  opacity: 0; animation: riseUp 1s ease-out forwards 3.5s;
+}
+.tombstone-cross {
+  font-size: 36px; color: #ff4455; margin-bottom: 8px;
+}
+.tombstone-text {
+  font-size: 32px; font-weight: 900; color: #ff4455;
+  letter-spacing: 3px;
+}
+.tombstone-years {
+  font-size: 18px; color: #556677; margin-top: 8px;
+}
+.tombstone-epitaph {
+  font-size: 14px; color: #445566; margin-top: 12px;
+  font-style: italic;
+}
+
+.winner-badge {
+  position: absolute; bottom: -60px;
+  padding: 12px 30px; border-radius: 50px;
+  background: linear-gradient(135deg, #00ff88, #D4A574);
+  color: #0a0a0f; font-size: 18px; font-weight: 900;
+  letter-spacing: 2px;
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 4.2s;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes stampX {
+  0% { opacity: 0; transform: scale(3) rotate(-20deg); }
+  60% { transform: scale(0.8) rotate(5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes lineFill { from { width: 0; } to { width: calc(100% - 120px); } }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes riseUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+  <div class="title">
+    A evolucao do <span class="red">desenvolvedor</span>
+  </div>
+
+  <div class="timeline">
+    <div class="timeline-line"></div>
+    <div class="timeline-line-fill"></div>
+
+    <div class="era era-dead">
+      <div class="era-icon era-notepad">
+        <span>&#128221;</span>
+        <div class="dead-x">X</div>
+      </div>
+      <div class="era-name">Notepad</div>
+      <div class="era-years">1995 - 2003</div>
+    </div>
+
+    <div class="era era-dead">
+      <div class="era-icon era-eclipse">
+        <span>&#9790;</span>
+        <div class="dead-x">X</div>
+      </div>
+      <div class="era-name">Eclipse / IntelliJ</div>
+      <div class="era-years">2003 - 2015</div>
+    </div>
+
+    <div class="era era-dead">
+      <div class="era-icon era-vscode">
+        <span>&#9998;</span>
+        <div class="dead-x">X</div>
+      </div>
+      <div class="era-name">VS Code</div>
+      <div class="era-years">2015 - 2023</div>
+    </div>
+
+    <div class="era era-dead">
+      <div class="era-icon era-copilot">
+        <span>&#9998;</span>
+        <div class="dead-x">X</div>
+      </div>
+      <div class="era-name">VS Code + Copilot</div>
+      <div class="era-years">2023 - 2025</div>
+    </div>
+
+    <div class="era">
+      <div class="crown">&#128081;</div>
+      <div class="era-icon era-terminal">
+        <span>&#9889;</span>
+      </div>
+      <div class="era-name" style="color:#00ff88; font-size:18px;">Terminal + Agent</div>
+      <div class="era-years" style="color:#D4A574;">2025+</div>
+    </div>
+  </div>
+
+  <div class="tombstone">
+    <div class="tombstone-cross">&#10013;</div>
+    <div class="tombstone-text">RIP IDE</div>
+    <div class="tombstone-years">2015 - 2026</div>
+    <div class="tombstone-epitaph">"Foi bom enquanto durou. Mas o terminal faz mais."</div>
+    <div class="winner-badge">O FUTURO E O TERMINAL</div>
+  </div>
+</body>
+</html>

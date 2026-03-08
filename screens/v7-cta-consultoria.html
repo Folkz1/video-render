@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; justify-content: center; align-items: center;
+}
+
+/* Animated background particles */
+.particles { position: absolute; inset: 0; overflow: hidden; }
+.particle {
+  position: absolute; width: 3px; height: 3px; border-radius: 50%;
+  animation: float linear infinite;
+}
+@keyframes float {
+  0% { transform: translateY(1080px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-20px) rotate(720deg); opacity: 0; }
+}
+
+.orb-gold {
+  position: absolute; width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,215,0,0.08), transparent 70%);
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  animation: orbPulse 4s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.content {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 24px; border-radius: 30px;
+  background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3);
+  margin-bottom: 24px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.3s;
+}
+.badge-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #FFD700;
+  animation: blink 1.5s ease-in-out infinite;
+}
+.badge-text {
+  font-size: 13px; font-weight: 900; color: #FFD700;
+  letter-spacing: 3px; text-transform: uppercase;
+}
+
+.main-title {
+  font-size: 52px; font-weight: 900; text-align: center;
+  line-height: 1.2; margin-bottom: 8px;
+  opacity: 0; animation: slideDown 0.8s ease-out forwards 0.6s;
+}
+.main-title .gold { color: #FFD700; }
+.main-title .white { color: #ffffff; }
+
+.subtitle {
+  font-size: 20px; color: #667788; margin-bottom: 40px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 1s;
+}
+
+/* Premium Card */
+.premium-card {
+  width: 800px; border-radius: 20px; overflow: hidden;
+  background: linear-gradient(135deg, #0d1117, #111822);
+  border: 2px solid rgba(255,215,0,0.25);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 80px rgba(255,215,0,0.08);
+  opacity: 0; animation: scaleIn 0.8s ease-out forwards 1.3s;
+}
+
+.card-header {
+  padding: 24px 36px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.03));
+  border-bottom: 1px solid rgba(255,215,0,0.15);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.card-title { font-size: 22px; font-weight: 900; color: #FFD700; }
+.card-price-container { text-align: right; }
+.card-price-old {
+  font-size: 16px; color: #ff4455; text-decoration: line-through;
+}
+.card-price {
+  font-size: 42px; font-weight: 900; color: #FFD700;
+  text-shadow: 0 0 30px rgba(255,215,0,0.3);
+  line-height: 1;
+}
+.card-price-detail { font-size: 14px; color: #8899aa; }
+
+.checklist {
+  padding: 28px 36px; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 16px;
+}
+.check-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  opacity: 0;
+}
+.check-item:nth-child(1) { animation: checkIn 0.4s ease-out forwards 1.8s; }
+.check-item:nth-child(2) { animation: checkIn 0.4s ease-out forwards 2.0s; }
+.check-item:nth-child(3) { animation: checkIn 0.4s ease-out forwards 2.2s; }
+.check-item:nth-child(4) { animation: checkIn 0.4s ease-out forwards 2.4s; }
+.check-item:nth-child(5) { animation: checkIn 0.4s ease-out forwards 2.6s; }
+.check-item:nth-child(6) { animation: checkIn 0.4s ease-out forwards 2.8s; }
+
+.check-icon {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(0,255,136,0.15); color: #00ff88;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; flex-shrink: 0;
+}
+.check-text { font-size: 15px; color: #ccddee; }
+
+/* WhatsApp CTA */
+.wa-button {
+  margin-top: 32px;
+  padding: 22px 60px; border-radius: 16px;
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 0 50px rgba(0,255,136,0.3), 0 10px 40px rgba(0,0,0,0.3);
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 3.2s;
+  cursor: pointer;
+}
+.wa-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #0a0a0f; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: #00ff88; font-weight: 900;
+}
+.wa-text {
+  font-size: 22px; font-weight: 900; color: #0a0a0f;
+  letter-spacing: 1px;
+}
+
+.scarcity {
+  margin-top: 20px; display: flex; align-items: center; gap: 10px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 3.8s;
+}
+.scarcity-text {
+  font-size: 16px; color: #ff4455; font-weight: 700;
+  animation: blinkSlow 2s ease-in-out infinite;
+}
+
+.guarantee {
+  margin-top: 16px; padding: 12px 24px; border-radius: 10px;
+  background: rgba(255,170,0,0.06); border: 1px solid rgba(255,170,0,0.15);
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 4.2s;
+}
+.guarantee-text { font-size: 14px; color: #ffaa00; font-weight: 600; }
+
+.footer {
+  position: absolute; bottom: 30px; display: flex; gap: 40px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 4.5s;
+}
+.footer-item { font-size: 13px; color: #445566; font-weight: 600; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes checkIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes blinkSlow { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
+</head>
+<body>
+
+  <div class="particles">
+    <div class="particle" style="left:8%; animation-duration:9s; background:rgba(255,215,0,0.3);"></div>
+    <div class="particle" style="left:18%; animation-duration:11s; animation-delay:1s; background:rgba(255,215,0,0.2);"></div>
+    <div class="particle" style="left:32%; animation-duration:8s; animation-delay:2s; background:rgba(0,255,136,0.2);"></div>
+    <div class="particle" style="left:48%; animation-duration:13s; animation-delay:0.5s; background:rgba(255,215,0,0.3);"></div>
+    <div class="particle" style="left:62%; animation-duration:10s; animation-delay:3s; background:rgba(0,255,136,0.2);"></div>
+    <div class="particle" style="left:78%; animation-duration:12s; animation-delay:1.5s; background:rgba(255,215,0,0.2);"></div>
+    <div class="particle" style="left:92%; animation-duration:9s; animation-delay:4s; background:rgba(255,215,0,0.3);"></div>
+    <div class="particle" style="left:25%; animation-duration:14s; animation-delay:2.5s; background:rgba(0,136,255,0.15);"></div>
+    <div class="particle" style="left:55%; animation-duration:7s; animation-delay:3.5s; background:rgba(0,136,255,0.15);"></div>
+    <div class="particle" style="left:85%; animation-duration:11s; animation-delay:5s; background:rgba(255,215,0,0.2);"></div>
+  </div>
+
+  <div class="orb-gold"></div>
+
+  <div class="content">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      <div class="badge-text">Consultoria Premium</div>
+    </div>
+
+    <div class="main-title">
+      <span class="gold">CONSULTORIA</span><br>
+      <span class="white">IMPLEMENTACAO IA</span>
+    </div>
+    <div class="subtitle">Seu bot WhatsApp funcionando em 1 hora</div>
+
+    <div class="premium-card">
+      <div class="card-header">
+        <div class="card-title">PACOTE COMPLETO</div>
+        <div class="card-price-container">
+          <div class="card-price-old">De R$2.000 a R$5.000 no mercado</div>
+          <div class="card-price">R$500</div>
+          <div class="card-price-detail">1 hora de consultoria individual</div>
+        </div>
+      </div>
+      <div class="checklist">
+        <div class="check-item">
+          <div class="check-icon">&#x2713;</div>
+          <div class="check-text">Analise completa da operacao</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">&#x2713;</div>
+          <div class="check-text">Bot WhatsApp configurado</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">&#x2713;</div>
+          <div class="check-text">Workflow N8N personalizado</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">&#x2713;</div>
+          <div class="check-text">Treinamento completo</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">&#x2713;</div>
+          <div class="check-text">Prompts otimizados pro negocio</div>
+        </div>
+        <div class="check-item">
+          <div class="check-icon">&#x2713;</div>
+          <div class="check-text">Suporte 7 dias pos-setup</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wa-button">
+      <div class="wa-icon">W</div>
+      <div class="wa-text">Manda CONSULTORIA no WhatsApp</div>
+    </div>
+
+    <div class="scarcity">
+      <div class="scarcity-text">/!\ Apenas 5 vagas por semana</div>
+    </div>
+
+    <div class="guarantee">
+      <div class="guarantee-text">Garantia total: nao valeu? Devolvo 100% do valor.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-item">7 projetos em producao</div>
+    <div class="footer-item">3 clientes ativos</div>
+    <div class="footer-item">R$100K+ em receita gerada</div>
+    <div class="footer-item">DIEGO | @GuyFolkz</div>
+  </div>
+</body>
+</html>

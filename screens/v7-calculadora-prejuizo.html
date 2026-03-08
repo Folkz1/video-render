@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.terminal {
+  width: 1100px; border-radius: 16px; overflow: hidden;
+  background: #0d1117; border: 1px solid #1a2233;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 80px rgba(255,68,85,0.05);
+  animation: fadeIn 0.5s ease-out both;
+}
+
+.terminal-header {
+  background: #161b22; padding: 14px 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.dot { width: 14px; height: 14px; border-radius: 50%; }
+.dot-r { background: #ff4455; }
+.dot-y { background: #ffaa00; }
+.dot-g { background: #00ff88; }
+.terminal-title {
+  flex: 1; text-align: center; font-size: 14px;
+  color: #556677; font-weight: 600;
+}
+
+.terminal-body {
+  padding: 40px; font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 18px; line-height: 2.2;
+}
+
+.line {
+  opacity: 0; animation: typeLine 0.4s ease-out forwards;
+  display: flex; align-items: baseline; gap: 8px;
+}
+.line-1 { animation-delay: 0.5s; }
+.line-2 { animation-delay: 1.5s; }
+.line-3 { animation-delay: 2.5s; }
+.line-4 { animation-delay: 3.5s; }
+.line-5 { animation-delay: 4.8s; }
+.line-6 { animation-delay: 6.0s; }
+.line-7 { animation-delay: 7.5s; }
+.line-8 { animation-delay: 9.0s; }
+
+.prompt { color: #00ff88; font-weight: 700; }
+.comment { color: #556677; }
+.var-name { color: #79c0ff; }
+.operator { color: #8899aa; }
+.number { color: #FFD700; font-weight: 700; }
+.number-red { color: #ff4455; font-weight: 900; font-size: 22px; }
+.string { color: #a5d6ff; }
+.result-line {
+  margin-top: 20px; padding-top: 20px;
+  border-top: 1px solid #1a2233;
+}
+
+.big-result {
+  margin-top: 30px; text-align: center;
+  opacity: 0; animation: scaleIn 0.8s ease-out forwards 10s;
+}
+.big-result-label {
+  font-size: 18px; color: #ff4455; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.big-result-value {
+  font-size: 80px; font-weight: 900; color: #ff4455;
+  text-shadow: 0 0 60px rgba(255,68,85,0.4);
+  animation: pulseRed 2s ease-in-out infinite;
+}
+.big-result-period {
+  font-size: 22px; color: #8899aa; margin-top: 8px;
+}
+
+.comparison {
+  display: flex; gap: 40px; margin-top: 30px; justify-content: center;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 11s;
+}
+.comp-card {
+  padding: 20px 30px; border-radius: 12px; text-align: center;
+}
+.comp-bad {
+  background: rgba(255,68,85,0.08); border: 1px solid rgba(255,68,85,0.2);
+}
+.comp-good {
+  background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+}
+.comp-label { font-size: 13px; color: #667788; margin-bottom: 8px; font-weight: 600; }
+.comp-value { font-size: 28px; font-weight: 900; }
+.comp-value.red { color: #ff4455; }
+.comp-value.green { color: #00ff88; }
+
+.footer {
+  position: absolute; bottom: 30px;
+  font-size: 14px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes typeLine {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseRed {
+  0%, 100% { text-shadow: 0 0 40px rgba(255,68,85,0.3); }
+  50% { text-shadow: 0 0 80px rgba(255,68,85,0.6); }
+}
+</style>
+</head>
+<body>
+
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="terminal-title">calculadora_prejuizo.sh -- Quanto voce perde sem bot</div>
+    </div>
+    <div class="terminal-body">
+      <div class="line line-1">
+        <span class="prompt">$</span>
+        <span class="comment"># Custo medio por lead (trafego pago)</span>
+      </div>
+      <div class="line line-2">
+        <span class="var-name">custo_lead</span>
+        <span class="operator">=</span>
+        <span class="number">R$200</span>
+      </div>
+      <div class="line line-3">
+        <span class="prompt">$</span>
+        <span class="comment"># Leads por mes (campanha media)</span>
+      </div>
+      <div class="line line-4">
+        <span class="var-name">leads_mes</span>
+        <span class="operator">=</span>
+        <span class="number">300</span>
+      </div>
+      <div class="line line-5">
+        <span class="prompt">$</span>
+        <span class="comment"># % perdidos por demora na resposta (Harvard)</span>
+      </div>
+      <div class="line line-6">
+        <span class="var-name">taxa_perda</span>
+        <span class="operator">=</span>
+        <span class="number-red">47%</span>
+      </div>
+      <div class="line line-7 result-line">
+        <span class="prompt">$</span>
+        <span class="string">echo</span>
+        <span class="operator">"</span>
+        <span class="var-name">$custo_lead</span>
+        <span class="operator"> x </span>
+        <span class="var-name">$leads_mes</span>
+        <span class="operator"> x </span>
+        <span class="var-name">$taxa_perda</span>
+        <span class="operator">"</span>
+      </div>
+      <div class="line line-8">
+        <span class="prompt">>>></span>
+        <span class="number-red" style="font-size: 26px;">R$200 x 300 x 0.47 = R$28.200/mes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="big-result">
+    <div class="big-result-label">Prejuizo mensal estimado</div>
+    <div class="big-result-value">R$28.200</div>
+    <div class="big-result-period">por mes jogados no lixo</div>
+  </div>
+
+  <div class="comparison">
+    <div class="comp-card comp-bad">
+      <div class="comp-label">SEM BOT (por ano)</div>
+      <div class="comp-value red">-R$338.400</div>
+    </div>
+    <div class="comp-card comp-good">
+      <div class="comp-label">CUSTO DO BOT (por ano)</div>
+      <div class="comp-value green">R$348</div>
+    </div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

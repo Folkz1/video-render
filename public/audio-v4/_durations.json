@@ -1,0 +1,182 @@
+[
+  {
+    "id": "01-confissao",
+    "dur": 30.0696875,
+    "chapter": "ATO 1 - DRAMA"
+  },
+  {
+    "id": "02-git-log",
+    "dur": 28.2671875,
+    "chapter": "ATO 1 - DRAMA"
+  },
+  {
+    "id": "03-provocacao",
+    "dur": 29.7823125,
+    "chapter": "ATO 1 - DRAMA"
+  },
+  {
+    "id": "04-ponto-virada",
+    "dur": 28.7113125,
+    "chapter": "ATO 1 - DRAMA"
+  },
+  {
+    "id": "05-instalacao",
+    "dur": 31.637,
+    "chapter": "ATO 2 - JORNADA (Setup)"
+  },
+  {
+    "id": "06-claude-md",
+    "dur": 34.14475,
+    "chapter": "ATO 2 - JORNADA (Setup)"
+  },
+  {
+    "id": "07-settings",
+    "dur": 35.1635625,
+    "chapter": "ATO 2 - JORNADA (Setup)"
+  },
+  {
+    "id": "08-primeiro-prompt",
+    "dur": 37.0705,
+    "chapter": "ATO 2 - JORNADA (Fluxo)"
+  },
+  {
+    "id": "09-analise-impacto",
+    "dur": 30.7749375,
+    "chapter": "ATO 2 - JORNADA (Fluxo)"
+  },
+  {
+    "id": "10-implementacao",
+    "dur": 35.555375,
+    "chapter": "ATO 2 - JORNADA (Fluxo)"
+  },
+  {
+    "id": "11-testes",
+    "dur": 37.2533125,
+    "chapter": "ATO 2 - JORNADA (Fluxo)"
+  },
+  {
+    "id": "12-commit",
+    "dur": 31.976625,
+    "chapter": "ATO 2 - JORNADA (Fluxo)"
+  },
+  {
+    "id": "13-fluxo-completo",
+    "dur": 31.454125,
+    "chapter": "ATO 2 - JORNADA (Fluxo)"
+  },
+  {
+    "id": "14-comparativo-vscode",
+    "dur": 34.3015,
+    "chapter": "ATO 2 - JORNADA (Comparativo)"
+  },
+  {
+    "id": "15-comparativo-claude",
+    "dur": 32.1071875,
+    "chapter": "ATO 2 - JORNADA (Comparativo)"
+  },
+  {
+    "id": "16-resultado-comparativo",
+    "dur": 31.1929375,
+    "chapter": "ATO 2 - JORNADA (Comparativo)"
+  },
+  {
+    "id": "17-agent-team",
+    "dur": 30.20025,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "18-mcp-servers",
+    "dur": 30.30475,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "19-subagentes",
+    "dur": 34.014125,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "20-hooks",
+    "dur": 31.558625,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "21-skills",
+    "dur": 32.995375,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "22-memory",
+    "dur": 32.76025,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "23-navegacao-codebase",
+    "dur": 34.7455625,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "24-debug",
+    "dur": 38.8990625,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "25-refactor",
+    "dur": 36.4174375,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "26-deploy",
+    "dur": 30.7749375,
+    "chapter": "ATO 2 - JORNADA (Truques)"
+  },
+  {
+    "id": "27-limitacao-visual",
+    "dur": 29.6516875,
+    "chapter": "ATO 2 - JORNADA (Limitacoes)"
+  },
+  {
+    "id": "28-limitacao-ui",
+    "dur": 39.134125,
+    "chapter": "ATO 2 - JORNADA (Limitacoes)"
+  },
+  {
+    "id": "29-limitacao-greenfield",
+    "dur": 32.943125,
+    "chapter": "ATO 2 - JORNADA (Limitacoes)"
+  },
+  {
+    "id": "30-workaround",
+    "dur": 32.4468125,
+    "chapter": "ATO 2 - JORNADA (Limitacoes)"
+  },
+  {
+    "id": "31-cinquenta-projetos",
+    "dur": 31.637,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "32-numeros-reais",
+    "dur": 31.454125,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "33-novo-perfil",
+    "dur": 28.8158125,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "34-empresas-pagam",
+    "dur": 32.0549375,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "35-consultoria",
+    "dur": 31.2190625,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "36-cta-final",
+    "dur": 37.2533125,
+    "chapter": "ATO 3 - CTA"
+  }
+]

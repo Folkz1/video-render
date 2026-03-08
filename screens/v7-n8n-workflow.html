@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.title {
+  font-size: 38px; font-weight: 900; text-align: center;
+  margin-bottom: 60px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.2s;
+}
+.title .orange { color: #ff6d5a; }
+.title .dim { color: #667788; }
+
+.workflow {
+  display: flex; align-items: center; gap: 0;
+  position: relative;
+}
+
+.node {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  opacity: 0; animation: nodeIn 0.6s ease-out forwards;
+  position: relative;
+}
+.node:nth-child(1) { animation-delay: 0.5s; }
+.node:nth-child(2) { animation-delay: 0.9s; }
+.node:nth-child(3) { animation-delay: 1.3s; }
+.node:nth-child(4) { animation-delay: 1.7s; }
+.node:nth-child(5) { animation-delay: 2.1s; }
+.node:nth-child(6) { animation-delay: 2.5s; }
+.node:nth-child(7) { animation-delay: 2.9s; }
+.node:nth-child(8) { animation-delay: 3.3s; }
+
+.node-icon {
+  width: 90px; height: 90px; border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; position: relative;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.node-label {
+  font-size: 13px; font-weight: 700; color: #8899aa;
+  text-align: center; max-width: 110px; line-height: 1.3;
+}
+
+.node-number {
+  position: absolute; top: -10px; right: -10px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: #0a0a0f; border: 2px solid #334455;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 900; color: #667788;
+}
+
+.connector {
+  width: 60px; height: 3px; position: relative;
+  opacity: 0; animation: connectorIn 0.4s ease-out forwards;
+  margin: 0 -2px;
+  align-self: center;
+  margin-bottom: 24px;
+}
+.connector::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 2px;
+}
+
+.c1 { animation-delay: 0.7s; }
+.c2 { animation-delay: 1.1s; }
+.c3 { animation-delay: 1.5s; }
+.c4 { animation-delay: 1.9s; }
+.c5 { animation-delay: 2.3s; }
+.c6 { animation-delay: 2.7s; }
+.c7 { animation-delay: 3.1s; }
+
+.c1::after, .c2::after { background: linear-gradient(90deg, #128c7e, #0044aa); }
+.c3::after { background: linear-gradient(90deg, #0044aa, #ff6d5a); }
+.c4::after { background: linear-gradient(90deg, #ff6d5a, #9333ea); }
+.c5::after { background: linear-gradient(90deg, #9333ea, #00aa44); }
+.c6::after { background: linear-gradient(90deg, #00aa44, #128c7e); }
+.c7::after { background: linear-gradient(90deg, #128c7e, #0088ff); }
+
+/* Node colors */
+.n-webhook { background: linear-gradient(135deg, #075e54, #128c7e); }
+.n-filter { background: linear-gradient(135deg, #1a1a3e, #0044aa); }
+.n-context { background: linear-gradient(135deg, #2a1a0a, #cc6600); }
+.n-prompt { background: linear-gradient(135deg, #ff6d5a22, #ff6d5a); border-color: #ff6d5a; }
+.n-llm { background: linear-gradient(135deg, #2e0a2e, #9333ea); }
+.n-response { background: linear-gradient(135deg, #0a2e0a, #00aa44); }
+.n-notify { background: linear-gradient(135deg, #075e54, #128c7e); }
+.n-history { background: linear-gradient(135deg, #0a1a2e, #0088ff); }
+
+.pulse-dot {
+  position: absolute; top: 50%; left: 0;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #00ff88;
+  animation: flowPulse 3s ease-in-out infinite;
+  transform: translateY(-50%);
+}
+
+.flow-animation {
+  position: absolute; top: 50%; left: 0; right: 0;
+  height: 3px; transform: translateY(-50%);
+}
+
+.description {
+  margin-top: 50px; display: flex; gap: 20px; flex-wrap: wrap;
+  justify-content: center; max-width: 1400px;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 4s;
+}
+.desc-item {
+  padding: 14px 20px; border-radius: 10px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; gap: 10px;
+}
+.desc-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.desc-text { font-size: 13px; color: #8899aa; }
+
+.data-flow {
+  margin-top: 30px; padding: 16px 32px; border-radius: 10px;
+  background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.15);
+  font-size: 14px; color: #00ff88; font-weight: 600;
+  font-family: 'Consolas', monospace; letter-spacing: 1px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 4.5s;
+}
+
+.footer {
+  position: absolute; bottom: 30px;
+  font-size: 14px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nodeIn {
+  from { opacity: 0; transform: scale(0.5) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes connectorIn {
+  from { opacity: 0; width: 0; }
+  to { opacity: 1; width: 60px; }
+}
+@keyframes flowPulse {
+  0% { left: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+  <div class="title">
+    Workflow <span class="orange">N8N</span> <span class="dim">-- 8 nodes, zero codigo</span>
+  </div>
+
+  <div class="workflow">
+    <div class="node">
+      <div class="node-icon n-webhook">
+        <span>&#9889;</span>
+        <div class="node-number">1</div>
+      </div>
+      <div class="node-label">Webhook Receptor</div>
+    </div>
+
+    <div class="connector c1"><div class="pulse-dot"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-filter">
+        <span>&#9670;</span>
+        <div class="node-number">2</div>
+      </div>
+      <div class="node-label">Filtro Mensagem</div>
+    </div>
+
+    <div class="connector c2"><div class="pulse-dot" style="animation-delay:0.4s"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-context">
+        <span>&#9776;</span>
+        <div class="node-number">3</div>
+      </div>
+      <div class="node-label">Busca Contexto</div>
+    </div>
+
+    <div class="connector c3"><div class="pulse-dot" style="animation-delay:0.8s"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-prompt">
+        <span>&#10095;</span>
+        <div class="node-number">4</div>
+      </div>
+      <div class="node-label">Monta Prompt</div>
+    </div>
+
+    <div class="connector c4"><div class="pulse-dot" style="animation-delay:1.2s"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-llm">
+        <span>&#10024;</span>
+        <div class="node-number">5</div>
+      </div>
+      <div class="node-label">LLM (Claude/GPT)</div>
+    </div>
+
+    <div class="connector c5"><div class="pulse-dot" style="animation-delay:1.6s"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-response">
+        <span>&#10003;</span>
+        <div class="node-number">6</div>
+      </div>
+      <div class="node-label">Envia Resposta</div>
+    </div>
+
+    <div class="connector c6"><div class="pulse-dot" style="animation-delay:2.0s"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-notify">
+        <span>&#9888;</span>
+        <div class="node-number">7</div>
+      </div>
+      <div class="node-label">Notifica Vendedor</div>
+    </div>
+
+    <div class="connector c7"><div class="pulse-dot" style="animation-delay:2.4s"></div></div>
+
+    <div class="node">
+      <div class="node-icon n-history">
+        <span>&#9107;</span>
+        <div class="node-number">8</div>
+      </div>
+      <div class="node-label">Salva Historico</div>
+    </div>
+  </div>
+
+  <div class="description">
+    <div class="desc-item">
+      <div class="desc-dot" style="background:#128c7e"></div>
+      <div class="desc-text">Webhook recebe msg da Evolution API</div>
+    </div>
+    <div class="desc-item">
+      <div class="desc-dot" style="background:#0044aa"></div>
+      <div class="desc-text">Filtra grupos, status, duplicatas</div>
+    </div>
+    <div class="desc-item">
+      <div class="desc-dot" style="background:#cc6600"></div>
+      <div class="desc-text">Puxa historico + dados do lead</div>
+    </div>
+    <div class="desc-item">
+      <div class="desc-dot" style="background:#ff6d5a"></div>
+      <div class="desc-text">Prompt com persona + contexto</div>
+    </div>
+    <div class="desc-item">
+      <div class="desc-dot" style="background:#9333ea"></div>
+      <div class="desc-text">IA gera resposta natural</div>
+    </div>
+    <div class="desc-item">
+      <div class="desc-dot" style="background:#00aa44"></div>
+      <div class="desc-text">Envia via Evolution API</div>
+    </div>
+  </div>
+
+  <div class="data-flow">
+    msg_received >> filter >> context_lookup >> prompt_build >> llm_call >> send_reply >> notify >> save_log
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

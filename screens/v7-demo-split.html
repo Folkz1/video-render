@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex;
+}
+
+.split-left {
+  width: 50%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-right: 2px solid #1a2233;
+  position: relative;
+  padding: 40px;
+}
+
+.split-right {
+  width: 50%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative;
+  padding: 40px;
+  background: #080810;
+}
+
+.section-label {
+  position: absolute; top: 30px;
+  font-size: 14px; font-weight: 900; letter-spacing: 3px;
+  text-transform: uppercase; color: #556677;
+}
+.section-label .green { color: #00ff88; }
+.section-label .orange { color: #ff6d5a; }
+
+/* WhatsApp Phone (left side) */
+.phone {
+  width: 360px; height: 700px; border-radius: 36px;
+  background: #1a1a2e; border: 2px solid #2a2a4a;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: fadeIn 0.6s ease-out both 0.3s;
+}
+
+.phone-header {
+  background: #075e54; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.phone-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: linear-gradient(135deg, #00ff88, #00aa55);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 900; color: #0a0a0f;
+}
+.phone-name { font-size: 15px; font-weight: 700; }
+.phone-status { font-size: 11px; color: #aaddbb; }
+
+.chat {
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  height: 590px; background: #0d1117;
+  overflow-y: auto;
+}
+
+.msg {
+  max-width: 260px; padding: 10px 14px; border-radius: 10px;
+  font-size: 14px; line-height: 1.4;
+  opacity: 0;
+}
+.msg-in {
+  background: #1e2d3d; align-self: flex-start; border-bottom-left-radius: 4px;
+}
+.msg-out {
+  background: #005c4b; align-self: flex-end; border-bottom-right-radius: 4px;
+}
+.msg-time { font-size: 10px; color: #667788; text-align: right; margin-top: 3px; }
+
+.msg-1 { animation: msgIn 0.4s ease-out forwards 1.0s; }
+.msg-2 { animation: msgIn 0.4s ease-out forwards 3.0s; }
+.msg-3 { animation: msgIn 0.4s ease-out forwards 4.0s; }
+.msg-4 { animation: msgIn 0.4s ease-out forwards 6.0s; }
+.msg-5 { animation: msgIn 0.4s ease-out forwards 7.0s; }
+.msg-6 { animation: msgIn 0.4s ease-out forwards 9.0s; }
+
+.phone-input {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 10px 14px; background: #1a1a2e;
+  display: flex; gap: 8px; align-items: center;
+}
+
+/* N8N Execution View (right side) */
+.n8n-panel {
+  width: 100%; max-width: 800px;
+  animation: fadeIn 0.6s ease-out both 0.5s;
+}
+
+.n8n-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: #161b22; border-radius: 12px 12px 0 0;
+  border: 1px solid #1a2233; border-bottom: none;
+}
+.n8n-title { font-size: 14px; color: #8899aa; font-weight: 600; }
+.n8n-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.status-running { background: #ffaa00; animation: blink 1s ease-in-out infinite; }
+.status-success { background: #00ff88; }
+
+.execution-list {
+  background: #0d1117; border: 1px solid #1a2233;
+  border-radius: 0 0 12px 12px; overflow: hidden;
+}
+
+.exec-node {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-bottom: 1px solid #0a0a12;
+  opacity: 0;
+}
+
+.exec-node:nth-child(1) { animation: execIn 0.4s ease-out forwards 1.5s; }
+.exec-node:nth-child(2) { animation: execIn 0.4s ease-out forwards 2.0s; }
+.exec-node:nth-child(3) { animation: execIn 0.4s ease-out forwards 2.5s; }
+.exec-node:nth-child(4) { animation: execIn 0.4s ease-out forwards 3.5s; }
+.exec-node:nth-child(5) { animation: execIn 0.4s ease-out forwards 4.5s; }
+.exec-node:nth-child(6) { animation: execIn 0.4s ease-out forwards 5.5s; }
+.exec-node:nth-child(7) { animation: execIn 0.4s ease-out forwards 6.5s; }
+.exec-node:nth-child(8) { animation: execIn 0.4s ease-out forwards 7.5s; }
+
+.exec-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.exec-info { flex: 1; }
+.exec-name { font-size: 14px; font-weight: 700; color: #ccddee; }
+.exec-detail { font-size: 11px; color: #556677; margin-top: 2px; }
+.exec-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700;
+}
+.exec-time { font-size: 11px; color: #556677; }
+
+.exec-success .exec-status { color: #00ff88; }
+.exec-success .status-dot { background: #00ff88; }
+.exec-pending .exec-status { color: #334455; }
+.exec-pending .status-dot { background: #334455; }
+.exec-running .exec-status { color: #ffaa00; }
+.exec-running .status-dot { background: #ffaa00; animation: blink 0.8s ease-in-out infinite; }
+
+/* Sync line */
+.sync-indicator {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 100;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 2s;
+}
+.sync-badge {
+  background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3);
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 11px; font-weight: 900; color: #00ff88;
+  letter-spacing: 2px;
+}
+
+.footer {
+  position: absolute; bottom: 20px; left: 0; right: 0;
+  text-align: center; font-size: 13px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes execIn {
+  from { opacity: 0; transform: translateX(20px); background: rgba(0,255,136,0.05); }
+  to { opacity: 1; transform: translateX(0); background: transparent; }
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+
+  <div class="sync-indicator">
+    <div class="sync-badge">TEMPO REAL</div>
+  </div>
+
+  <div class="split-left">
+    <div class="section-label"><span class="green">WHATSAPP</span> -- Usuario</div>
+    <div class="phone">
+      <div class="phone-header">
+        <div class="phone-avatar">IA</div>
+        <div style="flex:1">
+          <div class="phone-name">Atendimento Bot</div>
+          <div class="phone-status">digitando...</div>
+        </div>
+      </div>
+      <div class="chat">
+        <div class="msg msg-in msg-1">
+          Bom dia! Vi que voces fazem automacao. Quanto custa?
+          <div class="msg-time">09:14</div>
+        </div>
+        <div class="msg msg-out msg-2">
+          Bom dia! Tudo bem? Trabalhamos com automacao sob medida. Pra te dar um valor certeiro: qual o principal processo que voce quer automatizar?
+          <div class="msg-time">09:14</div>
+        </div>
+        <div class="msg msg-in msg-3">
+          Atendimento ao cliente. Recebo uns 50 msgs/dia e nao consigo responder tudo.
+          <div class="msg-time">09:15</div>
+        </div>
+        <div class="msg msg-out msg-4">
+          50 msgs/dia e um volume perfeito pra automacao. Consigo fazer um bot que responde 80% automatico e escala pro humano quando precisa. Investimento a partir de R$497/mes. Quer ver uma demo?
+          <div class="msg-time">09:15</div>
+        </div>
+        <div class="msg msg-in msg-5">
+          Sim!! Pode mandar
+          <div class="msg-time">09:16</div>
+        </div>
+        <div class="msg msg-out msg-6">
+          Perfeito! Vou preparar uma demo personalizada pra voce. Qual o nome da sua empresa?
+          <div class="msg-time">09:16</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="split-right">
+    <div class="section-label"><span class="orange">N8N</span> -- Execution Log</div>
+    <div class="n8n-panel">
+      <div class="n8n-header">
+        <div class="n8n-title">Execution #2847 -- Bot WhatsApp</div>
+        <div class="n8n-status">
+          <div class="status-dot status-success"></div>
+          <span style="color:#00ff88">SUCCESS</span>
+        </div>
+      </div>
+      <div class="execution-list">
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#075e54">&#9889;</div>
+          <div class="exec-info">
+            <div class="exec-name">Webhook Receptor</div>
+            <div class="exec-detail">POST /webhook/whatsapp -- 200 OK</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> OK
+          </div>
+          <div class="exec-time">12ms</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#0044aa">&#9670;</div>
+          <div class="exec-info">
+            <div class="exec-name">Filtro Mensagem</div>
+            <div class="exec-detail">type: conversation -- not group</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> PASS
+          </div>
+          <div class="exec-time">3ms</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#cc6600">&#9776;</div>
+          <div class="exec-info">
+            <div class="exec-name">Busca Contexto</div>
+            <div class="exec-detail">historico: 4 msgs anteriores</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> OK
+          </div>
+          <div class="exec-time">45ms</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#ff6d5a">&#10095;</div>
+          <div class="exec-info">
+            <div class="exec-name">Monta Prompt</div>
+            <div class="exec-detail">persona: atendente -- tokens: 847</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> OK
+          </div>
+          <div class="exec-time">2ms</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#9333ea">&#10024;</div>
+          <div class="exec-info">
+            <div class="exec-name">Claude Sonnet 4</div>
+            <div class="exec-detail">tokens_in: 847 -- tokens_out: 156</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> OK
+          </div>
+          <div class="exec-time">1.2s</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#00aa44">&#10003;</div>
+          <div class="exec-info">
+            <div class="exec-name">Envia Resposta</div>
+            <div class="exec-detail">Evolution API -- sendText 200</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> SENT
+          </div>
+          <div class="exec-time">180ms</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#128c7e">&#9888;</div>
+          <div class="exec-info">
+            <div class="exec-name">Notifica Vendedor</div>
+            <div class="exec-detail">Telegram -- lead qualificado</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> OK
+          </div>
+          <div class="exec-time">95ms</div>
+        </div>
+        <div class="exec-node exec-success">
+          <div class="exec-icon" style="background:#0088ff">&#9107;</div>
+          <div class="exec-info">
+            <div class="exec-name">Salva Historico</div>
+            <div class="exec-detail">PostgreSQL -- INSERT messages</div>
+          </div>
+          <div class="exec-status">
+            <div class="status-dot"></div> OK
+          </div>
+          <div class="exec-time">8ms</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

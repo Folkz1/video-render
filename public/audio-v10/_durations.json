@@ -1,0 +1,222 @@
+[
+  {
+    "id": "01-hook-desafio",
+    "dur": 24.166,
+    "chapter": "Hook"
+  },
+  {
+    "id": "02-hook-contexto",
+    "dur": 22.3113125,
+    "chapter": "Hook"
+  },
+  {
+    "id": "03-hook-stakes",
+    "dur": 26.67375,
+    "chapter": "Hook"
+  },
+  {
+    "id": "04-hook-promessa",
+    "dur": 24.4533125,
+    "chapter": "Hook"
+  },
+  {
+    "id": "05-hook-credibilidade",
+    "dur": 23.6696875,
+    "chapter": "Hook"
+  },
+  {
+    "id": "06-desafio-regras",
+    "dur": 27.927625,
+    "chapter": "O Desafio"
+  },
+  {
+    "id": "07-copilot-intro",
+    "dur": 24.9496875,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "08-copilot-setup",
+    "dur": 29.050875,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "09-copilot-crud",
+    "dur": 27.614125,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "10-copilot-auth",
+    "dur": 27.64025,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "11-copilot-banco",
+    "dur": 25.0019375,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "12-copilot-deploy",
+    "dur": 26.908875,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "13-copilot-score",
+    "dur": 29.23375,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "14-copilot-veredito",
+    "dur": 25.6549375,
+    "chapter": "Copilot"
+  },
+  {
+    "id": "15-cursor-intro",
+    "dur": 27.1439375,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "16-cursor-setup",
+    "dur": 27.927625,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "17-cursor-crud",
+    "dur": 27.1961875,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "18-cursor-auth",
+    "dur": 24.4533125,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "19-cursor-tab",
+    "dur": 26.0206875,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "20-cursor-banco",
+    "dur": 26.856625,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "21-cursor-limitacoes",
+    "dur": 26.438625,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "22-cursor-deploy",
+    "dur": 27.3268125,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "23-cursor-score",
+    "dur": 27.2745625,
+    "chapter": "Cursor"
+  },
+  {
+    "id": "24-claude-intro",
+    "dur": 30.2525,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "25-claude-setup",
+    "dur": 28.7113125,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "26-claude-autonomia",
+    "dur": 30.6705,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "27-claude-crud",
+    "dur": 30.9055625,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "28-claude-auth",
+    "dur": 28.05825,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "29-claude-git",
+    "dur": 30.6705,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "30-claude-deploy",
+    "dur": 30.0696875,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "31-claude-score",
+    "dur": 30.1219375,
+    "chapter": "Claude Code"
+  },
+  {
+    "id": "32-comparativo-intro",
+    "dur": 16.1725,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "33-comparativo-tempo",
+    "dur": 25.7855625,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "34-comparativo-erros",
+    "dur": 28.6851875,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "35-comparativo-qualidade",
+    "dur": 30.8533125,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "36-comparativo-custo",
+    "dur": 28.4761875,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "37-comparativo-autonomia",
+    "dur": 29.6516875,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "38-comparativo-tabela-final",
+    "dur": 26.438625,
+    "chapter": "Comparativo"
+  },
+  {
+    "id": "39-veredicto-honesto",
+    "dur": 27.797,
+    "chapter": "Veredicto"
+  },
+  {
+    "id": "40-quando-usar",
+    "dur": 36.992125,
+    "chapter": "Veredicto"
+  },
+  {
+    "id": "41-combinacao",
+    "dur": 28.8158125,
+    "chapter": "Veredicto"
+  },
+  {
+    "id": "42-cta-setup",
+    "dur": 28.5806875,
+    "chapter": "CTA"
+  },
+  {
+    "id": "43-cta-preco",
+    "dur": 30.6705,
+    "chapter": "CTA"
+  },
+  {
+    "id": "44-cta-close",
+    "dur": 26.2035625,
+    "chapter": "CTA"
+  }
+]

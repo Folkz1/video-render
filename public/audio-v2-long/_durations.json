@@ -1,0 +1,202 @@
+[
+  {
+    "id": "01-hook-cifra",
+    "dur": 23.04275,
+    "chapter": "Hook"
+  },
+  {
+    "id": "02-counter-animado",
+    "dur": 25.9684375,
+    "chapter": "Hook"
+  },
+  {
+    "id": "03-dor-tempo",
+    "dur": 27.2223125,
+    "chapter": "Hook"
+  },
+  {
+    "id": "04-virada-solucao",
+    "dur": 34.7194375,
+    "chapter": "Hook"
+  },
+  {
+    "id": "05-prova-real",
+    "dur": 30.1219375,
+    "chapter": "Hook"
+  },
+  {
+    "id": "06-pncp-intro",
+    "dur": 33.8313125,
+    "chapter": "PNCP e Coleta"
+  },
+  {
+    "id": "07-api-pncp",
+    "dur": 33.6484375,
+    "chapter": "PNCP e Coleta"
+  },
+  {
+    "id": "08-n8n-coleta",
+    "dur": 29.7039375,
+    "chapter": "PNCP e Coleta"
+  },
+  {
+    "id": "09-volume-dados",
+    "dur": 28.032125,
+    "chapter": "PNCP e Coleta"
+  },
+  {
+    "id": "10-problema-volume",
+    "dur": 24.7668125,
+    "chapter": "Motor de Analise IA"
+  },
+  {
+    "id": "11-claude-analise",
+    "dur": 28.1105,
+    "chapter": "Motor de Analise IA"
+  },
+  {
+    "id": "12-pipeline-analise",
+    "dur": 35.9994375,
+    "chapter": "Motor de Analise IA"
+  },
+  {
+    "id": "13-exemplo-real",
+    "dur": 32.86475,
+    "chapter": "Motor de Analise IA"
+  },
+  {
+    "id": "14-analise-profunda",
+    "dur": 31.0361875,
+    "chapter": "Motor de Analise IA"
+  },
+  {
+    "id": "15-duas-mil-analises",
+    "dur": 27.4574375,
+    "chapter": "Motor de Analise IA"
+  },
+  {
+    "id": "16-stack-arquitetura",
+    "dur": 34.6149375,
+    "chapter": "Arquitetura e Dashboard"
+  },
+  {
+    "id": "17-nextjs-frontend",
+    "dur": 27.2745625,
+    "chapter": "Arquitetura e Dashboard"
+  },
+  {
+    "id": "18-dashboard-tour",
+    "dur": 31.924375,
+    "chapter": "Arquitetura e Dashboard"
+  },
+  {
+    "id": "19-detalhes-licitacao",
+    "dur": 31.1929375,
+    "chapter": "Arquitetura e Dashboard"
+  },
+  {
+    "id": "20-postgresql-dados",
+    "dur": 29.1815,
+    "chapter": "Arquitetura e Dashboard"
+  },
+  {
+    "id": "21-motor-vendas-intro",
+    "dur": 22.0761875,
+    "chapter": "Motor de Vendas"
+  },
+  {
+    "id": "22-lead-capture",
+    "dur": 28.7113125,
+    "chapter": "Motor de Vendas"
+  },
+  {
+    "id": "23-whatsapp-integration",
+    "dur": 29.23375,
+    "chapter": "Motor de Vendas"
+  },
+  {
+    "id": "24-funil-conversao",
+    "dur": 30.9055625,
+    "chapter": "Motor de Vendas"
+  },
+  {
+    "id": "25-n8n-workflows",
+    "dur": 31.924375,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "26-workflow-coleta-detalhe",
+    "dur": 30.20025,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "27-workflow-ia-detalhe",
+    "dur": 30.7749375,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "28-prompt-engineering",
+    "dur": 36.3913125,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "29-custos-operacao",
+    "dur": 33.7006875,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "30-seguranca",
+    "dur": 28.16275,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "31-escalabilidade",
+    "dur": 30.0696875,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "32-diferenciais",
+    "dur": 30.1219375,
+    "chapter": "Arquitetura Detalhada"
+  },
+  {
+    "id": "33-resultados-concretos",
+    "dur": 36.1561875,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "34-roi-calculo",
+    "dur": 35.268,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "35-oportunidade-perdida",
+    "dur": 29.7039375,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "36-escassez",
+    "dur": 27.84925,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "37-cta-principal",
+    "dur": 35.450875,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "38-prova-social",
+    "dur": 29.6516875,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "39-urgencia-final",
+    "dur": 27.797,
+    "chapter": "ROI e CTA"
+  },
+  {
+    "id": "40-encerramento",
+    "dur": 25.0019375,
+    "chapter": "ROI e CTA"
+  }
+]

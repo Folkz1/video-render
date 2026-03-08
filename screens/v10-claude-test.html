@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+
+/* Header */
+.header {
+  height: 60px;
+  background: linear-gradient(90deg, #D4A574, #a67c52);
+  display: flex; align-items: center;
+  padding: 0 30px; gap: 16px;
+  box-shadow: 0 2px 20px #D4A57444;
+}
+.header-logo {
+  font-size: 24px; font-weight: 900; color: #0a0a0f;
+  display: flex; align-items: center; gap: 10px;
+}
+.header-logo span { font-size: 28px; }
+.header-tag {
+  margin-left: auto;
+  font-size: 13px; color: #0a0a0faa;
+  letter-spacing: 2px; font-weight: 600;
+}
+
+.main {
+  flex: 1; display: flex;
+}
+
+/* Terminal */
+.terminal {
+  flex: 1; background: #0c0c12;
+  padding: 24px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px; line-height: 1.8;
+  overflow: hidden;
+  position: relative;
+}
+
+.term-line {
+  opacity: 0;
+  animation: termLine 0.3s ease-out both;
+}
+
+.prompt { color: #D4A574; font-weight: 700; }
+.cmd { color: #fff; }
+.output { color: #8899aa; }
+.success { color: #00ff88; }
+.plan-item { color: #79c0ff; padding-left: 24px; }
+.git-line { color: #aa44ff; }
+.deploy-line { color: #00ff88; font-weight: 700; }
+.dim { color: #334; }
+.warn { color: #ffaa44; }
+.auto-fix { color: #00ddff; }
+
+/* Plan box */
+.plan-box {
+  border: 1px solid #D4A57444;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  background: #D4A57408;
+  animation: planGlow 2s ease-in-out 2s both;
+}
+.plan-title {
+  font-size: 13px; font-weight: 800;
+  color: #D4A574;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+@keyframes planGlow {
+  from { box-shadow: none; }
+  to { box-shadow: 0 0 20px #D4A57411; }
+}
+
+/* Execution block */
+.exec-block {
+  border-left: 2px solid #00ff8844;
+  padding-left: 16px;
+  margin: 8px 0;
+}
+
+/* Right panel */
+.stats-panel {
+  width: 400px;
+  background: #0d0d14;
+  border-left: 1px solid #1a1a2e;
+  padding: 30px 24px;
+  display: flex; flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.6s ease-out 0.5s both;
+}
+
+.stat-block {
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 18px;
+}
+.stat-label {
+  font-size: 12px; color: #556;
+  text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 6px; font-weight: 700;
+}
+.stat-value {
+  font-size: 34px; font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.timer-val { color: #D4A574; }
+.error-val { color: #00ff88; }
+
+/* Git commits */
+.commits {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 8px;
+}
+.commit-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: #aa44ff11;
+  border-radius: 6px;
+  border-left: 2px solid #aa44ff;
+  animation: commitSlide 0.4s ease-out both;
+}
+.commit-item:nth-child(1) { animation-delay: 4s; }
+.commit-item:nth-child(2) { animation-delay: 4.5s; }
+.commit-item:nth-child(3) { animation-delay: 5s; }
+.commit-item:nth-child(4) { animation-delay: 5.5s; }
+
+.commit-hash { color: #aa44ff; font-family: 'Consolas', monospace; font-weight: 700; }
+.commit-msg { color: #8899aa; }
+
+@keyframes commitSlide {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Deploy URL */
+.deploy-url {
+  background: #00ff8811;
+  border: 1px solid #00ff8844;
+  border-radius: 8px;
+  padding: 14px 16px;
+  animation: deployGlow 1.5s ease-in-out infinite alternate, fadeIn 0.5s ease-out 6.5s both;
+}
+.deploy-url-label {
+  font-size: 11px; color: #00ff88;
+  font-weight: 700; letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.deploy-url-val {
+  font-size: 15px; color: #00ff88;
+  font-family: 'Consolas', monospace;
+  font-weight: 600;
+}
+@keyframes deployGlow {
+  from { box-shadow: 0 0 10px #00ff8811; }
+  to { box-shadow: 0 0 25px #00ff8833; }
+}
+
+/* Auto-fix indicator */
+.autofix-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #00ddff22;
+  border: 1px solid #00ddff44;
+  padding: 4px 10px; border-radius: 6px;
+  font-size: 11px; color: #00ddff;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+/* Autonomy meter */
+.autonomy-meter {
+  position: relative;
+  height: 10px;
+  background: #1a1a2e;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.autonomy-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #D4A574, #00ff88);
+  border-radius: 5px;
+  animation: fillBar 2s ease-out 3s forwards;
+}
+@keyframes fillBar {
+  to { width: 95%; }
+}
+
+/* Verdict */
+.verdict {
+  position: absolute;
+  bottom: 80px; left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  color: #0a0a0f;
+  font-size: 24px; font-weight: 900;
+  padding: 18px 40px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  box-shadow: 0 8px 30px #00ff8844;
+  animation: verdictIn 0.5s ease-out 7s both;
+  z-index: 10;
+}
+@keyframes verdictIn {
+  from { opacity: 0; transform: translateX(-50%) rotate(-2deg) scale(0.5); }
+  to { opacity: 1; transform: translateX(-50%) rotate(-2deg) scale(1); }
+}
+
+/* Status bar */
+.status-bar {
+  height: 28px;
+  background: #D4A574;
+  display: flex; align-items: center;
+  padding: 0 16px;
+  font-size: 12px; color: #0a0a0fcc;
+  gap: 20px;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes termLine {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo"><span>&#9733;</span> Claude Code</div>
+    <div class="header-tag">TESTE #3 &bull; TERMINAL AUTONOMO</div>
+  </div>
+
+  <div class="main">
+    <div class="terminal">
+      <div class="term-line" style="animation-delay: 0.3s">
+        <span class="prompt">~ $</span> <span class="cmd">claude "Cria um app CRUD com auth, PostgreSQL e deploy"</span>
+      </div>
+      <div class="term-line" style="animation-delay: 0.8s">
+        <span class="dim">───────────────────────────────────────────</span>
+      </div>
+
+      <div class="plan-box">
+        <div class="plan-title term-line" style="animation-delay: 1.2s">Plano de Execucao</div>
+        <div class="term-line plan-item" style="animation-delay: 1.5s">1. Inicializar projeto Node + Express + TypeScript</div>
+        <div class="term-line plan-item" style="animation-delay: 1.7s">2. Schema PostgreSQL (users, sessions, migrations)</div>
+        <div class="term-line plan-item" style="animation-delay: 1.9s">3. CRUD routes + validacao + error handling</div>
+        <div class="term-line plan-item" style="animation-delay: 2.1s">4. Auth JWT (register, login, refresh, logout)</div>
+        <div class="term-line plan-item" style="animation-delay: 2.3s">5. Testes + lint + build</div>
+        <div class="term-line plan-item" style="animation-delay: 2.5s">6. Deploy automatico + URL publica</div>
+      </div>
+
+      <div class="term-line" style="animation-delay: 3.0s">
+        <span class="dim">───────────────────────────────────────────</span>
+      </div>
+
+      <div class="exec-block">
+        <div class="term-line" style="animation-delay: 3.3s">
+          <span class="success">&#10003;</span> <span class="output">Criando 12 arquivos...</span>
+        </div>
+        <div class="term-line" style="animation-delay: 3.8s">
+          <span class="success">&#10003;</span> <span class="output">Schema PostgreSQL aplicado</span>
+        </div>
+        <div class="term-line" style="animation-delay: 4.3s">
+          <span class="success">&#10003;</span> <span class="output">CRUD + Auth implementados</span>
+        </div>
+        <div class="term-line" style="animation-delay: 4.8s">
+          <span class="warn">&#9888;</span> <span class="output">2 erros detectados</span>
+          <span class="auto-fix"> &rarr; auto-corrigindo...</span>
+        </div>
+        <div class="term-line" style="animation-delay: 5.3s">
+          <span class="success">&#10003;</span> <span class="auto-fix">Erros corrigidos automaticamente</span>
+        </div>
+        <div class="term-line" style="animation-delay: 5.8s">
+          <span class="success">&#10003;</span> <span class="output">Build + lint OK</span>
+        </div>
+      </div>
+
+      <div class="term-line" style="animation-delay: 6.3s">
+        <span class="dim">───────────────────────────────────────────</span>
+      </div>
+      <div class="term-line" style="animation-delay: 6.6s">
+        <span class="git-line">&#9679; feat: initial CRUD + auth + PostgreSQL setup</span>
+      </div>
+      <div class="term-line" style="animation-delay: 7.0s">
+        <span class="git-line">&#9679; feat: deploy config + production build</span>
+      </div>
+      <div class="term-line" style="animation-delay: 7.5s">
+        <span class="deploy-line">&#9889; Deploy: https://crud-app-demo.vercel.app</span>
+      </div>
+      <div class="term-line" style="animation-delay: 8.0s">
+        <span class="success">&#10003; Tudo pronto em 54 minutos. Zero intervencao humana.</span>
+      </div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="stat-block">
+        <div class="stat-label">Tempo Total</div>
+        <div class="stat-value timer-val">54:00</div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">Erros</div>
+        <div class="stat-value error-val">2</div>
+        <div class="autofix-badge">&#10003; AUTO-CORRIGIDOS</div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">Git Commits</div>
+        <div class="commits">
+          <div class="commit-item">
+            <span class="commit-hash">a3f2c1d</span>
+            <span class="commit-msg">feat: init + schema</span>
+          </div>
+          <div class="commit-item">
+            <span class="commit-hash">b7e4a9f</span>
+            <span class="commit-msg">feat: CRUD routes</span>
+          </div>
+          <div class="commit-item">
+            <span class="commit-hash">c1d8f3e</span>
+            <span class="commit-msg">feat: JWT auth</span>
+          </div>
+          <div class="commit-item">
+            <span class="commit-hash">d9a2b5c</span>
+            <span class="commit-msg">feat: deploy prod</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">Autonomia</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 14px; color: #667;">Intervencao humana</span>
+          <span style="font-size: 16px; font-weight: 800; color: #00ff88;">0</span>
+        </div>
+        <div class="autonomy-meter">
+          <div class="autonomy-fill"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+          <span style="font-size: 10px; color: #334;">0%</span>
+          <span style="font-size: 10px; color: #00ff88;">95% Autonomo</span>
+        </div>
+      </div>
+
+      <div class="deploy-url">
+        <div class="deploy-url-label">DEPLOY LIVE</div>
+        <div class="deploy-url-val">crud-app-demo.vercel.app</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">DEV AUTONOMO</div>
+
+  <div class="status-bar">
+    <span>Claude Code CLI</span>
+    <span>Opus 4</span>
+    <span>12 arquivos criados</span>
+    <span style="margin-left: auto;">54 min &bull; 0 intervencoes</span>
+  </div>
+</body>
+</html>

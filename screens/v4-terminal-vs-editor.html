@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.split {
+  display: flex; height: 100%;
+}
+
+.side {
+  flex: 1; padding: 40px; position: relative;
+  display: flex; flex-direction: column;
+}
+
+.left { border-right: 2px solid #1a1a2e; }
+
+.side-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 30px;
+}
+
+.side-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+.vscode-icon { background: #007acc; }
+.claude-icon { background: #D4A574; }
+
+.side-title { font-size: 24px; font-weight: 800; }
+.left .side-title { color: #007acc; }
+.right .side-title { color: #D4A574; }
+
+.side-sub { font-size: 14px; color: #8899aa; }
+
+.code-block {
+  flex: 1; background: #1a1a2e; border-radius: 12px;
+  padding: 20px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 13px; line-height: 1.8; overflow: hidden;
+  position: relative;
+}
+
+.line-num { color: #444; display: inline-block; width: 30px; }
+.keyword { color: #c586c0; }
+.string { color: #ce9178; }
+.func { color: #dcdcaa; }
+.type { color: #4ec9b0; }
+.comment { color: #6a9955; }
+.var { color: #9cdcfe; }
+.op { color: #d4d4d4; }
+
+.cursor-blink {
+  display: inline-block; width: 8px; height: 18px;
+  background: #fff; animation: blink 1s step-end infinite;
+  vertical-align: middle;
+}
+
+.ghost-text { color: #444; font-style: italic; }
+
+.verdict {
+  position: absolute; bottom: 20px; left: 0; right: 0;
+  text-align: center;
+}
+
+.verdict-box {
+  display: inline-block; padding: 10px 24px; border-radius: 8px;
+  font-size: 16px; font-weight: 800;
+}
+
+.left .verdict-box {
+  background: #007acc22; border: 1px solid #007acc44; color: #007acc;
+}
+.right .verdict-box {
+  background: #D4A57422; border: 1px solid #D4A57444; color: #D4A574;
+}
+
+.vs-badge {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: #0a0a0f; border: 2px solid #333;
+  border-radius: 50%; width: 60px; height: 60px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 900; color: #666;
+  z-index: 10;
+}
+
+.stats-row {
+  display: flex; gap: 16px; margin-top: 16px;
+}
+
+.mini-stat {
+  padding: 8px 16px; border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  text-align: center;
+}
+
+.mini-stat-val { font-size: 20px; font-weight: 900; }
+.left .mini-stat-val { color: #007acc; }
+.right .mini-stat-val { color: #D4A574; }
+.mini-stat-label { font-size: 11px; color: #8899aa; }
+
+.crossed {
+  text-decoration: line-through; color: #ff4455; opacity: 0.5;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.typing-indicator {
+  display: flex; gap: 4px; padding: 8px 16px;
+  background: rgba(212,165,116,0.1); border-radius: 8px;
+  margin-top: 16px; width: fit-content;
+}
+.typing-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #D4A574;
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1.2); }
+}
+</style>
+</head>
+<body>
+  <div class="split">
+    <div class="side left">
+      <div class="side-header">
+        <div class="side-icon vscode-icon">&#9998;</div>
+        <div>
+          <div class="side-title">VS Code + Copilot</div>
+          <div class="side-sub">Editor grafico + autocomplete IA</div>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div><span class="line-num">1</span> <span class="keyword">import</span> { <span class="type">NextResponse</span> } <span class="keyword">from</span> <span class="string">'next/server'</span>;</div>
+        <div><span class="line-num">2</span> <span class="keyword">import</span> { <span class="var">pool</span> } <span class="keyword">from</span> <span class="string">'@/lib/db'</span>;</div>
+        <div><span class="line-num">3</span></div>
+        <div><span class="line-num">4</span> <span class="keyword">export async function</span> <span class="func">GET</span>(<span class="var">req</span>) {</div>
+        <div><span class="line-num">5</span>   <span class="keyword">const</span> { <span class="var">searchParams</span> } = <span class="keyword">new</span> <span class="type">URL</span>(<span class="var">req</span>.<span class="var">url</span>);</div>
+        <div><span class="line-num">6</span>   <span class="keyword">const</span> <span class="var">page</span> = <span class="var">searchParams</span>.<span class="func">get</span>(<span class="string">'page'</span>) || <span class="string">'1'</span>;</div>
+        <div><span class="line-num">7</span>   <span class="ghost-text">// Copilot sugere: const limit = 10;</span></div>
+        <div><span class="line-num">8</span>   <span class="cursor-blink"></span></div>
+        <div><span class="line-num">9</span></div>
+        <div><span class="line-num">10</span> <span class="comment">// Voce escreve linha por linha...</span></div>
+        <div><span class="line-num">11</span> <span class="comment">// Copilot autocompleta parcialmente...</span></div>
+        <div><span class="line-num">12</span> <span class="comment">// Voce corrige o que ele errou...</span></div>
+        <div><span class="line-num">13</span> <span class="comment">// Repete 342 vezes.</span></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="mini-stat">
+          <div class="mini-stat-val">45 min</div>
+          <div class="mini-stat-label">Tempo</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val">342</div>
+          <div class="mini-stat-label">Linhas</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val crossed">8 bugs</div>
+          <div class="mini-stat-label">Fix manual</div>
+        </div>
+      </div>
+
+      <div class="verdict">
+        <div class="verdict-box">Assistente: voce ainda pilota</div>
+      </div>
+    </div>
+
+    <div class="vs-badge">VS</div>
+
+    <div class="side right">
+      <div class="side-header">
+        <div class="side-icon claude-icon">&#9733;</div>
+        <div>
+          <div class="side-title">Claude Code</div>
+          <div class="side-sub">Terminal puro + autonomia total</div>
+        </div>
+      </div>
+
+      <div class="code-block" style="background: #0d0d0d;">
+        <div><span class="line-num">$</span> <span class="var">claude</span> <span class="string">"Crie CRUD de licitacoes com auth e deploy"</span></div>
+        <div></div>
+        <div><span style="color:#D4A574">Claude:</span> Analisando impacto...</div>
+        <div><span style="color:#00ff88">  &#10003;</span> 4 arquivos a criar</div>
+        <div><span style="color:#00ff88">  &#10003;</span> Schema PostgreSQL</div>
+        <div><span style="color:#00ff88">  &#10003;</span> API routes (GET, POST, PUT, DELETE)</div>
+        <div><span style="color:#00ff88">  &#10003;</span> Auth middleware (JWT)</div>
+        <div><span style="color:#00ff88">  &#10003;</span> Dockerfile + deploy config</div>
+        <div></div>
+        <div><span style="color:#D4A574">Implementando...</span></div>
+        <div><span style="color:#00ff88">  &#10003;</span> src/app/api/licitacoes/route.ts</div>
+        <div><span style="color:#00ff88">  &#10003;</span> src/lib/auth.ts</div>
+        <div><span style="color:#00ff88">  &#10003;</span> migrations/001_licitacoes.sql</div>
+        <div><span style="color:#00ff88">  &#10003;</span> Dockerfile</div>
+        <div></div>
+        <div><span style="color:#00ddff">Testando...</span> <span style="color:#00ff88">All 12 tests passed</span></div>
+        <div><span style="color:#00ddff">Commit:</span> feat: CRUD licitacoes + auth + deploy</div>
+        <div><span style="color:#00ff88">Deployed to production &#10003;</span></div>
+      </div>
+
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="mini-stat">
+          <div class="mini-stat-val">12 min</div>
+          <div class="mini-stat-label">Tempo</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val">198</div>
+          <div class="mini-stat-label">Linhas</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-val" style="color:#00ff88">1 bug</div>
+          <div class="mini-stat-label">Auto-fix</div>
+        </div>
+      </div>
+
+      <div class="verdict">
+        <div class="verdict-box">Piloto automatico: voce dirige o RESULTADO</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; align-items: center; justify-content: center;
+  gap: 60px;
+}
+
+.left-panel {
+  display: flex; flex-direction: column; gap: 24px;
+  width: 440px;
+}
+
+.brain-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 24px; border-radius: 30px;
+  background: rgba(212,165,116,0.1); border: 1px solid rgba(212,165,116,0.3);
+  width: fit-content;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.3s;
+}
+.brain-badge-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: #D4A574;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.brain-badge-text {
+  font-size: 14px; font-weight: 900; color: #D4A574;
+  letter-spacing: 3px; text-transform: uppercase;
+}
+
+.main-title {
+  font-size: 48px; font-weight: 900; line-height: 1.15;
+  opacity: 0; animation: slideRight 0.8s ease-out forwards 0.6s;
+}
+.main-title .file { color: #D4A574; }
+.main-title .desc { display: block; font-size: 22px; color: #667788; font-weight: 600; margin-top: 8px; }
+
+.section-list {
+  display: flex; flex-direction: column; gap: 12px;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 1s;
+}
+.section-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 20px; border-radius: 12px;
+  background: rgba(255,255,255,0.03); border: 1px solid #ffffff08;
+  opacity: 0;
+}
+.section-item:nth-child(1) { animation: slideRight 0.4s ease-out forwards 1.2s; }
+.section-item:nth-child(2) { animation: slideRight 0.4s ease-out forwards 1.5s; }
+.section-item:nth-child(3) { animation: slideRight 0.4s ease-out forwards 1.8s; }
+.section-item:nth-child(4) { animation: slideRight 0.4s ease-out forwards 2.1s; }
+.section-item:nth-child(5) { animation: slideRight 0.4s ease-out forwards 2.4s; }
+.section-item:nth-child(6) { animation: slideRight 0.4s ease-out forwards 2.7s; }
+
+.section-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.icon-identity { background: linear-gradient(135deg, #1a2e1a, #00aa44); }
+.icon-projects { background: linear-gradient(135deg, #1a1a3e, #0066cc); }
+.icon-rules { background: linear-gradient(135deg, #3e1a1a, #cc4444); }
+.icon-git { background: linear-gradient(135deg, #2e1a3e, #aa44ff); }
+.icon-clis { background: linear-gradient(135deg, #3e2e1a, #D4A574); }
+.icon-conventions { background: linear-gradient(135deg, #1a3e3e, #00aaaa); }
+
+.section-text { font-size: 14px; font-weight: 700; color: #ccddee; }
+.section-sub { font-size: 12px; color: #556677; margin-top: 2px; }
+
+.file-viewer {
+  width: 940px; background: #0d0d14; border-radius: 16px;
+  border: 1px solid #1a1a2e; overflow: hidden;
+  opacity: 0; animation: scaleIn 0.8s ease-out forwards 0.8s;
+}
+
+.viewer-bar {
+  height: 40px; background: #111120; display: flex;
+  align-items: center; padding: 0 16px; gap: 8px;
+  border-bottom: 1px solid #1a1a2e;
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-r { background: #ff5f57; }
+.dot-y { background: #febc2e; }
+.dot-g { background: #28c840; }
+.viewer-title {
+  font-size: 13px; color: #D4A574; margin-left: 12px;
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-weight: 700;
+}
+.viewer-badge {
+  margin-left: auto; padding: 4px 12px; border-radius: 6px;
+  background: rgba(0,255,136,0.1); color: #00ff88;
+  font-size: 11px; font-weight: 900;
+}
+
+.viewer-body {
+  padding: 20px 24px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 12.5px; line-height: 1.7; height: 880px; overflow: hidden;
+}
+
+.ln { color: #333; display: inline-block; width: 32px; text-align: right; margin-right: 16px; user-select: none; }
+.h1 { color: #D4A574; font-weight: 900; font-size: 15px; }
+.h2 { color: #00ddff; font-weight: 700; font-size: 14px; }
+.h3 { color: #aa88ff; font-weight: 600; }
+.comment { color: #6a9955; }
+.key { color: #9cdcfe; }
+.value { color: #ce9178; }
+.important { color: #ff4455; font-weight: 700; }
+.highlight-line {
+  background: rgba(212,165,116,0.08); margin: 0 -24px; padding: 0 24px;
+  border-left: 3px solid #D4A574;
+}
+.highlight-green {
+  background: rgba(0,255,136,0.05); margin: 0 -24px; padding: 0 24px;
+  border-left: 3px solid #00ff88;
+}
+.highlight-red {
+  background: rgba(255,68,85,0.05); margin: 0 -24px; padding: 0 24px;
+  border-left: 3px solid #ff4455;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+</head>
+<body>
+  <div class="left-panel">
+    <div class="brain-badge">
+      <div class="brain-badge-dot"></div>
+      <div class="brain-badge-text">O Cerebro do Agente</div>
+    </div>
+
+    <div class="main-title">
+      <span class="file">CLAUDE.md</span>
+      <span class="desc">Um arquivo. Todo o contexto.<br>O agente sabe TUDO.</span>
+    </div>
+
+    <div class="section-list">
+      <div class="section-item">
+        <div class="section-icon icon-identity">&#9733;</div>
+        <div>
+          <div class="section-text">Identidade</div>
+          <div class="section-sub">Quem e, como age, prioridades</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-icon icon-projects">&#128193;</div>
+        <div>
+          <div class="section-text">11 Projetos Ativos</div>
+          <div class="section-sub">Path, stack, branch, descricao</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-icon icon-rules">&#9888;</div>
+        <div>
+          <div class="section-text">Regra de Ouro</div>
+          <div class="section-sub">Analise de impacto obrigatoria</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-icon icon-git">&#9736;</div>
+        <div>
+          <div class="section-text">Git Workflow</div>
+          <div class="section-sub">Branches, commits, PRs</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-icon icon-clis">&#9881;</div>
+        <div>
+          <div class="section-text">CLIs Disponiveis</div>
+          <div class="section-sub">claude, gh, git, node, python</div>
+        </div>
+      </div>
+      <div class="section-item">
+        <div class="section-icon icon-conventions">&#128295;</div>
+        <div>
+          <div class="section-text">Convencoes</div>
+          <div class="section-sub">CommonJS, ESM, logs, error handling</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-viewer">
+    <div class="viewer-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="viewer-title">CLAUDE.md</div>
+      <div class="viewer-badge">ATIVO</div>
+    </div>
+    <div class="viewer-body">
+      <div class="highlight-line"><span class="ln">1</span><span class="h1"># Orquestrador Jarbas v2</span></div>
+      <div><span class="ln">2</span></div>
+      <div class="highlight-line"><span class="ln">3</span><span class="h2">## Identidade</span></div>
+      <div><span class="ln">4</span><span class="key">Voce e o Jarbas, CTO virtual do Diego.</span></div>
+      <div><span class="ln">5</span><span class="key">Administra TODOS os projetos. Toma decisoes tecnicas.</span></div>
+      <div><span class="ln">6</span><span class="key">Delega tarefas. Garante qualidade antes de merge.</span></div>
+      <div><span class="ln">7</span></div>
+      <div><span class="ln">8</span><span class="h2">## Dono</span></div>
+      <div><span class="ln">9</span><span class="key">Diego</span> - <span class="value">Automacao B2B (R$4-15k + recorrencia)</span></div>
+      <div><span class="ln">10</span><span class="key">Meta:</span> <span class="important">Motor 100K (R$100k/mes)</span></div>
+      <div><span class="ln">11</span></div>
+      <div class="highlight-line"><span class="ln">12</span><span class="h2">## Projetos Ativos</span></div>
+      <div><span class="ln">13</span></div>
+      <div><span class="ln">14</span><span class="h3">### D:\jarbas_vida\ (Core)</span></div>
+      <div><span class="ln">15</span><span class="comment">| Projeto | Path | Stack | Branch |</span></div>
+      <div><span class="ln">16</span><span class="comment">|---------|------|-------|--------|</span></div>
+      <div><span class="ln">17</span><span class="key">| Jarbas Memory Core</span> | <span class="value">Node Express JSON</span> | master |</div>
+      <div><span class="ln">18</span><span class="key">| Remote Executor</span> | <span class="value">Node Puppeteer</span> | master |</div>
+      <div><span class="ln">19</span><span class="key">| Motor 100k</span> | <span class="value">Dados/Insights</span> | - |</div>
+      <div><span class="ln">20</span></div>
+      <div><span class="ln">21</span><span class="h3">### D:\projetos\ (Todos)</span></div>
+      <div><span class="ln">22</span><span class="key">| LicitaAI</span> | <span class="value">Next.js 16 React TS PostgreSQL</span></div>
+      <div><span class="ln">23</span><span class="key">| CRM Juridico</span> | <span class="value">React TS Express PostgreSQL Stripe</span></div>
+      <div><span class="ln">24</span><span class="key">| Fiel IA</span> | <span class="value">Next.js 16 Prisma PostgreSQL</span></div>
+      <div><span class="ln">25</span><span class="key">| Superbot</span> | <span class="value">Node Express Next.js</span></div>
+      <div><span class="ln">26</span><span class="key">| IssueMapper</span> | <span class="value">N8N PostgreSQL Python</span></div>
+      <div><span class="ln">27</span></div>
+      <div class="highlight-red"><span class="ln">28</span><span class="h2">## REGRA DE OURO: ANALISE DE IMPACTO</span></div>
+      <div class="highlight-red"><span class="ln">29</span><span class="important">ANTES de qualquer mudanca, SEMPRE executar:</span></div>
+      <div><span class="ln">30</span><span class="key">1.</span> Quais arquivos serao modificados?</div>
+      <div><span class="ln">31</span><span class="key">2.</span> Quais dependem desses arquivos?</div>
+      <div><span class="ln">32</span><span class="key">3.</span> Impacto por area: BACKEND, FRONTEND, BANCO</div>
+      <div><span class="ln">33</span><span class="key">4.</span> Classificacao: <span class="comment">BAIXO</span> | <span class="value">MEDIO</span> | <span class="important">ALTO</span></div>
+      <div><span class="ln">34</span></div>
+      <div class="highlight-green"><span class="ln">35</span><span class="h2">## CLIs Disponiveis</span></div>
+      <div><span class="ln">36</span><span class="key">- claude</span> (2.1.63) -> <span class="value">PADRAO. Tudo.</span></div>
+      <div><span class="ln">37</span><span class="key">- gh</span> (2.87.3) -> <span class="value">PRs, issues, releases</span></div>
+      <div><span class="ln">38</span><span class="key">- git</span> (2.48.1) -> <span class="value">Versionamento</span></div>
+      <div><span class="ln">39</span><span class="key">- node</span> (22.14.0) -> <span class="value">Runtime</span></div>
+      <div><span class="ln">40</span><span class="key">- python</span> (3.10.10) -> <span class="value">Scripts auxiliares</span></div>
+      <div><span class="ln">41</span></div>
+      <div><span class="ln">42</span><span class="h2">## Git</span></div>
+      <div><span class="ln">43</span><span class="key">- Branch:</span> <span class="value">agent/nome-tarefa</span></div>
+      <div><span class="ln">44</span><span class="key">- Commits:</span> <span class="value">feat:|fix:|chore:|docs:|refactor:</span></div>
+      <div><span class="ln">45</span><span class="important">- NUNCA commitar .env, tokens, secrets</span></div>
+      <div><span class="ln">46</span></div>
+      <div><span class="ln">47</span><span class="h2">## Convencoes</span></div>
+      <div><span class="ln">48</span><span class="key">- CommonJS</span> para projetos Node existentes</div>
+      <div><span class="ln">49</span><span class="key">- ESM</span> para Next.js/React</div>
+      <div><span class="ln">50</span><span class="comment">- Sem over-engineering: minimo que funciona</span></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex;
+  justify-content: center; align-items: center;
+  gap: 80px;
+  position: relative;
+}
+
+/* Background grid */
+body::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.5;
+}
+
+/* Left: Checklist */
+.checklist-panel {
+  width: 600px; z-index: 1;
+}
+
+.section-title {
+  font-size: 32px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 4px;
+  margin-bottom: 40px;
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: fadeIn 0.6s ease-out both;
+}
+
+.checklist {
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.check-item {
+  display: flex; align-items: center; gap: 20px;
+  font-size: 28px; font-weight: 700;
+  padding: 18px 24px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  border-left: 4px solid transparent;
+  opacity: 0;
+  animation: checkSlide 0.5s ease-out both;
+}
+.check-item:nth-child(1) { animation-delay: 0.3s; border-left-color: #00ff88; }
+.check-item:nth-child(2) { animation-delay: 0.8s; border-left-color: #00ddff; }
+.check-item:nth-child(3) { animation-delay: 1.3s; border-left-color: #ffaa00; }
+.check-item:nth-child(4) { animation-delay: 1.8s; border-left-color: #ff4488; }
+
+.check-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #00ff8822;
+  border: 2px solid #00ff88;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #00ff88;
+  flex-shrink: 0;
+}
+
+.check-label { color: #dde; }
+.check-tech {
+  margin-left: auto;
+  font-size: 14px; color: #556;
+  font-weight: 500;
+}
+
+@keyframes checkSlide {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Right: Scoreboard */
+.scoreboard-panel {
+  width: 800px; z-index: 1;
+  animation: fadeIn 0.8s ease-out 2.2s both;
+}
+
+.board-title {
+  font-size: 24px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 3px;
+  color: #556;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.scoreboard {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+
+.scoreboard th {
+  padding: 14px 20px;
+  font-size: 16px; font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.scoreboard th:first-child { text-align: left; color: #556; }
+.scoreboard th.copilot-col { color: #007acc; }
+.scoreboard th.cursor-col { color: #aa44ff; }
+.scoreboard th.claude-col { color: #D4A574; }
+
+.scoreboard td {
+  padding: 14px 20px;
+  font-size: 18px; font-weight: 600;
+  text-align: center;
+  background: rgba(255,255,255,0.02);
+}
+.scoreboard td:first-child {
+  text-align: left;
+  color: #8899aa;
+  font-weight: 700;
+  border-radius: 8px 0 0 8px;
+}
+.scoreboard td:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.mystery {
+  font-size: 28px; font-weight: 900;
+  color: #334;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+
+.scoreboard tbody tr {
+  animation: rowFade 0.4s ease-out both;
+}
+.scoreboard tbody tr:nth-child(1) { animation-delay: 2.4s; }
+.scoreboard tbody tr:nth-child(2) { animation-delay: 2.6s; }
+.scoreboard tbody tr:nth-child(3) { animation-delay: 2.8s; }
+.scoreboard tbody tr:nth-child(4) { animation-delay: 3.0s; }
+.scoreboard tbody tr:nth-child(5) { animation-delay: 3.2s; }
+.scoreboard tbody tr:nth-child(6) { animation-delay: 3.4s; }
+
+@keyframes rowFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.footer {
+  position: absolute; bottom: 40px;
+  font-size: 16px; color: #334;
+  letter-spacing: 3px; font-weight: 600;
+}
+</style>
+</head>
+<body>
+  <div class="checklist-panel">
+    <div class="section-title">O Desafio</div>
+    <div class="checklist">
+      <div class="check-item">
+        <div class="check-icon">&#10003;</div>
+        <div class="check-label">CRUD Completo</div>
+        <div class="check-tech">API + Frontend</div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">&#10003;</div>
+        <div class="check-label">Autenticacao</div>
+        <div class="check-tech">JWT + Sessoes</div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">&#10003;</div>
+        <div class="check-label">PostgreSQL</div>
+        <div class="check-tech">Schema + Migrations</div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon">&#10003;</div>
+        <div class="check-label">Deploy Producao</div>
+        <div class="check-tech">URL Publica</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scoreboard-panel">
+    <div class="board-title">Scoreboard</div>
+    <table class="scoreboard">
+      <thead>
+        <tr>
+          <th>Metrica</th>
+          <th class="copilot-col">Copilot</th>
+          <th class="cursor-col">Cursor</th>
+          <th class="claude-col">Claude Code</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tempo</td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+        </tr>
+        <tr>
+          <td>Erros</td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+        </tr>
+        <tr>
+          <td>LOC</td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+        </tr>
+        <tr>
+          <td>Qualidade</td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+        </tr>
+        <tr>
+          <td>Deploy</td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+        </tr>
+        <tr>
+          <td>Autonomia</td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+          <td><span class="mystery">?</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">MESMO PROJETO &bull; MESMA MAQUINA &bull; MESMO DEV</div>
+</body>
+</html>

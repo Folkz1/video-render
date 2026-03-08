@@ -145,10 +145,34 @@ const VIDEO3 = [
   }
 ];
 
+const VIDEO11 = [
+  {
+    id: '01-hook',
+    text: `Três semanas. Foi exatamente esse o tempo que levou para mudar absolutamente tudo na minha operação. Eu deixei de ser um desenvolvedor que fazia tudo manualmente para me tornar um operador de sistemas com inteligência artificial.`
+  },
+  {
+    id: '02-problema',
+    text: `Antes eu trabalhava quatorze horas por dia e mal conseguia manter dois projetos de pé. A conta não fechava. Se eu vendia mais, eu não conseguia entregar. Se eu focava na entrega, eu parava de vender. O gargalo da empresa era a minha própria energia.`
+  },
+  {
+    id: '03-solucao',
+    text: `A solução foi tirar a mão da massa e colocar a cabeça para orquestrar. Hoje, quem escreve código, revisa deploy e monitora servidores é o Claude Code. Ele atua como meu CTO virtual. Eu só direciono, aprovo e acompanho as métricas.`
+  },
+  {
+    id: '04-prova',
+    text: `Olha a diferença na prática. Hoje eu gerencio sete projetos simultâneos. Projetos reais como LicitaAí, Superbot e Orquestra. Meu custo com o Claude? Cento e dez reais por mês. A receita que esses projetos geram? Mais de dezoito mil mensais.`
+  },
+  {
+    id: '05-cta',
+    text: `Se você quer abandonar o trabalho braçal e aprender a operar o seu negócio com IA, eu te ensino como. Abri horários na minha consultoria de diagnóstico por quinhentos reais. O link está na descrição. Mas seja rápido, porque o mercado não espera.`
+  }
+];
+
 const ALL_VIDEOS = [
   { name: 'video1', dir: 'audio-v2', segments: VIDEO1 },
   { name: 'video2', dir: 'audio-v2-projetos', segments: VIDEO2 },
   { name: 'video3', dir: 'audio-v2-meta', segments: VIDEO3 },
+  { name: 'video11', dir: 'audio-v11-virada', segments: VIDEO11 },
 ];
 
 async function generateTTS(segment, audioDir) {

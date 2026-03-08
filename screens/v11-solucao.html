@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1920px; height: 1080px;
+    background: #0a0a0f; color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 200px 1fr;
+    grid-template-rows: repeat(3, 1fr);
+    width: 1400px; height: 800px;
+    gap: 40px;
+    align-items: center; justify-items: center;
+  }
+  .node {
+    width: 380px; height: 160px;
+    background: #111; border: 2px solid #333; border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; z-index: 10;
+    transition: all 0.3s;
+  }
+  .node-title { font-size: 28px; font-weight: 800; color: #fff; }
+  .node-sub { font-size: 18px; color: #8899aa; margin-top: 8px; text-transform: uppercase; letter-spacing: 2px; }
+  
+  .center-node {
+    grid-column: 2; grid-row: 2;
+    width: 280px; height: 280px; border-radius: 50%;
+    background: #00ff88; border: none;
+    box-shadow: 0 0 60px rgba(0, 255, 136, 0.4);
+    animation: pulse 2s infinite alternate;
+  }
+  .center-title { font-size: 36px; font-weight: 900; color: #000; text-align: center; line-height: 1.2; }
+  
+  .n1 { grid-column: 1; grid-row: 1; border-color: #0088ff; animation: slideInLeft 1s ease forwards; }
+  .n2 { grid-column: 1; grid-row: 3; border-color: #aa44ff; animation: slideInLeft 1s 0.2s ease forwards; }
+  .n3 { grid-column: 3; grid-row: 1; border-color: #ffaa00; animation: slideInRight 1s 0.4s ease forwards; }
+  .n4 { grid-column: 3; grid-row: 3; border-color: #00ddff; animation: slideInRight 1s 0.6s ease forwards; }
+
+  @keyframes slideInLeft { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes slideInRight { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes pulse { to { box-shadow: 0 0 100px rgba(0, 255, 136, 0.8), inset 0 0 20px #fff; } }
+
+  .connector { position: absolute; background: rgba(255,255,255,0.1); z-index: 1; }
+  .c1 { top: 250px; left: 450px; width: 330px; height: 4px; transform: rotate(35deg); }
+  .c2 { bottom: 250px; left: 450px; width: 330px; height: 4px; transform: rotate(-35deg); }
+  .c3 { top: 250px; right: 450px; width: 330px; height: 4px; transform: rotate(-35deg); }
+  .c4 { bottom: 250px; right: 450px; width: 330px; height: 4px; transform: rotate(35deg); }
+  
+  .pulse-dot { position: absolute; width: 12px; height: 12px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 10px #00ff88; top: -4px; animation: moveLine 2s linear infinite; }
+  
+  @keyframes moveLine { from { left: 0; } to { left: 100%; } }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="connector c1"><div class="pulse-dot"></div></div>
+  <div class="connector c2"><div class="pulse-dot" style="animation-direction: reverse;"></div></div>
+  <div class="connector c3"><div class="pulse-dot" style="animation-direction: reverse;"></div></div>
+  <div class="connector c4"><div class="pulse-dot"></div></div>
+
+  <div class="grid">
+    <div class="node n1">
+      <div class="node-title">CÓDIGO</div>
+      <div class="node-sub">IMPLEMENTAÇÃO</div>
+    </div>
+    <div class="node n2">
+      <div class="node-title">DEPLOY</div>
+      <div class="node-sub">INFRAESTRUTURA</div>
+    </div>
+    
+    <div class="node center-node">
+      <div class="center-title">CLAUDE<br>CODE<br><span style="font-size:20px;color:#333;margin-top:10px;display:block;">CTO VIRTUAL</span></div>
+    </div>
+    
+    <div class="node n3">
+      <div class="node-title">REVIEW</div>
+      <div class="node-sub">PULL REQUESTS</div>
+    </div>
+    <div class="node n4">
+      <div class="node-title">MONITORAMENTO</div>
+      <div class="node-sub">LOGS & ERROS</div>
+    </div>
+  </div>
+</body>
+</html>

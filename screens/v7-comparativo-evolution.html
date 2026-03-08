@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.title {
+  font-size: 42px; font-weight: 900; text-align: center;
+  margin-bottom: 50px;
+  opacity: 0; animation: slideDown 0.8s ease-out forwards 0.3s;
+}
+.title .green { color: #00ff88; }
+.title .dim { color: #667788; }
+
+.table-container {
+  width: 1200px; border-radius: 16px; overflow: hidden;
+  border: 1px solid #1a2233;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 0.6s;
+}
+
+.table-header {
+  display: grid; grid-template-columns: 280px 1fr 1fr;
+  background: #0d1117;
+}
+.th {
+  padding: 24px 30px; font-size: 18px; font-weight: 900;
+  text-align: center; border-bottom: 2px solid #1a2233;
+}
+.th-feature { text-align: left; color: #667788; }
+.th-evolution {
+  color: #00ff88; border-bottom-color: #00ff88;
+  background: rgba(0,255,136,0.05);
+}
+.th-meta {
+  color: #667788; border-bottom-color: #334455;
+}
+
+.table-row {
+  display: grid; grid-template-columns: 280px 1fr 1fr;
+  border-bottom: 1px solid #0d1117;
+  opacity: 0; animation: slideRight 0.5s ease-out forwards;
+}
+.table-row:nth-child(2) { animation-delay: 0.9s; }
+.table-row:nth-child(3) { animation-delay: 1.1s; }
+.table-row:nth-child(4) { animation-delay: 1.3s; }
+.table-row:nth-child(5) { animation-delay: 1.5s; }
+.table-row:nth-child(6) { animation-delay: 1.7s; }
+.table-row:nth-child(7) { animation-delay: 1.9s; }
+.table-row:nth-child(8) { animation-delay: 2.1s; }
+.table-row:nth-child(9) { animation-delay: 2.3s; }
+
+.table-row:nth-child(even) { background: rgba(255,255,255,0.015); }
+.table-row:nth-child(odd) { background: #0a0a12; }
+
+.td {
+  padding: 18px 30px; font-size: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.td-feature {
+  font-weight: 700; color: #aabbcc;
+}
+.td-evolution {
+  justify-content: center; background: rgba(0,255,136,0.02);
+}
+.td-meta {
+  justify-content: center;
+}
+
+.check {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900;
+}
+.check-yes {
+  background: rgba(0,255,136,0.15); color: #00ff88;
+}
+.check-no {
+  background: rgba(255,68,85,0.15); color: #ff4455;
+}
+.check-warn {
+  background: rgba(255,170,0,0.15); color: #ffaa00;
+}
+
+.cell-text { font-size: 15px; }
+.cell-text.green { color: #00ff88; font-weight: 700; }
+.cell-text.red { color: #ff4455; }
+.cell-text.yellow { color: #ffaa00; }
+.cell-text.dim { color: #667788; }
+
+.verdict {
+  margin-top: 40px; display: flex; align-items: center; gap: 20px;
+  padding: 20px 40px; border-radius: 14px;
+  background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 3s;
+}
+.verdict-icon {
+  font-size: 36px; font-weight: 900; color: #00ff88;
+}
+.verdict-text {
+  font-size: 20px; font-weight: 700; color: #ccddee;
+}
+.verdict-text .green { color: #00ff88; }
+
+.footer {
+  position: absolute; bottom: 30px;
+  font-size: 14px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.5); }
+  60% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+  <div class="title">
+    <span class="green">Evolution API</span> <span class="dim">vs</span> API Oficial Meta
+  </div>
+
+  <div class="table-container">
+    <div class="table-header">
+      <div class="th th-feature">RECURSO</div>
+      <div class="th th-evolution">EVOLUTION API</div>
+      <div class="th th-meta">API OFICIAL META</div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Custo</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Gratis / Open Source</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-no">&#x2717;</div>
+        <span class="cell-text red">US$0.05-0.08/msg</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Multi-numero</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Ilimitado</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-warn">!</div>
+        <span class="cell-text yellow">1 por WABA</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Webhooks</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Tempo real, customizavel</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text dim">Webhook padrao</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Setup</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Docker + QR Code (5min)</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-no">&#x2717;</div>
+        <span class="cell-text red">Business Verification (dias)</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Templates obrigatorios</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Nao precisa</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-no">&#x2717;</div>
+        <span class="cell-text red">Aprovacao Meta (24-72h)</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Janela 24h</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Sem restricao</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-no">&#x2717;</div>
+        <span class="cell-text red">Bloqueado apos 24h</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Midia (audio, video, docs)</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Completo</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text dim">Completo</span>
+      </div>
+    </div>
+
+    <div class="table-row">
+      <div class="td td-feature">Self-hosted</div>
+      <div class="td td-evolution">
+        <div class="check check-yes">&#x2713;</div>
+        <span class="cell-text green">Seus dados, seu servidor</span>
+      </div>
+      <div class="td td-meta">
+        <div class="check check-no">&#x2717;</div>
+        <span class="cell-text red">Servidores Meta</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <div class="verdict-icon">>>></div>
+    <div class="verdict-text">
+      Escolha obvia: <span class="green">Evolution API</span> -- gratis, sem limites, sem burocracia
+    </div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+</body>
+</html>

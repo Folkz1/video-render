@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.title {
+  font-size: 38px; font-weight: 900; text-align: center;
+  margin-bottom: 50px;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 0.2s;
+}
+.title .gold { color: #FFD700; }
+.title .dim { color: #556677; font-size: 20px; display: block; margin-top: 6px; }
+
+.org-chart {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; margin-bottom: 50px;
+}
+
+/* Leader Node */
+.leader {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; opacity: 0; animation: scaleIn 0.6s ease-out forwards 0.5s;
+}
+
+.leader-card {
+  padding: 24px 48px; border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
+  border: 2px solid rgba(255,215,0,0.4);
+  text-align: center; position: relative;
+  box-shadow: 0 0 40px rgba(255,215,0,0.15);
+}
+.leader-crown {
+  position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+  font-size: 30px;
+}
+.leader-icon {
+  font-size: 42px; margin-bottom: 8px;
+}
+.leader-name {
+  font-size: 24px; font-weight: 900; color: #FFD700;
+}
+.leader-role {
+  font-size: 13px; color: #aa8833; margin-top: 4px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.leader-model {
+  font-size: 12px; color: #556677; margin-top: 6px;
+}
+
+/* Connection Lines */
+.connections {
+  display: flex; align-items: flex-start; justify-content: center;
+  width: 800px; height: 60px; position: relative;
+  opacity: 0; animation: fadeIn 0.5s ease-out forwards 1s;
+}
+.conn-vertical {
+  position: absolute; left: 50%; top: 0; width: 2px; height: 30px;
+  background: #FFD700;
+}
+.conn-horizontal {
+  position: absolute; top: 30px; left: 100px; right: 100px; height: 2px;
+  background: linear-gradient(90deg, #4488ff, #FFD700, #4488ff);
+}
+.conn-down-1 {
+  position: absolute; top: 30px; left: 100px; width: 2px; height: 30px;
+  background: #4488ff;
+}
+.conn-down-2 {
+  position: absolute; top: 30px; left: 50%; width: 2px; height: 30px;
+  background: #4488ff; transform: translateX(-50%);
+}
+.conn-down-3 {
+  position: absolute; top: 30px; right: 100px; width: 2px; height: 30px;
+  background: #4488ff;
+}
+
+/* Worker Nodes */
+.workers {
+  display: flex; gap: 40px; justify-content: center;
+}
+
+.worker {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; opacity: 0; width: 220px;
+}
+.worker:nth-child(1) { animation: slideUp 0.6s ease-out forwards 1.3s; }
+.worker:nth-child(2) { animation: slideUp 0.6s ease-out forwards 1.6s; }
+.worker:nth-child(3) { animation: slideUp 0.6s ease-out forwards 1.9s; }
+
+.worker-card {
+  padding: 20px 24px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(68,136,255,0.12), rgba(68,136,255,0.04));
+  border: 1px solid rgba(68,136,255,0.3);
+  text-align: center; width: 100%;
+}
+.worker-icon { font-size: 32px; margin-bottom: 6px; }
+.worker-name { font-size: 18px; font-weight: 800; color: #4488ff; }
+.worker-role { font-size: 12px; color: #556677; margin-top: 4px; }
+
+.worker-task {
+  padding: 10px 18px; border-radius: 10px;
+  background: rgba(255,255,255,0.03); border: 1px solid #ffffff08;
+  font-size: 12px; color: #8899aa; text-align: center;
+  width: 100%;
+}
+.worker-task span { color: #00ff88; font-weight: 700; }
+
+/* Pipeline */
+.pipeline-title {
+  font-size: 16px; font-weight: 800; color: #556677;
+  margin-top: 50px; margin-bottom: 16px; letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 2.3s;
+}
+
+.pipeline {
+  display: flex; align-items: center; gap: 0;
+}
+
+.gate {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  opacity: 0;
+}
+.gate:nth-child(1) { animation: fadeIn 0.4s ease-out forwards 2.5s; }
+.gate:nth-child(3) { animation: fadeIn 0.4s ease-out forwards 2.8s; }
+.gate:nth-child(5) { animation: fadeIn 0.4s ease-out forwards 3.1s; }
+.gate:nth-child(7) { animation: fadeIn 0.4s ease-out forwards 3.4s; }
+
+.gate-box {
+  padding: 14px 28px; border-radius: 12px;
+  font-size: 13px; font-weight: 800; text-align: center;
+}
+.gate-seed {
+  background: linear-gradient(135deg, rgba(170,119,255,0.15), rgba(170,119,255,0.05));
+  border: 1px solid rgba(170,119,255,0.3); color: #aa77ff;
+}
+.gate-implement {
+  background: linear-gradient(135deg, rgba(212,165,116,0.15), rgba(212,165,116,0.05));
+  border: 1px solid rgba(212,165,116,0.3); color: #D4A574;
+}
+.gate-review {
+  background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,255,136,0.04));
+  border: 1px solid rgba(0,255,136,0.3); color: #00ff88;
+}
+.gate-final {
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
+  border: 2px solid rgba(255,215,0,0.4); color: #FFD700;
+  box-shadow: 0 0 20px rgba(255,215,0,0.1);
+}
+
+.gate-sub {
+  font-size: 11px; color: #445566; font-weight: 600;
+}
+
+.pipe-arrow {
+  font-size: 24px; color: #333; margin: 0 12px;
+  opacity: 0;
+}
+.pipe-arrow:nth-child(2) { animation: fadeIn 0.3s ease-out forwards 2.65s; }
+.pipe-arrow:nth-child(4) { animation: fadeIn 0.3s ease-out forwards 2.95s; }
+.pipe-arrow:nth-child(6) { animation: fadeIn 0.3s ease-out forwards 3.25s; }
+
+.data-flow {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  background: #FFD700; opacity: 0.8;
+  animation: flowDot 3s linear infinite;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes flowDot {
+  0% { transform: translateX(-100px); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(100px); opacity: 0; }
+}
+</style>
+</head>
+<body>
+  <div class="title">
+    <span class="gold">Agent Team</span> - Hierarquia Autonoma
+    <span class="dim">Opus lidera. Sonnet executa. Ninguem espera.</span>
+  </div>
+
+  <div class="org-chart">
+    <div class="leader">
+      <div class="leader-card">
+        <div class="leader-crown">&#128081;</div>
+        <div class="leader-icon">&#9733;</div>
+        <div class="leader-name">Opus</div>
+        <div class="leader-role">Leader / CTO</div>
+        <div class="leader-model">claude-opus-4 | Arquitetura, decisoes, review final</div>
+      </div>
+    </div>
+
+    <div class="connections">
+      <div class="conn-vertical"></div>
+      <div class="conn-horizontal"></div>
+      <div class="conn-down-1"></div>
+      <div class="conn-down-2"></div>
+      <div class="conn-down-3"></div>
+    </div>
+
+    <div class="workers">
+      <div class="worker">
+        <div class="worker-card">
+          <div class="worker-icon">&#9881;</div>
+          <div class="worker-name">Sonnet #1</div>
+          <div class="worker-role">Worker - Backend</div>
+        </div>
+        <div class="worker-task">
+          <span>API routes</span> + migrations<br>PostgreSQL + auth
+        </div>
+      </div>
+
+      <div class="worker">
+        <div class="worker-card">
+          <div class="worker-icon">&#9998;</div>
+          <div class="worker-name">Sonnet #2</div>
+          <div class="worker-role">Worker - Frontend</div>
+        </div>
+        <div class="worker-task">
+          <span>React components</span><br>Tailwind + estado + UX
+        </div>
+      </div>
+
+      <div class="worker">
+        <div class="worker-card">
+          <div class="worker-icon">&#128269;</div>
+          <div class="worker-name">Sonnet #3</div>
+          <div class="worker-role">Worker - Infra/Review</div>
+        </div>
+        <div class="worker-task">
+          <span>Docker + deploy</span><br>Testes + code review
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pipeline-title">Pipeline de Qualidade</div>
+  <div class="pipeline">
+    <div class="gate">
+      <div class="gate-box gate-seed">Seed Gate</div>
+      <div class="gate-sub">Haiku valida prompt</div>
+    </div>
+    <div class="pipe-arrow">&#10141;</div>
+    <div class="gate">
+      <div class="gate-box gate-implement">Implement</div>
+      <div class="gate-sub">Sonnet executa</div>
+    </div>
+    <div class="pipe-arrow">&#10141;</div>
+    <div class="gate">
+      <div class="gate-box gate-review">Gate 1</div>
+      <div class="gate-sub">Scoped review</div>
+    </div>
+    <div class="pipe-arrow">&#10141;</div>
+    <div class="gate">
+      <div class="gate-box gate-final">Gate 2</div>
+      <div class="gate-sub">Opus review final</div>
+    </div>
+  </div>
+</body>
+</html>

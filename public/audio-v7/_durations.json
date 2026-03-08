@@ -1,0 +1,182 @@
+[
+  {
+    "id": "01-hook",
+    "dur": 30.61825,
+    "chapter": "Hook"
+  },
+  {
+    "id": "02-estatistica-choque",
+    "dur": 18.7325,
+    "chapter": "Hook"
+  },
+  {
+    "id": "03-dor-financeira",
+    "dur": 21.527625,
+    "chapter": "Hook"
+  },
+  {
+    "id": "04-virada",
+    "dur": 26.77825,
+    "chapter": "Hook"
+  },
+  {
+    "id": "05-credibilidade",
+    "dur": 18.6019375,
+    "chapter": "Hook"
+  },
+  {
+    "id": "06-arquitetura-intro",
+    "dur": 34.56275,
+    "chapter": "Arquitetura"
+  },
+  {
+    "id": "07-fluxo-completo",
+    "dur": 32.6558125,
+    "chapter": "Arquitetura"
+  },
+  {
+    "id": "08-por-que-evolution",
+    "dur": 26.726,
+    "chapter": "Arquitetura"
+  },
+  {
+    "id": "09-easypanel-intro",
+    "dur": 31.454125,
+    "chapter": "Instalacao"
+  },
+  {
+    "id": "10-evolution-install",
+    "dur": 24.2705,
+    "chapter": "Instalacao"
+  },
+  {
+    "id": "11-n8n-install",
+    "dur": 21.188,
+    "chapter": "Instalacao"
+  },
+  {
+    "id": "12-conectar-whatsapp",
+    "dur": 24.4010625,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "13-webhook-config",
+    "dur": 22.546375,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "14-n8n-workflow-inicio",
+    "dur": 21.1619375,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "15-n8n-filtro",
+    "dur": 23.748,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "16-n8n-contexto",
+    "dur": 22.859875,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "17-n8n-prompt",
+    "dur": 30.148,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "18-n8n-llm-call",
+    "dur": 24.087625,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "19-n8n-resposta",
+    "dur": 23.748,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "20-n8n-notifica-vendedor",
+    "dur": 23.748,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "21-n8n-salva-historico",
+    "dur": 22.3113125,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "22-workflow-completo",
+    "dur": 23.748,
+    "chapter": "Configuracao"
+  },
+  {
+    "id": "23-demo-intro",
+    "dur": 13.1161875,
+    "chapter": "Demo"
+  },
+  {
+    "id": "24-demo-mensagem",
+    "dur": 9.3023125,
+    "chapter": "Demo"
+  },
+  {
+    "id": "25-demo-processamento",
+    "dur": 9.4590625,
+    "chapter": "Demo"
+  },
+  {
+    "id": "26-demo-resposta",
+    "dur": 30.2525,
+    "chapter": "Demo"
+  },
+  {
+    "id": "27-demo-vendedor",
+    "dur": 19.6990625,
+    "chapter": "Demo"
+  },
+  {
+    "id": "28-demo-inteligencia",
+    "dur": 30.0696875,
+    "chapter": "Demo"
+  },
+  {
+    "id": "29-custos-detalhado",
+    "dur": 31.1929375,
+    "chapter": "Custos"
+  },
+  {
+    "id": "30-comparativo",
+    "dur": 25.106375,
+    "chapter": "Custos"
+  },
+  {
+    "id": "31-roi",
+    "dur": 23.748,
+    "chapter": "CTA"
+  },
+  {
+    "id": "32-objecao-medo",
+    "dur": 34.014125,
+    "chapter": "CTA"
+  },
+  {
+    "id": "33-urgencia",
+    "dur": 24.8190625,
+    "chapter": "CTA"
+  },
+  {
+    "id": "34-cta-consultoria",
+    "dur": 29.7300625,
+    "chapter": "CTA"
+  },
+  {
+    "id": "35-prova-social-final",
+    "dur": 28.3978125,
+    "chapter": "CTA"
+  },
+  {
+    "id": "36-encerramento",
+    "dur": 31.1406875,
+    "chapter": "CTA"
+  }
+]

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.title {
+  font-size: 38px; font-weight: 900; margin-bottom: 36px;
+  text-align: center;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 0.2s;
+}
+.title .green { color: #00ff88; }
+.title .dim { color: #667788; font-size: 22px; display: block; margin-top: 6px; }
+
+.terminal {
+  width: 1400px; background: #0d0d14; border-radius: 16px;
+  border: 1px solid #1a1a2e; overflow: hidden;
+  opacity: 0; animation: scaleIn 0.6s ease-out forwards 0.5s;
+}
+
+.terminal-bar {
+  height: 40px; background: #111120; display: flex;
+  align-items: center; padding: 0 16px; gap: 8px;
+  border-bottom: 1px solid #1a1a2e;
+}
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-r { background: #ff5f57; }
+.dot-y { background: #febc2e; }
+.dot-g { background: #28c840; }
+.terminal-title {
+  font-size: 13px; color: #556677; margin-left: 12px;
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+}
+
+.terminal-body {
+  padding: 20px 24px; font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 13px; line-height: 1.7; height: 560px;
+  overflow: hidden; position: relative;
+}
+
+.scroll-container {
+  animation: scrollUp 12s linear infinite 2s;
+}
+
+.commit-line {
+  display: flex; gap: 12px; white-space: nowrap;
+}
+.hash { color: #ffaa44; }
+.graph-line { color: #00ddff; }
+.graph-branch { color: #ff6688; }
+.graph-merge { color: #aa77ff; }
+.feat { color: #00ff88; font-weight: 700; }
+.fix { color: #ff6655; font-weight: 700; }
+.refactor { color: #44aaff; font-weight: 700; }
+.chore { color: #aabb44; font-weight: 700; }
+.docs { color: #cc88ff; font-weight: 700; }
+.msg { color: #ccddee; }
+.date { color: #445566; font-size: 12px; }
+.author { color: #8899aa; }
+.tag { color: #0a0a0f; background: #FFD700; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 900; }
+
+.cmd-line { color: #00ff88; margin-bottom: 12px; }
+.cmd-prompt { color: #D4A574; }
+
+.stats-row {
+  display: flex; gap: 40px; margin-top: 36px;
+}
+
+.stat {
+  text-align: center; padding: 20px 40px;
+  border-radius: 14px; background: rgba(255,255,255,0.03);
+  border: 1px solid #ffffff0a;
+  opacity: 0;
+}
+.stat:nth-child(1) { animation: slideUp 0.6s ease-out forwards 1.5s; }
+.stat:nth-child(2) { animation: slideUp 0.6s ease-out forwards 1.8s; }
+.stat:nth-child(3) { animation: slideUp 0.6s ease-out forwards 2.1s; }
+
+.stat-value { font-size: 48px; font-weight: 900; }
+.stat-value.green { color: #00ff88; }
+.stat-value.gold { color: #FFD700; }
+.stat-value.cyan { color: #00ddff; }
+
+.stat-label { font-size: 14px; color: #8899aa; margin-top: 6px; }
+
+.badge-14d {
+  margin-top: 28px; padding: 12px 36px; border-radius: 50px;
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  color: #0a0a0f; font-size: 20px; font-weight: 900;
+  letter-spacing: 2px;
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 2.6s;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes scrollUp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-1600px); }
+}
+</style>
+</head>
+<body>
+  <div class="title">
+    <span class="green">git log</span> --oneline --graph --all
+    <span class="dim">14 dias. Um desenvolvedor. Zero IDE.</span>
+  </div>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="terminal-title">~/projetos $ git log --oneline --graph --all</div>
+    </div>
+    <div class="terminal-body">
+      <div class="scroll-container">
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">e1ee003</span> <span class="feat">feat:</span> <span class="msg">skill /youtube-rag generico para Diego</span> <span class="date">(2h ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">4bc9014</span> <span class="feat">feat:</span> <span class="msg">skill /youtube-rag + Python tool transcrever videos</span> <span class="date">(5h ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">09548fa</span> <span class="feat">feat:</span> <span class="msg">Jarbas v3 Orchestrator - autonomous multi-agent</span> <span class="date">(8h ago)</span> <span class="tag">v3.0</span></div>
+        <div class="commit-line"><span class="graph-merge">|\</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">fe2b760</span> <span class="feat">feat:</span> <span class="msg">Orquestra auto-sync hooks + skill update</span> <span class="date">(1d ago)</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">634f6a4</span> <span class="feat">feat:</span> <span class="msg">Orquestra deploy completo + skills youtube/whatsapp</span> <span class="date">(1d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">a3f8812</span> <span class="refactor">refactor:</span> <span class="msg">asyncpg CAST migration - remove ::uuid casts</span> <span class="date">(2d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">b92c4e1</span> <span class="fix">fix:</span> <span class="msg">Evolution webhook multi-instance resolution</span> <span class="date">(2d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">c7d3f55</span> <span class="feat">feat:</span> <span class="msg">ElevenLabs TEXT agents - Pacific/Dentaly/Gianni</span> <span class="date">(2d ago)</span></div>
+        <div class="commit-line"><span class="graph-merge">|\</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">d44a91b</span> <span class="feat">feat:</span> <span class="msg">anti-robocall DTMF tool for Pacific Surf</span> <span class="date">(3d ago)</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">e5512c8</span> <span class="chore">chore:</span> <span class="msg">39 ElevenLabs tools + 15 agents config</span> <span class="date">(3d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">f661d0a</span> <span class="feat">feat:</span> <span class="msg">LicitaAI Motor de Vendas + lead capture</span> <span class="date">(3d ago)</span> <span class="tag">v2.1</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">a77b3c2</span> <span class="fix">fix:</span> <span class="msg">PostgreSQL pool exhaustion under load</span> <span class="date">(4d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">b88c4d3</span> <span class="refactor">refactor:</span> <span class="msg">Kanban datas relativas - "Criada 3d atras"</span> <span class="date">(4d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">c99d5e4</span> <span class="feat">feat:</span> <span class="msg">YouTubeKanban 10 secoes producao</span> <span class="date">(4d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">d00e6f5</span> <span class="feat">feat:</span> <span class="msg">BriefingVideo +6 campos contexto/referencias</span> <span class="date">(5d ago)</span></div>
+        <div class="commit-line"><span class="graph-merge">|\</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">e11f7a6</span> <span class="fix">fix:</span> <span class="msg">nixpacks ignora Dockerfile - add nixpacks.toml</span> <span class="date">(5d ago)</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">f22a8b7</span> <span class="docs">docs:</span> <span class="msg">superbot-n8n-map.md - 71 workflows documentados</span> <span class="date">(5d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">a33b9c8</span> <span class="feat">feat:</span> <span class="msg">Superbot FastAPI + N8N + ElevenLabs integration</span> <span class="date">(6d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">b44c0d9</span> <span class="feat">feat:</span> <span class="msg">Vive Pipa v2 Vercel AI SDK migration</span> <span class="date">(6d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">c55d1e0</span> <span class="refactor">refactor:</span> <span class="msg">CRM Juridico Stripe webhook handler</span> <span class="date">(7d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">d66e2f1</span> <span class="fix">fix:</span> <span class="msg">Fiel IA Prisma migrations + Asaas billing</span> <span class="date">(7d ago)</span></div>
+        <div class="commit-line"><span class="graph-merge">|\</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">e77f3a2</span> <span class="feat">feat:</span> <span class="msg">IssueMapper Apify screenshots v2</span> <span class="date">(8d ago)</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">f88a4b3</span> <span class="chore">chore:</span> <span class="msg">Docker websockets>=12.0 for Superbot</span> <span class="date">(8d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">a99b5c4</span> <span class="feat">feat:</span> <span class="msg">Orquestra pgvector memory embeddings</span> <span class="date">(9d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">b00c6d5</span> <span class="feat">feat:</span> <span class="msg">LicitaAI 2907 licitacoes + 2173 analises</span> <span class="date">(9d ago)</span> <span class="tag">v2.0</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">c11d7e6</span> <span class="fix">fix:</span> <span class="msg">N8N 100 workflows sync + error handling</span> <span class="date">(10d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">d22e8f7</span> <span class="refactor">refactor:</span> <span class="msg">EasyPanel multi-server deploy scripts</span> <span class="date">(10d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">e33f9a8</span> <span class="feat">feat:</span> <span class="msg">WhatsApp monitor + auto-respond pipeline</span> <span class="date">(11d ago)</span></div>
+        <div class="commit-line"><span class="graph-merge">|\</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">f44a0b9</span> <span class="feat">feat:</span> <span class="msg">OCR Supreme recursive document processor</span> <span class="date">(11d ago)</span></div>
+        <div class="commit-line"><span class="graph-branch">| *</span> <span class="hash">a55b1c0</span> <span class="fix">fix:</span> <span class="msg">Clear Licitacoes PNCP integration</span> <span class="date">(11d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">b66c2d1</span> <span class="feat">feat:</span> <span class="msg">Jarbas Memory Core API + bridge remoto</span> <span class="date">(12d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">c77d3e2</span> <span class="feat">feat:</span> <span class="msg">Remote Executor Puppeteer bridge HTTP</span> <span class="date">(12d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">d88e4f3</span> <span class="refactor">refactor:</span> <span class="msg">NutrIA microservicos dashboard + scraper</span> <span class="date">(13d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">e99f5a4</span> <span class="feat">feat:</span> <span class="msg">Scraper Selecty Docker + Puppeteer</span> <span class="date">(13d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">f00a6b5</span> <span class="feat">feat:</span> <span class="msg">Post Auto WordPress + N8N publish</span> <span class="date">(14d ago)</span></div>
+        <div class="commit-line"><span class="graph-line">*</span> <span class="hash">a11b7c6</span> <span class="chore">chore:</span> <span class="msg">initial project structure + CLAUDE.md</span> <span class="date">(14d ago)</span> <span class="tag">v1.0</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-value green">187</div>
+      <div class="stat-label">commits</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value gold">32</div>
+      <div class="stat-label">PRs merged</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value cyan">11</div>
+      <div class="stat-label">projetos</div>
+    </div>
+  </div>
+
+  <div class="badge-14d">14 DIAS. UM DEV. ZERO IDE.</div>
+</body>
+</html>

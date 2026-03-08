@@ -1,0 +1,252 @@
+[
+  {
+    "id": "01-abertura-impacto",
+    "dur": 30.30475,
+    "chapter": "ATO 1 - HOOK"
+  },
+  {
+    "id": "02-numeros-prova",
+    "dur": 35.32025,
+    "chapter": "ATO 1 - HOOK"
+  },
+  {
+    "id": "03-problema-equipe",
+    "dur": 34.327625,
+    "chapter": "ATO 1 - HOOK"
+  },
+  {
+    "id": "04-dia-mudanca",
+    "dur": 41.4068125,
+    "chapter": "ATO 1 - HOOK"
+  },
+  {
+    "id": "05-apresenta-jarbas",
+    "dur": 40.832125,
+    "chapter": "ATO 1 - HOOK"
+  },
+  {
+    "id": "06-primeiro-contato",
+    "dur": 38.6639375,
+    "chapter": "ATO 2 - CLAUDE.MD"
+  },
+  {
+    "id": "07-claudemd-contrato",
+    "dur": 35.398625,
+    "chapter": "ATO 2 - CLAUDE.MD"
+  },
+  {
+    "id": "08-projetos-reais",
+    "dur": 37.1749375,
+    "chapter": "ATO 2 - CLAUDE.MD"
+  },
+  {
+    "id": "09-regra-ouro",
+    "dur": 40.806,
+    "chapter": "ATO 2 - CLAUDE.MD"
+  },
+  {
+    "id": "10-convencoes",
+    "dur": 35.7905,
+    "chapter": "ATO 2 - CLAUDE.MD"
+  },
+  {
+    "id": "11-skills-intro",
+    "dur": 41.0671875,
+    "chapter": "ATO 2 - SKILLS"
+  },
+  {
+    "id": "12-skill-orquestrar",
+    "dur": 40.832125,
+    "chapter": "ATO 2 - SKILLS"
+  },
+  {
+    "id": "13-skill-daily",
+    "dur": 38.19375,
+    "chapter": "ATO 2 - SKILLS"
+  },
+  {
+    "id": "14-skill-impacto",
+    "dur": 35.9733125,
+    "chapter": "ATO 2 - SKILLS"
+  },
+  {
+    "id": "15-skill-video",
+    "dur": 39.9178125,
+    "chapter": "ATO 2 - SKILLS"
+  },
+  {
+    "id": "16-hooks-intro",
+    "dur": 31.976625,
+    "chapter": "ATO 2 - HOOKS"
+  },
+  {
+    "id": "17-hook-sync-orquestra",
+    "dur": 39.447625,
+    "chapter": "ATO 2 - HOOKS"
+  },
+  {
+    "id": "18-hook-credentials",
+    "dur": 34.7194375,
+    "chapter": "ATO 2 - HOOKS"
+  },
+  {
+    "id": "19-hook-decisions",
+    "dur": 40.884375,
+    "chapter": "ATO 2 - HOOKS"
+  },
+  {
+    "id": "20-agent-team-intro",
+    "dur": 33.8313125,
+    "chapter": "ATO 2 - AGENT TEAM"
+  },
+  {
+    "id": "21-orchestrator-mjs",
+    "dur": 37.958625,
+    "chapter": "ATO 2 - AGENT TEAM"
+  },
+  {
+    "id": "22-seed-gate",
+    "dur": 40.1790625,
+    "chapter": "ATO 2 - AGENT TEAM"
+  },
+  {
+    "id": "23-gate1",
+    "dur": 43.10475,
+    "chapter": "ATO 2 - AGENT TEAM"
+  },
+  {
+    "id": "24-gate2",
+    "dur": 41.2500625,
+    "chapter": "ATO 2 - AGENT TEAM"
+  },
+  {
+    "id": "25-retry-inteligente",
+    "dur": 37.4623125,
+    "chapter": "ATO 2 - AGENT TEAM"
+  },
+  {
+    "id": "26-demo-licitaai",
+    "dur": 42.8435625,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "27-demo-superbot",
+    "dur": 40.2835625,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "28-demo-orquestra",
+    "dur": 43.5749375,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "29-demo-crm-juridico",
+    "dur": 41.5896875,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "30-demo-fielia",
+    "dur": 37.5406875,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "31-demo-issuemapper",
+    "dur": 35.9733125,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "32-demo-videofactory",
+    "dur": 40.1529375,
+    "chapter": "ATO 2 - DEMOS"
+  },
+  {
+    "id": "33-dia-tipico",
+    "dur": 33.7790625,
+    "chapter": "ATO 2 - DIA TIPICO"
+  },
+  {
+    "id": "34-whatsapp-integrado",
+    "dur": 41.5896875,
+    "chapter": "ATO 2 - DIA TIPICO"
+  },
+  {
+    "id": "35-backlog-priorizado",
+    "dur": 40.1529375,
+    "chapter": "ATO 2 - DIA TIPICO"
+  },
+  {
+    "id": "36-resultados-paralelo",
+    "dur": 31.1406875,
+    "chapter": "ATO 2 - DIA TIPICO"
+  },
+  {
+    "id": "37-numeros-produtividade",
+    "dur": 42.3733125,
+    "chapter": "ATO 2 - RESULTADOS"
+  },
+  {
+    "id": "38-custo-equipe",
+    "dur": 38.6639375,
+    "chapter": "ATO 2 - RESULTADOS"
+  },
+  {
+    "id": "39-roi-brutal",
+    "dur": 38.7945625,
+    "chapter": "ATO 2 - RESULTADOS"
+  },
+  {
+    "id": "40-motor-100k",
+    "dur": 40.75375,
+    "chapter": "ATO 2 - RESULTADOS"
+  },
+  {
+    "id": "41-erros-cometi",
+    "dur": 41.72025,
+    "chapter": "ATO 2 - LICOES"
+  },
+  {
+    "id": "42-o-que-faria-diferente",
+    "dur": 42.8435625,
+    "chapter": "ATO 2 - LICOES"
+  },
+  {
+    "id": "43-nao-so-devs",
+    "dur": 38.5594375,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "44-novo-modelo-empresa",
+    "dur": 39.343125,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "45-recap-rapido",
+    "dur": 43.026375,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "46-consultoria-oferta",
+    "dur": 30.0174375,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "47-garantia",
+    "dur": 28.4500625,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "48-depoimento",
+    "dur": 36.3390625,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "49-cta-whatsapp",
+    "dur": 37.6713125,
+    "chapter": "ATO 3 - CTA"
+  },
+  {
+    "id": "50-fechamento",
+    "dur": 23.748,
+    "chapter": "ATO 3 - CTA"
+  }
+]

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+
+/* Header bar - Purple */
+.header {
+  height: 60px;
+  background: linear-gradient(90deg, #aa44ff, #7722cc);
+  display: flex; align-items: center;
+  padding: 0 30px; gap: 16px;
+  box-shadow: 0 2px 20px #aa44ff44;
+}
+.header-logo {
+  font-size: 24px; font-weight: 900; color: #fff;
+  display: flex; align-items: center; gap: 10px;
+}
+.header-logo span { font-size: 28px; }
+.header-tag {
+  margin-left: auto;
+  font-size: 13px; color: #ffffffaa;
+  letter-spacing: 2px; font-weight: 600;
+}
+
+.main {
+  flex: 1; display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: #0d0d14;
+  border-right: 1px solid #1a1a2e;
+  padding: 16px 12px;
+  animation: fadeIn 0.5s ease-out 0.3s both;
+}
+.sidebar-title {
+  font-size: 11px; color: #556;
+  text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 12px; font-weight: 700;
+}
+.file-item {
+  padding: 6px 10px; font-size: 13px; color: #8899aa;
+  display: flex; align-items: center; gap: 8px;
+  border-radius: 4px; margin-bottom: 2px;
+}
+.file-item.active { background: #aa44ff22; color: #fff; }
+.file-item.new {
+  color: #00ff88;
+  animation: fileCreate 0.5s ease-out both;
+}
+.file-item.new::after {
+  content: 'NEW';
+  margin-left: auto;
+  font-size: 9px; font-weight: 800;
+  color: #00ff88;
+  background: #00ff8822;
+  padding: 2px 6px; border-radius: 3px;
+}
+.file-item:nth-child(3).new { animation-delay: 1.0s; }
+.file-item:nth-child(4).new { animation-delay: 1.4s; }
+.file-item:nth-child(5).new { animation-delay: 1.8s; }
+.file-item:nth-child(6).new { animation-delay: 2.2s; }
+.file-item:nth-child(7).new { animation-delay: 2.6s; }
+.file-item:nth-child(8).new { animation-delay: 3.0s; }
+
+@keyframes fileCreate {
+  from { opacity: 0; transform: translateX(-20px); background: #00ff8811; }
+  to { opacity: 1; transform: translateX(0); background: transparent; }
+}
+
+.file-icon { font-size: 14px; }
+
+/* Editor */
+.editor {
+  flex: 1; display: flex; flex-direction: column;
+}
+.tab-bar {
+  height: 38px; background: #0d0d14;
+  display: flex; align-items: stretch;
+  border-bottom: 1px solid #1a1a2e;
+}
+.tab {
+  padding: 0 20px;
+  font-size: 13px; color: #667;
+  display: flex; align-items: center; gap: 6px;
+  border-right: 1px solid #1a1a2e;
+}
+.tab.active {
+  color: #fff; background: #13131e;
+  border-top: 2px solid #aa44ff;
+}
+
+.code-area {
+  flex: 1; background: #13131e;
+  padding: 20px 0;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 15px; line-height: 1.7;
+  overflow: hidden; position: relative;
+}
+
+.code-line {
+  display: flex; padding: 0 20px;
+  animation: lineAppear 0.3s ease-out both;
+}
+.code-line:nth-child(n) { animation-delay: calc(0.3s + var(--i, 0) * 0.15s); }
+
+.line-num {
+  width: 50px; color: #334; text-align: right;
+  padding-right: 16px; user-select: none;
+  flex-shrink: 0;
+}
+.line-code { flex: 1; }
+
+.kw { color: #c678dd; }
+.str { color: #98c379; }
+.fn { color: #61afef; }
+.cm { color: #5c6370; }
+.type { color: #e5c07b; }
+.op { color: #abb2bf; }
+
+/* Multi-line ghost suggestion */
+.ghost-block {
+  position: relative;
+  background: #aa44ff08;
+  border-left: 2px solid #aa44ff44;
+  margin: 4px 0 4px 66px;
+  padding: 8px 12px;
+  border-radius: 0 8px 8px 0;
+  animation: ghostExpand 0.8s ease-out 3.5s both;
+}
+.ghost-block .ghost-line {
+  color: #aa44ff44;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px; line-height: 1.6;
+}
+.ghost-label {
+  position: absolute; top: -20px; left: 0;
+  font-size: 10px; color: #aa44ff;
+  background: #aa44ff22;
+  padding: 2px 8px; border-radius: 3px;
+  font-family: 'Inter', sans-serif; font-weight: 700;
+  letter-spacing: 1px;
+}
+@keyframes ghostExpand {
+  from { opacity: 0; max-height: 0; padding: 0 12px; }
+  to { opacity: 1; max-height: 200px; padding: 8px 12px; }
+}
+
+/* Agent mode indicator */
+.agent-indicator {
+  position: absolute; top: 20px; right: 20px;
+  display: flex; align-items: center; gap: 10px;
+  background: #aa44ff22;
+  border: 1px solid #aa44ff44;
+  padding: 8px 16px; border-radius: 8px;
+  font-size: 13px; color: #aa44ff;
+  font-weight: 700;
+  animation: fadeIn 0.5s ease-out 0.5s both;
+}
+.agent-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #aa44ff;
+  animation: agentPulse 1s ease-in-out infinite;
+}
+@keyframes agentPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Right panel */
+.stats-panel {
+  width: 360px;
+  background: #0d0d14;
+  border-left: 1px solid #1a1a2e;
+  padding: 30px 24px;
+  display: flex; flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.6s ease-out 0.5s both;
+}
+
+.stat-block {
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 18px;
+}
+.stat-label {
+  font-size: 12px; color: #556;
+  text-transform: uppercase; letter-spacing: 2px;
+  margin-bottom: 6px; font-weight: 700;
+}
+.stat-value {
+  font-size: 34px; font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.timer-val { color: #aa44ff; }
+.error-val { color: #ffaa44; }
+
+.error-list {
+  margin-top: 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.error-item {
+  font-size: 11px; color: #ffaa44aa;
+  padding: 4px 8px;
+  background: #ffaa4411;
+  border-radius: 4px;
+  border-left: 2px solid #ffaa44;
+  animation: errorSlide 0.3s ease-out both;
+}
+.error-item:nth-child(1) { animation-delay: 4s; }
+.error-item:nth-child(2) { animation-delay: 4.3s; }
+.error-item:nth-child(3) { animation-delay: 4.6s; }
+
+@keyframes errorSlide {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Rate limit warning */
+.rate-limit {
+  background: #ff334422;
+  border: 1px solid #ff334466;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: #ff6677;
+  font-weight: 600;
+  animation: rateFlash 2s ease-in-out infinite, fadeIn 0.5s ease-out 5s both;
+}
+.rate-icon { font-size: 20px; }
+@keyframes rateFlash {
+  0%, 100% { border-color: #ff334466; }
+  50% { border-color: #ff3344; box-shadow: 0 0 15px #ff334433; }
+}
+
+/* Tab prediction */
+.tab-predict {
+  background: rgba(170, 68, 255, 0.05);
+  border: 1px solid #aa44ff33;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.tab-predict-title {
+  font-size: 11px; color: #aa44ff;
+  font-weight: 700; letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.tab-predict-text {
+  font-size: 12px; color: #667;
+  font-family: 'Consolas', monospace;
+  line-height: 1.5;
+}
+
+/* Verdict badge */
+.verdict {
+  position: absolute;
+  bottom: 80px; right: 400px;
+  background: linear-gradient(135deg, #aa44ff, #7722cc);
+  color: #fff;
+  font-size: 22px; font-weight: 900;
+  padding: 16px 36px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  transform: rotate(-3deg);
+  box-shadow: 0 8px 30px #aa44ff44;
+  animation: verdictIn 0.5s ease-out 6s both;
+  z-index: 10;
+}
+@keyframes verdictIn {
+  from { opacity: 0; transform: rotate(-3deg) scale(0.5); }
+  to { opacity: 1; transform: rotate(-3deg) scale(1); }
+}
+
+/* Status bar */
+.status-bar {
+  height: 28px;
+  background: #aa44ff;
+  display: flex; align-items: center;
+  padding: 0 16px;
+  font-size: 12px; color: #ffffffcc;
+  gap: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes lineAppear {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo"><span>&#9670;</span> Cursor AI</div>
+    <div class="header-tag">TESTE #2 &bull; AGENT MODE</div>
+  </div>
+
+  <div class="main">
+    <div class="sidebar">
+      <div class="sidebar-title">Files</div>
+      <div class="file-item"><span class="file-icon" style="color:#aa44ff;">&#128193;</span> src</div>
+      <div class="file-item active" style="padding-left: 28px"><span class="file-icon" style="color:#3178c6;">TS</span> server.ts</div>
+      <div class="file-item new" style="padding-left: 28px;--i:0"><span class="file-icon" style="color:#3178c6;">TS</span> routes/users.ts</div>
+      <div class="file-item new" style="padding-left: 28px;--i:1"><span class="file-icon" style="color:#3178c6;">TS</span> routes/auth.ts</div>
+      <div class="file-item new" style="padding-left: 28px;--i:2"><span class="file-icon" style="color:#3178c6;">TS</span> middleware/jwt.ts</div>
+      <div class="file-item new" style="padding-left: 28px;--i:3"><span class="file-icon" style="color:#3178c6;">TS</span> db/schema.ts</div>
+      <div class="file-item new" style="padding-left: 28px;--i:4"><span class="file-icon" style="color:#3178c6;">TS</span> db/migrate.ts</div>
+      <div class="file-item new" style="padding-left: 28px;--i:5"><span class="file-icon" style="color:#cb7832;">{}</span> package.json</div>
+    </div>
+
+    <div class="editor">
+      <div class="tab-bar">
+        <div class="tab active">server.ts</div>
+        <div class="tab">routes/users.ts</div>
+        <div class="tab">middleware/jwt.ts</div>
+      </div>
+      <div class="code-area">
+        <div class="agent-indicator">
+          <div class="agent-dot"></div>
+          Agent Mode Ativo
+        </div>
+
+        <div class="code-line" style="--i:0">
+          <span class="line-num">1</span>
+          <span class="line-code"><span class="kw">import</span> <span class="type">express</span> <span class="kw">from</span> <span class="str">'express'</span>;</span>
+        </div>
+        <div class="code-line" style="--i:1">
+          <span class="line-num">2</span>
+          <span class="line-code"><span class="kw">import</span> { <span class="fn">Pool</span> } <span class="kw">from</span> <span class="str">'pg'</span>;</span>
+        </div>
+        <div class="code-line" style="--i:2">
+          <span class="line-num">3</span>
+          <span class="line-code"><span class="kw">import</span> { <span class="fn">authRouter</span> } <span class="kw">from</span> <span class="str">'./routes/auth'</span>;</span>
+        </div>
+        <div class="code-line" style="--i:3">
+          <span class="line-num">4</span>
+          <span class="line-code"><span class="kw">import</span> { <span class="fn">usersRouter</span> } <span class="kw">from</span> <span class="str">'./routes/users'</span>;</span>
+        </div>
+        <div class="code-line" style="--i:4">
+          <span class="line-num">5</span>
+          <span class="line-code"><span class="kw">import</span> { <span class="fn">jwtMiddleware</span> } <span class="kw">from</span> <span class="str">'./middleware/jwt'</span>;</span>
+        </div>
+        <div class="code-line" style="--i:5">
+          <span class="line-num">6</span>
+          <span class="line-code"></span>
+        </div>
+        <div class="code-line" style="--i:6">
+          <span class="line-num">7</span>
+          <span class="line-code"><span class="kw">const</span> <span class="fn">app</span> = <span class="fn">express</span>();</span>
+        </div>
+        <div class="code-line" style="--i:7">
+          <span class="line-num">8</span>
+          <span class="line-code"><span class="fn">app</span>.<span class="fn">use</span>(<span class="fn">express</span>.<span class="fn">json</span>());</span>
+        </div>
+        <div class="code-line" style="--i:8">
+          <span class="line-num">9</span>
+          <span class="line-code"><span class="fn">app</span>.<span class="fn">use</span>(<span class="str">'/auth'</span>, <span class="fn">authRouter</span>);</span>
+        </div>
+        <div class="code-line" style="--i:9">
+          <span class="line-num">10</span>
+          <span class="line-code"><span class="fn">app</span>.<span class="fn">use</span>(<span class="str">'/api'</span>, <span class="fn">jwtMiddleware</span>, <span class="fn">usersRouter</span>);</span>
+        </div>
+        <div class="code-line" style="--i:10">
+          <span class="line-num">11</span>
+          <span class="line-code"></span>
+        </div>
+
+        <div class="ghost-block">
+          <div class="ghost-label">&#9670; Tab Prediction</div>
+          <div class="ghost-line">const pool = new Pool({</div>
+          <div class="ghost-line">&nbsp;&nbsp;connectionString: process.env.DATABASE_URL,</div>
+          <div class="ghost-line">&nbsp;&nbsp;ssl: { rejectUnauthorized: false }</div>
+          <div class="ghost-line">});</div>
+          <div class="ghost-line"></div>
+          <div class="ghost-line">app.listen(3000, () =&gt; {</div>
+          <div class="ghost-line">&nbsp;&nbsp;console.log('Server running on :3000');</div>
+          <div class="ghost-line">});</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-panel">
+      <div class="stat-block">
+        <div class="stat-label">Tempo Decorrido</div>
+        <div class="stat-value timer-val">1:22:00</div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">Erros Encontrados</div>
+        <div class="stat-value error-val">7</div>
+        <div class="error-list">
+          <div class="error-item">Type error: missing return</div>
+          <div class="error-item">JWT secret undefined at runtime</div>
+          <div class="error-item">Migration order conflict</div>
+        </div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">Arquivos Criados</div>
+        <div class="stat-value" style="color: #00ff88; font-size: 28px;">6 arquivos</div>
+        <div style="font-size: 12px; color: #556; margin-top: 4px;">Automaticamente pelo Agent</div>
+      </div>
+
+      <div class="tab-predict">
+        <div class="tab-predict-title">TAB PREDICTION</div>
+        <div class="tab-predict-text">
+          Multi-line completion<br>
+          Contexto: 5 arquivos<br>
+          Confianca: 87%
+        </div>
+      </div>
+
+      <div class="rate-limit">
+        <span class="rate-icon">&#9888;</span>
+        <span>Rate Limit: 18/25 fast<br>requests restantes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict">AGENTE IDE</div>
+
+  <div class="status-bar">
+    <span>UTF-8</span>
+    <span>TypeScript</span>
+    <span>Agent Mode</span>
+    <span style="margin-left: auto;">Cursor 0.48 &bull; Claude 3.5 Sonnet</span>
+  </div>
+</body>
+</html>

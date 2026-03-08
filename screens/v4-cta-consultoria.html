@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; justify-content: center; align-items: center;
+}
+
+/* Animated background particles */
+.particles { position: absolute; inset: 0; overflow: hidden; }
+.particle {
+  position: absolute; width: 3px; height: 3px; border-radius: 50%;
+  animation: float linear infinite;
+}
+@keyframes float {
+  0% { transform: translateY(1080px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-20px) rotate(720deg); opacity: 0; }
+}
+
+.orb {
+  position: absolute; width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,165,116,0.08), transparent 70%);
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  animation: orbPulse 4s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.content {
+  position: relative; z-index: 10;
+  display: flex; gap: 60px; align-items: center;
+}
+
+/* Left Side - Card */
+.card-side { display: flex; flex-direction: column; align-items: center; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 24px; border-radius: 30px;
+  background: rgba(212,165,116,0.1); border: 1px solid rgba(212,165,116,0.3);
+  margin-bottom: 24px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.3s;
+}
+.badge-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #D4A574;
+  animation: blink 1.5s ease-in-out infinite;
+}
+.badge-text {
+  font-size: 13px; font-weight: 900; color: #D4A574;
+  letter-spacing: 3px; text-transform: uppercase;
+}
+
+.main-title {
+  font-size: 44px; font-weight: 900; text-align: center;
+  line-height: 1.2; margin-bottom: 8px;
+  opacity: 0; animation: slideDown 0.8s ease-out forwards 0.6s;
+}
+.main-title .claude-color { color: #D4A574; }
+
+.sub {
+  font-size: 18px; color: #667788; margin-bottom: 30px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.9s;
+}
+
+.premium-card {
+  width: 700px; border-radius: 20px; overflow: hidden;
+  background: linear-gradient(135deg, #0d1117, #111822);
+  border: 2px solid rgba(212,165,116,0.3);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212,165,116,0.08);
+  opacity: 0; animation: scaleIn 0.8s ease-out forwards 1.2s;
+}
+
+.card-header {
+  padding: 24px 36px;
+  background: linear-gradient(135deg, rgba(212,165,116,0.12), rgba(212,165,116,0.03));
+  border-bottom: 1px solid rgba(212,165,116,0.15);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.card-title { font-size: 20px; font-weight: 900; color: #D4A574; }
+.price-container { text-align: right; }
+.price {
+  font-size: 48px; font-weight: 900; color: #00ff88;
+  text-shadow: 0 0 30px rgba(0,255,136,0.3); line-height: 1;
+}
+.price-detail { font-size: 14px; color: #8899aa; }
+
+.checklist {
+  padding: 24px 36px; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 14px;
+}
+.check-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px;
+  background: rgba(255,255,255,0.02);
+  opacity: 0;
+}
+.check-item:nth-child(1) { animation: checkIn 0.4s ease-out forwards 1.7s; }
+.check-item:nth-child(2) { animation: checkIn 0.4s ease-out forwards 1.9s; }
+.check-item:nth-child(3) { animation: checkIn 0.4s ease-out forwards 2.1s; }
+.check-item:nth-child(4) { animation: checkIn 0.4s ease-out forwards 2.3s; }
+.check-item:nth-child(5) { animation: checkIn 0.4s ease-out forwards 2.5s; }
+.check-item:nth-child(6) { animation: checkIn 0.4s ease-out forwards 2.7s; }
+
+.check-icon {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(0,255,136,0.15); color: #00ff88;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; flex-shrink: 0;
+}
+.check-text { font-size: 14px; color: #ccddee; }
+
+/* Right Side - QR + Quote */
+.right-side {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 30px; width: 420px;
+}
+
+.qr-placeholder {
+  width: 240px; height: 240px; border-radius: 20px;
+  background: #fff; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  opacity: 0; animation: scaleIn 0.8s ease-out forwards 3s;
+  position: relative; overflow: hidden;
+}
+.qr-grid {
+  display: grid; grid-template-columns: repeat(11, 1fr);
+  gap: 2px; width: 200px; height: 200px; padding: 20px;
+}
+.qr-cell {
+  background: #0a0a0f; border-radius: 1px;
+}
+.qr-cell.w { background: #fff; }
+/* QR corner squares */
+.qr-corner {
+  position: absolute; width: 48px; height: 48px;
+  border: 6px solid #0a0a0f; border-radius: 4px;
+}
+.qr-corner::after {
+  content: ''; position: absolute; top: 8px; left: 8px;
+  width: 20px; height: 20px; background: #0a0a0f; border-radius: 2px;
+}
+.qr-tl { top: 16px; left: 16px; }
+.qr-tr { top: 16px; right: 16px; }
+.qr-bl { bottom: 16px; left: 16px; }
+.qr-center-text {
+  position: absolute; font-size: 11px; color: #667788;
+  font-weight: 700; bottom: 6px;
+}
+
+.quote {
+  padding: 24px 28px; border-radius: 16px;
+  background: rgba(255,255,255,0.03); border: 1px solid #ffffff08;
+  border-left: 3px solid #D4A574; max-width: 380px;
+  opacity: 0; animation: slideUp 0.6s ease-out forwards 3.4s;
+}
+.quote-text {
+  font-size: 18px; font-weight: 700; color: #ccddee;
+  line-height: 1.5; font-style: italic;
+}
+.quote-text .highlight { color: #D4A574; font-style: normal; }
+
+.wa-button {
+  padding: 20px 50px; border-radius: 16px;
+  background: linear-gradient(135deg, #00ff88, #00cc66);
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: 0 0 50px rgba(0,255,136,0.3), 0 10px 40px rgba(0,0,0,0.3);
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 3.8s;
+  cursor: pointer;
+}
+.wa-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: #0a0a0f; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; color: #00ff88; font-weight: 900;
+}
+.wa-text {
+  font-size: 20px; font-weight: 900; color: #0a0a0f; letter-spacing: 1px;
+}
+
+.footer {
+  position: absolute; bottom: 30px; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 50px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 4.2s;
+}
+.footer-item { font-size: 14px; color: #445566; font-weight: 600; }
+.footer-item .brand { color: #D4A574; font-weight: 900; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes checkIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+  <div class="particles">
+    <div class="particle" style="left:5%; animation-duration:10s; background:rgba(212,165,116,0.3);"></div>
+    <div class="particle" style="left:15%; animation-duration:12s; animation-delay:1s; background:rgba(0,255,136,0.2);"></div>
+    <div class="particle" style="left:30%; animation-duration:8s; animation-delay:2s; background:rgba(212,165,116,0.2);"></div>
+    <div class="particle" style="left:45%; animation-duration:14s; animation-delay:0.5s; background:rgba(0,255,136,0.3);"></div>
+    <div class="particle" style="left:60%; animation-duration:9s; animation-delay:3s; background:rgba(212,165,116,0.2);"></div>
+    <div class="particle" style="left:75%; animation-duration:11s; animation-delay:1.5s; background:rgba(0,255,136,0.2);"></div>
+    <div class="particle" style="left:90%; animation-duration:10s; animation-delay:4s; background:rgba(212,165,116,0.3);"></div>
+    <div class="particle" style="left:22%; animation-duration:13s; animation-delay:2.5s; background:rgba(0,136,255,0.15);"></div>
+    <div class="particle" style="left:68%; animation-duration:7s; animation-delay:3.5s; background:rgba(0,136,255,0.15);"></div>
+  </div>
+
+  <div class="orb"></div>
+
+  <div class="content">
+    <div class="card-side">
+      <div class="badge">
+        <div class="badge-dot"></div>
+        <div class="badge-text">Setup Claude Code</div>
+      </div>
+
+      <div class="main-title">
+        DELETE SEU EDITOR.<br>
+        <span class="claude-color">EU CONFIGURO PRA VOCE.</span>
+      </div>
+      <div class="sub">R$500 | 1 hora | Setup completo</div>
+
+      <div class="premium-card">
+        <div class="card-header">
+          <div class="card-title">CONSULTORIA CLAUDE CODE</div>
+          <div class="price-container">
+            <div class="price">R$500</div>
+            <div class="price-detail">1 hora de consultoria individual</div>
+          </div>
+        </div>
+        <div class="checklist">
+          <div class="check-item">
+            <div class="check-icon">&#x2713;</div>
+            <div class="check-text">Instalacao Claude Code</div>
+          </div>
+          <div class="check-item">
+            <div class="check-icon">&#x2713;</div>
+            <div class="check-text">CLAUDE.md personalizado</div>
+          </div>
+          <div class="check-item">
+            <div class="check-icon">&#x2713;</div>
+            <div class="check-text">Settings otimizados</div>
+          </div>
+          <div class="check-item">
+            <div class="check-icon">&#x2713;</div>
+            <div class="check-text">Hooks automaticos</div>
+          </div>
+          <div class="check-item">
+            <div class="check-icon">&#x2713;</div>
+            <div class="check-text">Skills do seu projeto</div>
+          </div>
+          <div class="check-item">
+            <div class="check-icon">&#x2713;</div>
+            <div class="check-text">Primeiro commit com agente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-side">
+      <div class="qr-placeholder">
+        <div class="qr-corner qr-tl"></div>
+        <div class="qr-corner qr-tr"></div>
+        <div class="qr-corner qr-bl"></div>
+        <div class="qr-grid">
+          <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
+          <div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell w"></div><div class="qr-cell"></div>
+          <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
+          <div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div>
+          <div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div>
+          <div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div>
+          <div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div>
+          <div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div>
+          <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
+          <div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell w"></div><div class="qr-cell"></div>
+          <div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell w"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div>
+        </div>
+        <div class="qr-center-text">Escaneia para WhatsApp</div>
+      </div>
+
+      <div class="quote">
+        <div class="quote-text">
+          "O VS Code ta esperando.<br>
+          <span class="highlight">Eu nao vou voltar.</span>"
+        </div>
+      </div>
+
+      <div class="wa-button">
+        <div class="wa-icon">W</div>
+        <div class="wa-text">QUERO MEU SETUP</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-item">11 projetos em producao</div>
+    <div class="footer-item">187 commits em 14 dias</div>
+    <div class="footer-item">Zero linhas manuais</div>
+    <div class="footer-item"><span class="brand">DIEGO | @GuyFolkz</span></div>
+  </div>
+</body>
+</html>

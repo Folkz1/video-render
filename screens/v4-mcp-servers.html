@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+
+.title {
+  font-size: 38px; font-weight: 900; text-align: center;
+  margin-bottom: 16px;
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 0.2s;
+}
+.title .claude-color { color: #D4A574; }
+
+.subtitle {
+  font-size: 18px; color: #556677; margin-bottom: 50px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.5s;
+}
+
+.hub-spoke {
+  position: relative; width: 900px; height: 700px;
+}
+
+/* Center Hub */
+.hub {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,165,116,0.2), rgba(212,165,116,0.05));
+  border: 3px solid rgba(212,165,116,0.5);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 10;
+  box-shadow: 0 0 60px rgba(212,165,116,0.2);
+  opacity: 0; animation: scaleIn 0.8s ease-out forwards 0.6s;
+}
+.hub-icon { font-size: 42px; margin-bottom: 6px; }
+.hub-name { font-size: 18px; font-weight: 900; color: #D4A574; }
+.hub-sub { font-size: 11px; color: #8899aa; }
+
+/* Orbit Ring */
+.orbit {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 600px; border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.06);
+  opacity: 0; animation: fadeIn 0.5s ease-out forwards 0.8s;
+}
+
+/* Spokes */
+.spoke {
+  position: absolute; display: flex; flex-direction: column;
+  align-items: center; gap: 10px; z-index: 5;
+  opacity: 0;
+}
+.spoke:nth-child(1) { animation: spokeIn 0.6s ease-out forwards 1.0s; }
+.spoke:nth-child(2) { animation: spokeIn 0.6s ease-out forwards 1.3s; }
+.spoke:nth-child(3) { animation: spokeIn 0.6s ease-out forwards 1.6s; }
+.spoke:nth-child(4) { animation: spokeIn 0.6s ease-out forwards 1.9s; }
+.spoke:nth-child(5) { animation: spokeIn 0.6s ease-out forwards 2.2s; }
+.spoke:nth-child(6) { animation: spokeIn 0.6s ease-out forwards 2.5s; }
+
+.spoke-icon {
+  width: 80px; height: 80px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; position: relative;
+}
+.spoke-name { font-size: 15px; font-weight: 800; color: #ccddee; }
+.spoke-desc { font-size: 11px; color: #556677; text-align: center; max-width: 120px; }
+
+.spoke-pinecone .spoke-icon { background: linear-gradient(135deg, #1a3e1a, #00aa55); }
+.spoke-github .spoke-icon { background: linear-gradient(135deg, #1a1a2e, #333); }
+.spoke-filesystem .spoke-icon { background: linear-gradient(135deg, #2e2e1a, #aaaa44); }
+.spoke-slack .spoke-icon { background: linear-gradient(135deg, #2e1a2e, #611f69); }
+.spoke-database .spoke-icon { background: linear-gradient(135deg, #1a1a3e, #3366cc); }
+.spoke-browser .spoke-icon { background: linear-gradient(135deg, #3e1a1a, #cc4444); }
+
+/* Spoke Positions (hexagonal) */
+.spoke-pinecone { left: 50%; top: -10px; transform: translateX(-50%); }
+.spoke-github { right: 20px; top: 100px; }
+.spoke-browser { right: 20px; bottom: 100px; }
+.spoke-database { left: 50%; bottom: -10px; transform: translateX(-50%); }
+.spoke-slack { left: 20px; bottom: 100px; }
+.spoke-filesystem { left: 20px; top: 100px; }
+
+/* Connection Lines */
+.connection-line {
+  position: absolute; left: 50%; top: 50%;
+  height: 2px; transform-origin: left center;
+  z-index: 1;
+}
+
+.line-1 { width: 210px; transform: rotate(-90deg) translateX(-1px); background: linear-gradient(90deg, rgba(212,165,116,0.4), rgba(0,170,85,0.4)); }
+.line-2 { width: 260px; transform: rotate(-30deg); background: linear-gradient(90deg, rgba(212,165,116,0.4), rgba(51,51,51,0.6)); }
+.line-3 { width: 260px; transform: rotate(30deg); background: linear-gradient(90deg, rgba(212,165,116,0.4), rgba(204,68,68,0.4)); }
+.line-4 { width: 210px; transform: rotate(90deg); background: linear-gradient(90deg, rgba(212,165,116,0.4), rgba(51,102,204,0.4)); }
+.line-5 { width: 260px; transform: rotate(150deg); background: linear-gradient(90deg, rgba(212,165,116,0.4), rgba(97,31,105,0.4)); }
+.line-6 { width: 260px; transform: rotate(-150deg); background: linear-gradient(90deg, rgba(212,165,116,0.4), rgba(170,170,68,0.4)); }
+
+/* Flowing Data Particles */
+.flow-particle {
+  position: absolute; width: 5px; height: 5px;
+  border-radius: 50%; z-index: 3;
+}
+
+.fp-1 { left: 50%; top: 50%; animation: flowUp 2.5s ease-in-out infinite 0s; background: #00ff88; }
+.fp-2 { left: 50%; top: 50%; animation: flowUR 2.5s ease-in-out infinite 0.4s; background: #aabbcc; }
+.fp-3 { left: 50%; top: 50%; animation: flowDR 2.5s ease-in-out infinite 0.8s; background: #ff6655; }
+.fp-4 { left: 50%; top: 50%; animation: flowDown 2.5s ease-in-out infinite 1.2s; background: #4488ff; }
+.fp-5 { left: 50%; top: 50%; animation: flowDL 2.5s ease-in-out infinite 1.6s; background: #aa55cc; }
+.fp-6 { left: 50%; top: 50%; animation: flowUL 2.5s ease-in-out infinite 2.0s; background: #aaaa44; }
+
+.badge-mcp {
+  margin-top: 20px; padding: 12px 36px; border-radius: 50px;
+  background: linear-gradient(135deg, #D4A574, #FFD700);
+  color: #0a0a0f; font-size: 16px; font-weight: 900;
+  letter-spacing: 2px;
+  opacity: 0; animation: bounceIn 0.8s ease-out forwards 3s;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { opacity: 0; transform: translate(-50%,-50%) scale(0.5); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+@keyframes spokeIn { from { opacity: 0; transform: translateX(-50%) scale(0.5); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes flowUp {
+  0% { transform: translate(0,0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(0, -250px); opacity: 1; }
+  60% { opacity: 0; }
+  100% { transform: translate(0, -250px); opacity: 0; }
+}
+@keyframes flowUR {
+  0% { transform: translate(0,0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(210px, -130px); opacity: 1; }
+  60% { opacity: 0; }
+  100% { transform: translate(210px, -130px); opacity: 0; }
+}
+@keyframes flowDR {
+  0% { transform: translate(0,0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(210px, 130px); opacity: 1; }
+  60% { opacity: 0; }
+  100% { transform: translate(210px, 130px); opacity: 0; }
+}
+@keyframes flowDown {
+  0% { transform: translate(0,0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(0, 250px); opacity: 1; }
+  60% { opacity: 0; }
+  100% { transform: translate(0, 250px); opacity: 0; }
+}
+@keyframes flowDL {
+  0% { transform: translate(0,0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(-210px, 130px); opacity: 1; }
+  60% { opacity: 0; }
+  100% { transform: translate(-210px, 130px); opacity: 0; }
+}
+@keyframes flowUL {
+  0% { transform: translate(0,0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translate(-210px, -130px); opacity: 1; }
+  60% { opacity: 0; }
+  100% { transform: translate(-210px, -130px); opacity: 0; }
+}
+</style>
+</head>
+<body>
+  <div class="title">
+    <span class="claude-color">MCP Servers</span> - O Agente Conectado a Tudo
+  </div>
+  <div class="subtitle">Model Context Protocol: ferramentas externas como extensoes do agente</div>
+
+  <div class="hub-spoke">
+    <!-- Connection Lines -->
+    <div class="connection-line line-1"></div>
+    <div class="connection-line line-2"></div>
+    <div class="connection-line line-3"></div>
+    <div class="connection-line line-4"></div>
+    <div class="connection-line line-5"></div>
+    <div class="connection-line line-6"></div>
+
+    <!-- Flowing particles -->
+    <div class="flow-particle fp-1"></div>
+    <div class="flow-particle fp-2"></div>
+    <div class="flow-particle fp-3"></div>
+    <div class="flow-particle fp-4"></div>
+    <div class="flow-particle fp-5"></div>
+    <div class="flow-particle fp-6"></div>
+
+    <!-- Orbit ring -->
+    <div class="orbit"></div>
+
+    <!-- Center Hub -->
+    <div class="hub">
+      <div class="hub-icon">&#9733;</div>
+      <div class="hub-name">Claude Code</div>
+      <div class="hub-sub">Agente central</div>
+    </div>
+
+    <!-- Spokes -->
+    <div class="spoke spoke-pinecone">
+      <div class="spoke-icon">&#129504;</div>
+      <div class="spoke-name">Pinecone</div>
+      <div class="spoke-desc">Memoria vetorial, RAG, busca semantica</div>
+    </div>
+
+    <div class="spoke spoke-github">
+      <div class="spoke-icon">&#128025;</div>
+      <div class="spoke-name">GitHub</div>
+      <div class="spoke-desc">PRs, issues, releases, code review</div>
+    </div>
+
+    <div class="spoke spoke-browser">
+      <div class="spoke-icon">&#127760;</div>
+      <div class="spoke-name">Browser</div>
+      <div class="spoke-desc">Web scraping, pesquisa, navegacao</div>
+    </div>
+
+    <div class="spoke spoke-database">
+      <div class="spoke-icon">&#128451;</div>
+      <div class="spoke-name">Database</div>
+      <div class="spoke-desc">PostgreSQL, queries, migrations</div>
+    </div>
+
+    <div class="spoke spoke-slack">
+      <div class="spoke-icon">&#128172;</div>
+      <div class="spoke-name">Slack</div>
+      <div class="spoke-desc">Mensagens, notificacoes, canais</div>
+    </div>
+
+    <div class="spoke spoke-filesystem">
+      <div class="spoke-icon">&#128193;</div>
+      <div class="spoke-name">Filesystem</div>
+      <div class="spoke-desc">Ler, editar, criar arquivos locais</div>
+    </div>
+  </div>
+
+  <div class="badge-mcp">MCP = SUPERPODERES DO AGENTE</div>
+</body>
+</html>

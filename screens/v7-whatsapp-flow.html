@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.title {
+  font-size: 36px; font-weight: 900; margin-bottom: 50px;
+  text-align: center;
+}
+.title .highlight { color: #00ff88; }
+.title .red { color: #ff4455; }
+
+.flow {
+  display: flex; align-items: center; gap: 20px;
+  margin-bottom: 50px;
+}
+
+.step {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; animation: fadeIn 0.6s ease-out both;
+}
+.step:nth-child(1) { animation-delay: 0.2s; }
+.step:nth-child(3) { animation-delay: 0.6s; }
+.step:nth-child(5) { animation-delay: 1.0s; }
+.step:nth-child(7) { animation-delay: 1.4s; }
+.step:nth-child(9) { animation-delay: 1.8s; }
+
+.step-icon {
+  width: 100px; height: 100px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; position: relative;
+}
+
+.whatsapp { background: linear-gradient(135deg, #075e54, #128c7e); }
+.webhook { background: linear-gradient(135deg, #1a1a3e, #0044aa); }
+.n8n { background: linear-gradient(135deg, #ff6d5a, #c13b3a); }
+.ai { background: linear-gradient(135deg, #1a2e1a, #00aa44); }
+.notify { background: linear-gradient(135deg, #2e1a2e, #aa44ff); }
+
+.step-label {
+  font-size: 14px; font-weight: 700; color: #8899aa;
+  text-align: center; max-width: 120px;
+}
+
+.arrow {
+  font-size: 28px; color: #333;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.stats {
+  display: flex; gap: 40px; margin-top: 10px;
+}
+
+.stat {
+  text-align: center; padding: 20px 40px;
+  border-radius: 12px; background: rgba(255,255,255,0.03);
+  border: 1px solid #ffffff0a;
+  animation: slideUp 0.8s ease-out both;
+}
+.stat:nth-child(1) { animation-delay: 2.2s; }
+.stat:nth-child(2) { animation-delay: 2.5s; }
+.stat:nth-child(3) { animation-delay: 2.8s; }
+.stat:nth-child(4) { animation-delay: 3.1s; }
+
+.stat-value {
+  font-size: 42px; font-weight: 900;
+}
+.stat-value.green { color: #00ff88; }
+.stat-value.gold { color: #FFD700; }
+.stat-value.cyan { color: #00ddff; }
+.stat-value.red { color: #ff4455; }
+
+.stat-label {
+  font-size: 14px; color: #8899aa; margin-top: 6px;
+}
+
+.badge {
+  position: absolute; top: -8px; right: -8px;
+  background: #00ff88; color: #0a0a0f;
+  font-size: 10px; font-weight: 900; padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.timer-badge {
+  background: linear-gradient(135deg, #00ff88, #00ddff);
+  color: #0a0a0f; font-size: 20px; font-weight: 900;
+  padding: 12px 30px; border-radius: 50px;
+  margin-top: 30px; letter-spacing: 2px;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(5px); }
+}
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(0,255,136,0.2); }
+  to { box-shadow: 0 0 40px rgba(0,255,136,0.5); }
+}
+</style>
+</head>
+<body>
+  <div class="title">
+    Lead chega no <span class="highlight">WhatsApp</span> &#8594; IA responde em <span class="highlight">5 segundos</span>
+    <br><span class="red">Sua equipe demora 47 minutos</span>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <div class="step-icon whatsapp">&#128172;</div>
+      <div class="step-label">Lead envia mensagem</div>
+    </div>
+    <div class="arrow">&#10141;</div>
+    <div class="step">
+      <div class="step-icon webhook">
+        <span>&#9889;</span>
+        <span class="badge">Webhook</span>
+      </div>
+      <div class="step-label">Evolution API recebe</div>
+    </div>
+    <div class="arrow">&#10141;</div>
+    <div class="step">
+      <div class="step-icon n8n">&#9881;</div>
+      <div class="step-label">N8N classifica intent</div>
+    </div>
+    <div class="arrow">&#10141;</div>
+    <div class="step">
+      <div class="step-icon ai">&#129302;</div>
+      <div class="step-label">Claude/GPT responde</div>
+    </div>
+    <div class="arrow">&#10141;</div>
+    <div class="step">
+      <div class="step-icon notify">&#128276;</div>
+      <div class="step-label">Notifica vendedor</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value green">5s</div>
+      <div class="stat-label">Tempo de resposta</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value gold">R$25</div>
+      <div class="stat-label">Custo mensal</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value cyan">24/7</div>
+      <div class="stat-label">Disponibilidade</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value red">R$0</div>
+      <div class="stat-label">Salario funcionario</div>
+    </div>
+  </div>
+
+  <div class="timer-badge">RESPOSTA INSTANTANEA &#9889;</div>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden;
+  background: #0a0a0f; color: #fff;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.source {
+  font-size: 14px; color: #556677; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 16px;
+  opacity: 0; animation: fadeIn 0.6s ease-out forwards 0.3s;
+}
+
+.title {
+  font-size: 44px; font-weight: 900; text-align: center;
+  line-height: 1.3; margin-bottom: 60px;
+  opacity: 0; animation: slideDown 0.8s ease-out forwards 0.5s;
+}
+.title .green { color: #00ff88; }
+.title .white { color: #ffffff; }
+
+.chart-container {
+  display: flex; align-items: flex-end; gap: 50px;
+  height: 420px; padding: 0 80px;
+  position: relative;
+}
+
+.chart-baseline {
+  position: absolute; bottom: 60px; left: 40px; right: 40px;
+  height: 2px; background: #1a1a2e;
+}
+
+.bar-group {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+
+.bar-wrapper {
+  height: 350px; display: flex; align-items: flex-end;
+}
+
+.bar {
+  width: 120px; border-radius: 8px 8px 0 0;
+  position: relative;
+  animation: growUp ease-out forwards;
+  transform-origin: bottom;
+}
+
+.bar-1 {
+  height: 0; background: linear-gradient(180deg, #00ff88, #00aa55);
+  animation-delay: 1.2s; animation-duration: 1.5s;
+  box-shadow: 0 0 40px rgba(0,255,136,0.3);
+}
+.bar-1-target { height: 320px; }
+
+.bar-2 {
+  height: 0; background: linear-gradient(180deg, #334455, #1a2233);
+  animation-delay: 1.8s; animation-duration: 1s;
+}
+.bar-2-target { height: 170px; }
+
+.bar-3 {
+  height: 0; background: linear-gradient(180deg, #2a2a3a, #151520);
+  animation-delay: 2.2s; animation-duration: 1s;
+}
+.bar-3-target { height: 100px; }
+
+.bar-4 {
+  height: 0; background: linear-gradient(180deg, #ff4455, #aa2233);
+  animation-delay: 2.6s; animation-duration: 1s;
+}
+.bar-4-target { height: 50px; }
+
+.bar-value {
+  position: absolute; top: -45px; left: 50%; transform: translateX(-50%);
+  font-size: 32px; font-weight: 900; white-space: nowrap;
+  opacity: 0; animation: fadeIn 0.4s ease-out forwards;
+}
+.bar-1 .bar-value { color: #00ff88; animation-delay: 2.8s; }
+.bar-2 .bar-value { color: #8899aa; animation-delay: 3.0s; }
+.bar-3 .bar-value { color: #667788; animation-delay: 3.2s; }
+.bar-4 .bar-value { color: #ff4455; animation-delay: 3.4s; }
+
+.bar-label {
+  font-size: 15px; color: #8899aa; font-weight: 600;
+  text-align: center; max-width: 140px;
+  opacity: 0; animation: fadeIn 0.4s ease-out forwards;
+}
+.bar-group:nth-child(1) .bar-label { animation-delay: 1.2s; }
+.bar-group:nth-child(2) .bar-label { animation-delay: 1.8s; }
+.bar-group:nth-child(3) .bar-label { animation-delay: 2.2s; }
+.bar-group:nth-child(4) .bar-label { animation-delay: 2.6s; }
+
+.winner-badge {
+  position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+  background: #00ff88; color: #0a0a0f; font-size: 13px; font-weight: 900;
+  padding: 6px 16px; border-radius: 20px; white-space: nowrap;
+  opacity: 0; animation: bounceIn 0.6s ease-out forwards 3.5s;
+}
+
+.insight {
+  margin-top: 50px; padding: 20px 40px; border-radius: 12px;
+  background: rgba(255,68,85,0.08); border: 1px solid rgba(255,68,85,0.2);
+  opacity: 0; animation: fadeIn 0.8s ease-out forwards 4s;
+}
+.insight-text {
+  font-size: 20px; color: #ff4455; font-weight: 700; text-align: center;
+}
+.insight-text .white { color: #ccddee; font-weight: 400; }
+
+.footer {
+  position: absolute; bottom: 30px;
+  font-size: 14px; color: #334455; font-weight: 600;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes growUp { to { height: var(--target-height); } }
+@keyframes bounceIn {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+  60% { transform: translateX(-50%) scale(1.1); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+</style>
+</head>
+<body>
+
+  <div class="source">HARVARD BUSINESS REVIEW</div>
+
+  <div class="title">
+    <span class="green">78%</span> <span class="white">dos leads fecham com</span><br>
+    <span class="white">quem responde</span> <span class="green">PRIMEIRO</span>
+  </div>
+
+  <div class="chart-container">
+    <div class="chart-baseline"></div>
+
+    <div class="bar-group">
+      <div class="bar-wrapper">
+        <div class="bar bar-1" style="--target-height: 320px;">
+          <div class="bar-value">78%</div>
+          <div class="winner-badge">VENCEDOR</div>
+        </div>
+      </div>
+      <div class="bar-label">1a empresa a responder</div>
+    </div>
+
+    <div class="bar-group">
+      <div class="bar-wrapper">
+        <div class="bar bar-2" style="--target-height: 170px;">
+          <div class="bar-value">12%</div>
+        </div>
+      </div>
+      <div class="bar-label">2a empresa</div>
+    </div>
+
+    <div class="bar-group">
+      <div class="bar-wrapper">
+        <div class="bar bar-3" style="--target-height: 100px;">
+          <div class="bar-value">7%</div>
+        </div>
+      </div>
+      <div class="bar-label">3a empresa</div>
+    </div>
+
+    <div class="bar-group">
+      <div class="bar-wrapper">
+        <div class="bar bar-4" style="--target-height: 50px;">
+          <div class="bar-value">3%</div>
+        </div>
+      </div>
+      <div class="bar-label">Demais</div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="insight-text">
+      Tempo medio de resposta das empresas: <span class="white">47 minutos</span><br>
+      Seu bot responde em: <span style="color:#00ff88">5 segundos</span>
+    </div>
+  </div>
+
+  <div class="footer">DIEGO | @GuyFolkz</div>
+
+  <script>
+    document.querySelectorAll('.bar').forEach(bar => {
+      const target = bar.style.getPropertyValue('--target-height');
+      bar.style.setProperty('height', '0px');
+      const observer = new IntersectionObserver(() => {
+        setTimeout(() => {
+          bar.style.height = target;
+          bar.style.transition = 'height 1.2s ease-out';
+        }, parseFloat(getComputedStyle(bar).animationDelay) * 1000 || 1200);
+      });
+    });
+    // Fallback: trigger via timeout
+    setTimeout(() => {
+      document.querySelectorAll('.bar').forEach(bar => {
+        bar.style.height = bar.style.getPropertyValue('--target-height');
+        bar.style.transition = 'height 1.5s ease-out';
+      });
+    }, 1300);
+  </script>
+</body>
+</html>
