@@ -4,15 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       video_id:
-        description: 'Composition ID to render (ex: Video12-EP01-Short01)'
+        description: 'Composition ID to render'
         required: true
-        default: 'Video12-EP01-Short01'
+        default: 'Video2-Projetos'
         type: string
-      concurrency:
-        description: 'Remotion concurrency'
-        required: false
-        default: '2'
-        type: string
+      frames:
+        description: 'Total frames'
+        required: true
+        default: '7600'
 
 jobs:
   render:
@@ -36,11 +35,24 @@ jobs:
           sudo apt-get install -y chromium-browser
           npx remotion browser ensure
 
+      - name: Download EP02 source asset if needed
+        run: |
+          mkdir -p public
+          if [ ! -f "public/2026-03-08_15-29-52_editbase.mp4" ]; then
+            echo "Downloading EP02 source asset from GitHub Releases"
+            curl -L "https://github.com/Folkz1/video-render/releases/download/render-assets/2026-03-08_15-29-52_editbase.mp4" \
+              -o "public/2026-03-08_15-29-52_editbase.mp4"
+          else
+            echo "EP02 source asset already available"
+          fi
+
       - name: Render video
         run: |
-          mkdir -p output
-          echo "Rendering ${{ inputs.video_id }} with concurrency=${{ inputs.concurrency }}"
-          npx remotion render src/index.ts "${{ inputs.video_id }}" "output/${{ inputs.video_id }}.mp4" --concurrency="${{ inputs.concurrency }}" --log=verbose
+          echo "Rendering ${{ inputs.video_id }} (${{ inputs.frames }} frames)"
+          npx remotion render src/index.ts "${{ inputs.video_id }}" \
+            "output/${{ inputs.video_id }}.mp4" \
+            --concurrency=2 \
+            --log=verbose
           ls -la output/
 
       - name: Upload video artifact

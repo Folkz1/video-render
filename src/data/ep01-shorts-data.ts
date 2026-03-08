@@ -14,6 +14,7 @@ export type ShortSegmentDefinition = {
   visualSource?: string;
   visualTrimBefore?: number;
   visualObjectFit?: 'cover' | 'contain';
+  objectPosition?: string;
   kicker?: string;
   headline: string[];
   caption?: string;

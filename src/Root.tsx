@@ -17,6 +17,10 @@ import { Video12Ep1Vertical } from './Video12-Ep1Vertical';
 import { EP01_VERTICAL_FRAMES } from './data/ep01-vertical-timeline';
 import {Video12Ep1Short} from './Video12-Ep1Short';
 import {EP01_SHORTS} from './data/ep01-shorts-data';
+import { Video13Ep2FullEdit } from './Video13-Ep2FullEdit';
+import { EP02_REAL_EDIT_FRAMES } from './data/ep02-real-edit-timeline';
+import {Video13Ep2Short} from './Video13-Ep2Short';
+import {EP02_SHORTS} from './data/ep02-shorts-data';
 
 const FPS = 30;
 
@@ -156,6 +160,15 @@ export const RemotionRoot: React.FC = () => {
       />
 
       <Composition
+        id="Video13-EP02-FullEdit"
+        component={Video13Ep2FullEdit}
+        durationInFrames={EP02_REAL_EDIT_FRAMES}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+
+      <Composition
         id="Video12-EP01-Vertical"
         component={Video12Ep1Vertical}
         durationInFrames={EP01_VERTICAL_FRAMES}
@@ -169,6 +182,19 @@ export const RemotionRoot: React.FC = () => {
           key={short.compositionId}
           id={short.compositionId}
           component={Video12Ep1Short}
+          durationInFrames={short.totalFrames}
+          fps={FPS}
+          width={1080}
+          height={1920}
+          defaultProps={{shortId: short.id}}
+        />
+      ))}
+
+      {EP02_SHORTS.map((short) => (
+        <Composition
+          key={short.compositionId}
+          id={short.compositionId}
+          component={Video13Ep2Short}
           durationInFrames={short.totalFrames}
           fps={FPS}
           width={1080}

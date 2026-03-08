@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   AbsoluteFill,
   Audio,
@@ -14,9 +14,9 @@ import {C} from './VideoLongBase';
 import {
   BuiltShortDefinition,
   BuiltShortSegment,
-  EP01_SHORT_A_ROLL_SRC,
-  EP01_SHORTS_MAP,
-} from './data/ep01-shorts-data';
+  EP02_SHORT_A_ROLL_SRC,
+  EP02_SHORTS_MAP,
+} from './data/ep02-shorts-data';
 
 type ShortProps = {
   shortId: string;
@@ -227,7 +227,7 @@ const HookColdOpen: React.FC<{short: BuiltShortDefinition}> = ({short}) => {
     <AbsoluteFill style={{backgroundColor: '#04050a'}}>
       {firstSegment.kind === 'face' ? (
         <OffthreadVideo
-          src={staticFile(EP01_SHORT_A_ROLL_SRC)}
+          src={staticFile(EP02_SHORT_A_ROLL_SRC)}
           startFrom={firstSegment.startFrame}
           endAt={firstSegment.startFrame + short.hookFrames}
           volume={0}
@@ -314,7 +314,7 @@ const FaceSegment: React.FC<{segment: BuiltShortSegment; accent: string}> = ({se
   return (
     <AbsoluteFill style={{backgroundColor: '#040507'}}>
       <OffthreadVideo
-        src={staticFile(EP01_SHORT_A_ROLL_SRC)}
+        src={staticFile(EP02_SHORT_A_ROLL_SRC)}
         startFrom={segment.startFrame}
         endAt={segment.endFrame}
         volume={1}
@@ -395,7 +395,7 @@ const ScreenSegment: React.FC<{segment: BuiltShortSegment; accent: string}> = ({
   return (
     <AbsoluteFill style={{backgroundColor: '#03040a'}}>
       <Audio
-        src={staticFile(EP01_SHORT_A_ROLL_SRC)}
+        src={staticFile(EP02_SHORT_A_ROLL_SRC)}
         startFrom={segment.startFrame}
         endAt={segment.endFrame}
         volume={1}
@@ -412,7 +412,7 @@ const ProofSegment: React.FC<{segment: BuiltShortSegment; accent: string}> = ({s
   return (
     <AbsoluteFill style={{backgroundColor: '#03040a'}}>
       <Audio
-        src={staticFile(EP01_SHORT_A_ROLL_SRC)}
+        src={staticFile(EP02_SHORT_A_ROLL_SRC)}
         startFrom={segment.startFrame}
         endAt={segment.endFrame}
         volume={1}
@@ -431,7 +431,7 @@ const ProofSegment: React.FC<{segment: BuiltShortSegment; accent: string}> = ({s
           gap: 10,
         }}
       >
-        {['PROVA REAL', 'EM OPERAÇÃO'].map((tag, index) => (
+        {['PROVA REAL', 'EM OPERAÃ‡ÃƒO'].map((tag, index) => (
           <div
             key={tag}
             style={{
@@ -606,9 +606,9 @@ const SegmentRenderer: React.FC<{
   return <FaceSegment segment={segment} accent={accent} />;
 };
 
-const useShort = (shortId: string) => EP01_SHORTS_MAP[shortId] ?? EP01_SHORTS_MAP['ep01-short-01'];
+const useShort = (shortId: string) => EP02_SHORTS_MAP[shortId] ?? EP02_SHORTS_MAP['ep02-short-01'];
 
-export const Video12Ep1Short: React.FC<ShortProps> = ({shortId}) => {
+export const Video13Ep2Short: React.FC<ShortProps> = ({shortId}) => {
   const short = useShort(shortId);
   const soundEvents = buildSoundEvents(short);
   const ambientVolume =
@@ -654,3 +654,4 @@ export const Video12Ep1Short: React.FC<ShortProps> = ({shortId}) => {
     </AbsoluteFill>
   );
 };
+
