@@ -22,6 +22,7 @@ import { EP02_REAL_EDIT_FRAMES } from './data/ep02-real-edit-timeline';
 import {Video13Ep2Short} from './Video13-Ep2Short';
 import {EP02_SHORTS} from './data/ep02-shorts-data';
 import { ShortParametrizavel, shortDefaultProps, cenasParaFrames } from './ShortParametrizavel';
+import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
 
 const FPS = 30;
 
@@ -51,6 +52,20 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={shortDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, cenasParaFrames(props.cenas)),
+        })}
+      />
+
+      {/* Short v2 alta qualidade (audio por cena + crossfade + SFX) */}
+      <Composition
+        id="ShortV2"
+        component={ShortV2}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={900}
+        defaultProps={shortV2DefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, cenasV2ParaFrames(props.cenas)),
         })}
       />
 

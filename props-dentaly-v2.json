@@ -1,0 +1,50 @@
+{
+  "cenas": [
+    {
+      "kicker": "DENTALY · MANAUS",
+      "texto": "Você parou de sorrir nas fotos?",
+      "imagem_url": "v2/cena0.png",
+      "audio_url": "v2/audio0.mp3",
+      "duracao_s": 5.33
+    },
+    {
+      "kicker": "A GENTE OUVE ISSO",
+      "texto": "“Fui me esquecendo de mim”",
+      "imagem_url": "v2/cena1.png",
+      "audio_url": "v2/audio1.mp3",
+      "duracao_s": 7.81
+    },
+    {
+      "kicker": "SEM JULGAMENTO",
+      "texto": "Aqui ninguém julga. A gente acolhe.",
+      "imagem_url": "v2/cena2.png",
+      "audio_url": "v2/audio2.mp3",
+      "duracao_s": 4.71
+    },
+    {
+      "kicker": "IMPLANTE A LASER",
+      "texto": "Sem corte, sem dor.",
+      "imagem_url": "v2/cena3.png",
+      "audio_url": "v2/audio3.mp3",
+      "duracao_s": 6.85
+    },
+    {
+      "kicker": "PRIMEIRO PASSO",
+      "texto": "Comece pela Consulta de Boas-Vindas.",
+      "imagem_url": "v2/cena4.png",
+      "audio_url": "v2/audio4.mp3",
+      "duracao_s": 5.33
+    },
+    {
+      "kicker": "DENTALY",
+      "texto": "A gente coleciona sorrisos.",
+      "imagem_url": "v2/cena5.png",
+      "audio_url": "v2/audio5.mp3",
+      "duracao_s": 4.78
+    }
+  ],
+  "paleta_hex": "#2FD4C4",
+  "logo_url": "dentaly/logo.png",
+  "handle": "@dentaly.manaus",
+  "sfx_url": "v2/whoosh.mp3"
+}
