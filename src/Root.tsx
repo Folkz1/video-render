@@ -21,6 +21,7 @@ import { Video13Ep2FullEdit } from './Video13-Ep2FullEdit';
 import { EP02_REAL_EDIT_FRAMES } from './data/ep02-real-edit-timeline';
 import {Video13Ep2Short} from './Video13-Ep2Short';
 import {EP02_SHORTS} from './data/ep02-shorts-data';
+import { ShortParametrizavel, shortDefaultProps, cenasParaFrames } from './ShortParametrizavel';
 
 const FPS = 30;
 
@@ -39,6 +40,20 @@ const V5_FRAMES = 36900;   // 30 segs, 3 chapters, ~20.5 min audio
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* Short vertical parametrizavel (Creative-Autopost) — props externos via --props */}
+      <Composition
+        id="ShortParametrizavel"
+        component={ShortParametrizavel}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={900}
+        defaultProps={shortDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, cenasParaFrames(props.cenas)),
+        })}
+      />
+
       {/* Original (v1) */}
       <Composition
         id="AgentesIA"

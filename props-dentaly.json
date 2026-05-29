@@ -1,0 +1,12 @@
+{
+  "cenas": [
+    { "kicker": "DENTALY · MANAUS", "texto": "Você parou de aparecer nas fotos?", "imagem_url": "dentaly/cena1-familias.jpg", "duracao_s": 8 },
+    { "kicker": "SEM JULGAMENTO", "texto": "Não foi vaidade. Foi vergonha.", "imagem_url": "dentaly/cena2-antes-depois.jpg", "duracao_s": 8 },
+    { "kicker": "IMPLANTE A LASER", "texto": "Sem corte, sem dor. Recomeçar é mais leve.", "imagem_url": "dentaly/cena3-equipe.jpg", "duracao_s": 8 },
+    { "kicker": "PRIMEIRO PASSO", "texto": "Volte a sorrir. Consulta de Boas-Vindas em Manaus.", "imagem_url": "dentaly/cena4-sorriso.jpg", "duracao_s": 9 }
+  ],
+  "audio_url": "dentaly-narration.mp3",
+  "paleta_hex": "#2FD4C4",
+  "logo_url": "dentaly/logo.png",
+  "handle": "@dentaly.manaus"
+}
