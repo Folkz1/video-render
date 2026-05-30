@@ -1,0 +1,43 @@
+{
+  "cenas": [
+    {
+      "kicker": "VOCÊ SABIA?",
+      "texto": "Implante sem corte?",
+      "video_url": "v2/hook.mp4",
+      "audio_url": "v2/content_hook.mp3",
+      "duracao_s": 5.94
+    },
+    {
+      "kicker": "COMO FUNCIONA",
+      "texto": "Laser no lugar do bisturi",
+      "imagem_url": "v2/content_c0.png",
+      "audio_url": "v2/content_c0.mp3",
+      "duracao_s": 5.39
+    },
+    {
+      "kicker": "NA PRÁTICA",
+      "texto": "Menos dor, pós tranquilo",
+      "imagem_url": "v2/content_c1.png",
+      "audio_url": "v2/content_c1.mp3",
+      "duracao_s": 7.4
+    },
+    {
+      "kicker": "BÔNUS",
+      "texto": "Cicatriza mais rápido",
+      "imagem_url": "v2/content_c2.png",
+      "audio_url": "v2/content_c2.mp3",
+      "duracao_s": 6.04
+    },
+    {
+      "kicker": "FICA A DICA",
+      "texto": "Saber é cuidar",
+      "imagem_url": "v2/content_c3.png",
+      "audio_url": "v2/content_c3.mp3",
+      "duracao_s": 4.92
+    }
+  ],
+  "paleta_hex": "#2FD4C4",
+  "logo_url": "dentaly/logo.png",
+  "handle": "@dentaly.manaus",
+  "sfx_url": "v2/whoosh.mp3"
+}

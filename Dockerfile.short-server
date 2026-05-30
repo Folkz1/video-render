@@ -1,0 +1,36 @@
+FROM node:22-slim
+
+# Deps de sistema p/ Remotion (Chromium headless + ffmpeg + fontes + libs do Chromium)
+RUN apt-get update && apt-get install -y \
+    chromium ffmpeg \
+    fonts-noto-cjk fonts-freefont-ttf fonts-liberation \
+    libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
+    libxrandr2 libxrender1 libxtst6 libnss3 libatk1.0-0 \
+    libatk-bridge2.0-0 libcups2 libdrm2 libgbm1 libpango-1.0-0 \
+    libcairo2 libasound2 libxshmfence1 \
+    python3 curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm install --production=false
+
+# Codigo + assets necessarios: src/ (bundle), render-farm/ (server),
+# public-dentaly/ (fallback p/ paths relativos; props com URL http nao dependem)
+COPY render-farm/ ./render-farm/
+COPY src/ ./src/
+COPY public-dentaly/ ./public-dentaly/
+COPY tsconfig.json* remotion.config.* ./
+
+# Pre-baixa o chrome-headless-shell na build (evita baixar no 1o render)
+RUN npx remotion browser ensure || echo "browser ensure falhou (vai baixar no 1o job)"
+
+ENV PORT=3002
+ENV WORKER_DATA_DIR=/data
+# SHORT_PUBLIC_DIR aponta p/ os assets embarcados (fallback de paths relativos)
+ENV SHORT_PUBLIC_DIR=public-dentaly
+
+EXPOSE 3002
+
+CMD ["node", "render-farm/short-server.mjs"]

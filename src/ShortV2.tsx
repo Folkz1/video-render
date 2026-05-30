@@ -3,6 +3,7 @@ import {
   AbsoluteFill,
   Audio,
   Img,
+  OffthreadVideo,
   Sequence,
   interpolate,
   spring,
@@ -23,7 +24,8 @@ const resolveSrc = (src: string): string =>
 export type CenaV2 = {
   kicker?: string;
   texto: string;
-  imagem_url: string;
+  imagem_url?: string;
+  video_url?: string; // se presente, usa OffthreadVideo (hook em vídeo AI)
   audio_url: string;
   duracao_s: number;
 };
@@ -73,10 +75,18 @@ const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number }> = ({ c
 
   return (
     <AbsoluteFill style={{ opacity: sceneOpacity, backgroundColor: '#06181b' }}>
-      <Img
-        src={resolveSrc(cena.imagem_url)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translateX(${panX}px)` }}
-      />
+      {cena.video_url ? (
+        <OffthreadVideo
+          src={resolveSrc(cena.video_url)}
+          muted
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        <Img
+          src={resolveSrc(cena.imagem_url || '')}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translateX(${panX}px)` }}
+        />
+      )}
       <AbsoluteFill
         style={{
           background:

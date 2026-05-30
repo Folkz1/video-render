@@ -1,0 +1,37 @@
+{
+  "tema": "Como funciona o implante a laser (explicado simples)",
+  "persona_alvo": "Cleocimar — adulto 35-55, prático, quer ENTENDER o que vai acontecer no corpo dele; linguagem acessível, foco no benefício concreto. Conteúdo de VALOR/educativo, sem dor, sem CTA.",
+  "caption": "Implante a laser não é marketing — é tecnologia. No lugar do bisturi, um feixe de luz preciso prepara o local do implante: dá menos sangramento, menos inchaço e uma recuperação mais tranquila, porque o laser ainda estimula a cicatrização. Entender como o seu tratamento funciona já é um jeito de cuidar melhor de você. 🦷 #saudebucal #implantealaser #odontologia #manaus",
+  "hook": {
+    "fala": "Dá pra colocar um implante sem corte e sem bisturi. Parece mágica, mas é pura ciência.",
+    "video_prompt": "Cinematic close-up of a modern dental laser device emitting a precise focused blue light beam inside a clean high-tech dental clinic, fascinating futuristic atmosphere, gentle slow camera movement, soft reflections, vertical 9:16, photorealistic, no text",
+    "texto_overlay": "Implante sem corte?",
+    "kicker": "VOCÊ SABIA?"
+  },
+  "cenas": [
+    {
+      "fala": "No lugar do bisturi, um feixe de laser bem preciso prepara o local do implante.",
+      "image_prompt": "Macro shot of advanced dental laser technology with a focused blue light beam, clean modern bright clinic, hi-tech precision and detail, vertical 9:16, photorealistic, no text",
+      "texto_overlay": "Laser no lugar do bisturi",
+      "kicker": "COMO FUNCIONA"
+    },
+    {
+      "fala": "Na prática, isso significa menos sangramento, menos inchaço e um pós-operatório bem mais tranquilo.",
+      "image_prompt": "Calm relaxed middle-aged Brazilian man resting comfortably and at ease at home, serene expression, soft warm natural light, lifestyle photography, vertical 9:16, photorealistic, no text",
+      "texto_overlay": "Menos dor, pós tranquilo",
+      "kicker": "NA PRÁTICA"
+    },
+    {
+      "fala": "E tem mais: o laser estimula as células, ajudando o osso a cicatrizar mais rápido.",
+      "image_prompt": "Bright clean abstract representation of healing and cellular regeneration, soft glowing blue and teal light, modern medical science aesthetic, elegant, vertical 9:16, photorealistic, no text",
+      "texto_overlay": "Cicatriza mais rápido",
+      "kicker": "BÔNUS"
+    },
+    {
+      "fala": "Entender como o seu tratamento funciona já é um jeito de cuidar melhor de você.",
+      "image_prompt": "Confident informed middle-aged Brazilian man with a calm reassured expression, modern bright airy background, soft light, lifestyle portrait, vertical 9:16, photorealistic, no text",
+      "texto_overlay": "Saber é cuidar",
+      "kicker": "FICA A DICA"
+    }
+  ]
+}

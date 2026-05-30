@@ -4,4 +4,11 @@ output/*.mp4
 .render-farm-cache/
 .render-farm-worker/
 output/farm/
+output/*.png
+output/*.aac
 render-farm/*.log
+# short-server: storage runtime + logs + scratch
+data/
+*.log
+*.log.err
+.last_job

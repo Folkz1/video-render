@@ -9,6 +9,7 @@
     "render": "npx remotion render src/index.ts AgentesIA output/agentes-ia.mp4",
     "farm:worker": "node render-farm/worker.mjs",
     "farm:render": "node render-farm/coordinator.mjs",
+    "short:server": "node render-farm/short-server.mjs",
     "farm:validate:easypanel": "node render-farm/validate-easypanel.mjs",
     "farm:deploy:easypanel": "node render-farm/deploy-easypanel.mjs"
   },
