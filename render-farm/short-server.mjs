@@ -60,9 +60,25 @@ async function ensureDirs() {
 
 // Clip-to-Short: baixa o TRECHO de um vídeo do YouTube (yt-dlp) e corta em 9:16.
 // start/end em segundos. Retorna o id do clip salvo em CLIPS_DIR.
-async function makeClip(youtubeUrl, start, end) {
+async function resolveSearch(query) {
+  // acha a melhor URL de vídeo no YouTube para um termo (yt-dlp ytsearch, mesma infra+proxy)
+  const args = ['--no-playlist', '--no-download', '--print', 'webpage_url'];
+  if (process.env.YTDLP_PROXY) args.push('--proxy', process.env.YTDLP_PROXY);
+  // ytsearch3 + filtro de duração no formato p/ evitar lives/vídeos enormes; pega o 1º válido
+  args.push(`ytsearch3:${query}`);
+  const { stdout } = await execFileP('yt-dlp', args, { timeout: 90000, maxBuffer: 1024 * 1024 * 8 });
+  const url = (stdout || '').trim().split('\n').map((s) => s.trim()).filter(Boolean)[0];
+  if (!url) throw new Error('busca no YouTube não retornou vídeo');
+  return url;
+}
+
+async function makeClip(youtubeUrl, start, end, search) {
   const id = randomUUID();
   const out = path.join(CLIPS_DIR, `${id}.mp4`);
+  if (!youtubeUrl && search) {
+    youtubeUrl = await resolveSearch(search);
+    log('clip search', search, '->', youtubeUrl);
+  }
   // 1) baixa SÓ o trecho (eficiente). Proxy Webshare se configurado (YouTube bloqueia datacenter).
   //    Deixa o yt-dlp escolher a extensão (%(ext)s): merge vp9+opus vira .webm/.mkv,
   //    não .mp4 — fixar .mp4 fazia o ffmpeg não achar o arquivo.
@@ -314,12 +330,12 @@ const server = http.createServer(async (req, res) => {
       const raw = await readBody(req);
       let body;
       try { body = JSON.parse(raw || '{}'); } catch { return jsonResponse(res, 400, { error: 'invalid json' }); }
-      const { youtube_url, start, end } = body;
-      if (!youtube_url || start == null || end == null) {
-        return jsonResponse(res, 400, { error: 'youtube_url, start, end (segundos) obrigatórios' });
+      const { youtube_url, search, start, end } = body;
+      if ((!youtube_url && !search) || start == null || end == null) {
+        return jsonResponse(res, 400, { error: 'youtube_url OU search, mais start, end (segundos) obrigatórios' });
       }
       try {
-        const r = await makeClip(youtube_url, Number(start), Number(end));
+        const r = await makeClip(youtube_url, Number(start), Number(end), search);
         return jsonResponse(res, 200, { id: r.id, sizeBytes: r.sizeBytes, downloadUrl: `/api/v1/clips/${r.id}/video` });
       } catch (err) {
         log('clip error', err?.message || err);
