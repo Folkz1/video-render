@@ -73,10 +73,12 @@ async function makeClip(youtubeUrl, start, end) {
   if (process.env.YTDLP_PROXY) ytArgs.push('--proxy', process.env.YTDLP_PROXY);
   ytArgs.push(youtubeUrl);
   await execFileP('yt-dlp', ytArgs, { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
-  // 2) crop central 9:16 (vídeo longo costuma ser 16:9)
+  // 2) 9:16 robusto p/ qualquer aspect (landscape/portrait/square):
+  //    escala p/ COBRIR 1080x1920 e corta o centro. Evita crop impossível
+  //    quando a altura escalada fica < 1920 (caso 16:9, o mais comum).
   await execFileP('ffmpeg', [
     '-y', '-i', raw,
-    '-vf', 'scale=1080:-2,crop=1080:1920',
+    '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
     '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-movflags', '+faststart', out,
   ], { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
   try { fs.unlinkSync(raw); } catch {}
