@@ -23,6 +23,7 @@ import {Video13Ep2Short} from './Video13-Ep2Short';
 import {EP02_SHORTS} from './data/ep02-shorts-data';
 import { ShortParametrizavel, shortDefaultProps, cenasParaFrames } from './ShortParametrizavel';
 import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
+import { ShortTech, shortTechDefaultProps, cenasTechParaFrames } from './ShortTech';
 
 const FPS = 30;
 
@@ -66,6 +67,20 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={shortV2DefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, cenasV2ParaFrames(props.cenas)),
+        })}
+      />
+
+      {/* Short TÉCNICO cyberpunk (animações Remotion: terminal/agentes/stat/glitch) */}
+      <Composition
+        id="ShortTech"
+        component={ShortTech}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={900}
+        defaultProps={shortTechDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, cenasTechParaFrames(props.cenas)),
         })}
       />
 
