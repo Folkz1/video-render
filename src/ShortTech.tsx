@@ -68,35 +68,35 @@ const CyberBackground: React.FC<{ accent: string }> = ({ accent }) => {
   const glow = interpolate(Math.sin(frame / 24), [-1, 1], [0.22, 0.5]);
   const scroll = (frame * 2) % 80;
   return (
-    <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
-      {/* glow de horizonte (sol synthwave) */}
-      <AbsoluteFill style={{ background: `radial-gradient(120% 60% at 50% 30%, ${accent}33 0%, ${MAGENTA}1f 30%, transparent 60%)` }} />
-      {/* grid em perspectiva, rolando */}
+    <AbsoluteFill style={{ backgroundColor: '#0a0f1c' }}>
+      {/* glow de horizonte (sol synthwave) — mais vibrante */}
+      <AbsoluteFill style={{ background: `radial-gradient(120% 65% at 50% 32%, ${accent}66 0%, ${MAGENTA}3a 30%, transparent 64%)` }} />
+      {/* grid em perspectiva, rolando — linhas neon mais fortes */}
       <div
         style={{
-          position: 'absolute', left: '-50%', right: '-50%', bottom: 0, height: '62%',
+          position: 'absolute', left: '-50%', right: '-50%', bottom: 0, height: '64%',
           backgroundImage:
-            `linear-gradient(${accent}55 2px, transparent 2px), linear-gradient(90deg, ${accent}40 2px, transparent 2px)`,
+            `linear-gradient(${accent}cc 2px, transparent 2px), linear-gradient(90deg, ${accent}88 2px, transparent 2px)`,
           backgroundSize: `80px 80px`,
           backgroundPositionY: `${scroll}px`,
           transform: 'perspective(520px) rotateX(68deg)',
           transformOrigin: 'center bottom',
-          maskImage: 'linear-gradient(transparent, #000 40%)',
-          WebkitMaskImage: 'linear-gradient(transparent, #000 40%)',
-          opacity: 0.7,
+          maskImage: 'linear-gradient(transparent, #000 38%)',
+          WebkitMaskImage: 'linear-gradient(transparent, #000 38%)',
+          opacity: 0.9,
         }}
       />
-      {/* glow central pulsante */}
-      <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 40%, ${accent}${Math.round(glow * 90).toString(16).padStart(2, '0')} 0%, transparent 52%)` }} />
-      {/* scanlines */}
+      {/* glow central pulsante — mais forte */}
+      <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 38%, ${accent}${Math.round(glow * 150).toString(16).padStart(2, '0')} 0%, transparent 55%)` }} />
+      {/* scanlines (leves) */}
       <AbsoluteFill
         style={{
-          backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0px, rgba(0,0,0,0.22) 1px, transparent 2px, transparent 4px)',
-          opacity: 0.5, mixBlendMode: 'multiply',
+          backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 2px, transparent 4px)',
+          opacity: 0.35, mixBlendMode: 'multiply',
         }}
       />
-      {/* vinheta */}
-      <AbsoluteFill style={{ boxShadow: 'inset 0 0 320px 80px rgba(0,0,0,0.85)' }} />
+      {/* vinheta (suave — não escurecer demais o conteúdo) */}
+      <AbsoluteFill style={{ boxShadow: 'inset 0 0 240px 50px rgba(0,0,0,0.6)' }} />
     </AbsoluteFill>
   );
 };
