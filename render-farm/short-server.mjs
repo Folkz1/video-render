@@ -62,17 +62,26 @@ async function ensureDirs() {
 // start/end em segundos. Retorna o id do clip salvo em CLIPS_DIR.
 async function makeClip(youtubeUrl, start, end) {
   const id = randomUUID();
-  const raw = path.join(CLIPS_DIR, `${id}-raw.mp4`);
   const out = path.join(CLIPS_DIR, `${id}.mp4`);
   // 1) baixa SÓ o trecho (eficiente). Proxy Webshare se configurado (YouTube bloqueia datacenter).
+  //    Deixa o yt-dlp escolher a extensão (%(ext)s): merge vp9+opus vira .webm/.mkv,
+  //    não .mp4 — fixar .mp4 fazia o ffmpeg não achar o arquivo.
+  const rawTpl = path.join(CLIPS_DIR, `${id}-raw.%(ext)s`);
   const ytArgs = [
     '-f', 'bestvideo[height<=1080]+bestaudio/best/best',
     '--download-sections', `*${start}-${end}`,
-    '--force-keyframes-at-cuts', '--no-playlist', '-o', raw,
+    '--force-keyframes-at-cuts', '--no-playlist', '-o', rawTpl,
   ];
   if (process.env.YTDLP_PROXY) ytArgs.push('--proxy', process.env.YTDLP_PROXY);
   ytArgs.push(youtubeUrl);
   await execFileP('yt-dlp', ytArgs, { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
+  // localiza o arquivo realmente gerado (qualquer extensão), ignorando
+  // fragmentos intermediários do merge (ex: {id}-raw.f137.webm) e pegando o maior.
+  const raw = fs.readdirSync(CLIPS_DIR)
+    .filter((f) => f.startsWith(`${id}-raw.`) && !/-raw\.f\d+\./.test(f))
+    .map((f) => path.join(CLIPS_DIR, f))
+    .sort((a, b) => fs.statSync(b).size - fs.statSync(a).size)[0];
+  if (!raw) throw new Error('yt-dlp não gerou arquivo (download bloqueado pelo proxy?)');
   // 2) 9:16 robusto p/ qualquer aspect (landscape/portrait/square):
   //    escala p/ COBRIR 1080x1920 e corta o centro. Evita crop impossível
   //    quando a altura escalada fica < 1920 (caso 16:9, o mais comum).
