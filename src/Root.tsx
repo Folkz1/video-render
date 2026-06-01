@@ -24,6 +24,8 @@ import {EP02_SHORTS} from './data/ep02-shorts-data';
 import { ShortParametrizavel, shortDefaultProps, cenasParaFrames } from './ShortParametrizavel';
 import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
 import { ShortTech, shortTechDefaultProps, cenasTechParaFrames } from './ShortTech';
+import { SplitReaction, splitReactionDefaultProps, cenasSplitParaFrames } from './SplitReaction';
+import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './CaptionClip';
 
 const FPS = 30;
 
@@ -81,6 +83,34 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={shortTechDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, cenasTechParaFrames(props.cenas)),
+        })}
+      />
+
+      {/* SplitReaction — tela dividida (criador topo + b-roll baixo) + legenda karaokê na costura */}
+      <Composition
+        id="SplitReaction"
+        component={SplitReaction}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={900}
+        defaultProps={splitReactionDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, cenasSplitParaFrames(props.cenas)),
+        })}
+      />
+
+      {/* CaptionClip — clip fullscreen + legenda karaokê lower-third + destaques (cena única) */}
+      <Composition
+        id="CaptionClip"
+        component={CaptionClip}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={240}
+        defaultProps={captionClipDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, captionClipParaFrames(props)),
         })}
       />
 
