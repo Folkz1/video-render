@@ -23,14 +23,18 @@ import { mkdir, stat } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia } from '@remotion/renderer';
 
+const execFileP = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..'); // raiz do repo de render
 const ENTRY = path.join(ROOT, 'src', 'index.ts');
 const DATA_DIR = process.env.WORKER_DATA_DIR || path.join(ROOT, 'data');
 const SHORTS_DIR = path.join(DATA_DIR, 'shorts');
+const CLIPS_DIR = path.join(DATA_DIR, 'clips');
 const PORT = Number(process.env.PORT || 3002);
 // public-dir embarcado: fallback p/ props com caminhos RELATIVOS (staticFile).
 // Props com URLs http/data: NAO dependem disto (resolveSrc do ShortV2 usa direto).
@@ -51,6 +55,33 @@ const log = (...a) => console.log(`[short-server ${nowIso()}]`, ...a);
 
 async function ensureDirs() {
   await mkdir(SHORTS_DIR, { recursive: true });
+  await mkdir(CLIPS_DIR, { recursive: true });
+}
+
+// Clip-to-Short: baixa o TRECHO de um vídeo do YouTube (yt-dlp) e corta em 9:16.
+// start/end em segundos. Retorna o id do clip salvo em CLIPS_DIR.
+async function makeClip(youtubeUrl, start, end) {
+  const id = randomUUID();
+  const raw = path.join(CLIPS_DIR, `${id}-raw.mp4`);
+  const out = path.join(CLIPS_DIR, `${id}.mp4`);
+  // 1) baixa SÓ o trecho (eficiente). Proxy Webshare se configurado (YouTube bloqueia datacenter).
+  const ytArgs = [
+    '-f', 'bestvideo[height<=1080]+bestaudio/best/best',
+    '--download-sections', `*${start}-${end}`,
+    '--force-keyframes-at-cuts', '--no-playlist', '-o', raw,
+  ];
+  if (process.env.YTDLP_PROXY) ytArgs.push('--proxy', process.env.YTDLP_PROXY);
+  ytArgs.push(youtubeUrl);
+  await execFileP('yt-dlp', ytArgs, { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
+  // 2) crop central 9:16 (vídeo longo costuma ser 16:9)
+  await execFileP('ffmpeg', [
+    '-y', '-i', raw,
+    '-vf', 'scale=1080:-2,crop=1080:1920',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-movflags', '+faststart', out,
+  ], { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
+  try { fs.unlinkSync(raw); } catch {}
+  const st = fs.statSync(out);
+  return { id, sizeBytes: st.size };
 }
 
 async function getServeUrl() {
@@ -265,6 +296,30 @@ const server = http.createServer(async (req, res) => {
       getServeUrl().catch(() => {}); // warm bundle
       setImmediate(processQueue);
       return jsonResponse(res, 202, publicJob(job));
+    }
+
+    // Clip-to-Short: corta trecho real de um vídeo do YouTube (síncrono; trecho curto)
+    if (req.method === 'POST' && u.pathname === '/api/v1/clip') {
+      const raw = await readBody(req);
+      let body;
+      try { body = JSON.parse(raw || '{}'); } catch { return jsonResponse(res, 400, { error: 'invalid json' }); }
+      const { youtube_url, start, end } = body;
+      if (!youtube_url || start == null || end == null) {
+        return jsonResponse(res, 400, { error: 'youtube_url, start, end (segundos) obrigatórios' });
+      }
+      try {
+        const r = await makeClip(youtube_url, Number(start), Number(end));
+        return jsonResponse(res, 200, { id: r.id, sizeBytes: r.sizeBytes, downloadUrl: `/api/v1/clips/${r.id}/video` });
+      } catch (err) {
+        log('clip error', err?.message || err);
+        return jsonResponse(res, 502, { error: 'falha ao cortar clip', detail: String(err?.message || err).slice(0, 300) });
+      }
+    }
+
+    if ((req.method === 'GET' || req.method === 'HEAD') && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'clips' && parts[3] && parts[4] === 'video') {
+      const f = path.join(CLIPS_DIR, `${parts[3]}.mp4`);
+      if (!fs.existsSync(f)) return jsonResponse(res, 404, { error: 'clip not found' });
+      return streamVideo(req, res, f);
     }
 
     if ((req.method === 'GET' || req.method === 'HEAD') && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'shorts' && parts[3]) {
