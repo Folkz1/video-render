@@ -168,8 +168,8 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         </Sequence>
       ))}
 
-      {/* handle badge abaixo da costura */}
-      <div style={{ position: 'absolute', top: splitY + 18, left: 0, width: 1080, textAlign: 'center', zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 36, letterSpacing: '0.08em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
+      {/* handle badge — canto superior esquerdo (fora da costura: não colide com a legenda karaokê) */}
+      <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
         {handle.toUpperCase()}
       </div>
 
