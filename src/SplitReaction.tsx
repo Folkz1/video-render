@@ -6,8 +6,10 @@ import {
   OffthreadVideo,
   Sequence,
   interpolate,
+  spring,
   staticFile,
   useCurrentFrame,
+  useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
 
@@ -31,6 +33,7 @@ export type CenaSplit = {
   duracao_s: number;
   words?: WordTiming[]; // timestamps por palavra (relativos ao áudio da cena)
   broll_cta?: string; // overlay opcional no rodapé do b-roll
+  logo_url?: string; // logo do nicho p/ "exemplificar" (entra animado quando a fala cita a ferramenta)
 };
 
 export type SplitReactionProps = {
@@ -80,6 +83,21 @@ const HandleTile: React.FC<{ handle: string }> = ({ handle }) => {
   );
 };
 
+// logo do nicho "exemplificando" a fala: entra com mola, glow pulsante e leve float
+const LogoBadge: React.FC<{ src: string; accent: string }> = ({ src, accent }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 13, mass: 0.6 } });
+  const scale = interpolate(appear, [0, 1], [0.4, 1]);
+  const float = Math.sin(frame / 22) * 6;
+  const glow = interpolate(Math.sin(frame / 18), [-1, 1], [0.35, 0.85]);
+  return (
+    <div style={{ position: 'absolute', top: 28, right: 28, width: 156, height: 156, borderRadius: 30, zIndex: 30, background: 'rgba(8,12,22,0.80)', border: `2px solid ${accent}`, boxShadow: `0 0 ${Math.round(22 * glow)}px ${accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: `scale(${scale}) translateY(${float}px)`, opacity: appear }}>
+      <Img src={resolveSrc(src)} style={{ width: '62%', height: '62%', objectFit: 'contain' }} />
+    </div>
+  );
+};
+
 const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }> = ({ cena, splitY, accent }) => (
   <>
     <div style={{ position: 'absolute', top: splitY, left: 0, width: 1080, height: 1920 - splitY, overflow: 'hidden', backgroundColor: '#05060a' }}>
@@ -88,6 +106,7 @@ const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }>
       ) : (
         <KenBurns src={cena.imagem_url || ''} />
       )}
+      {cena.logo_url ? <LogoBadge src={cena.logo_url} accent={accent} /> : null}
       {cena.broll_cta ? (
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 44, textAlign: 'center', color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 38, letterSpacing: '0.04em', WebkitTextStroke: '5px #000', paintOrder: 'stroke fill' }}>{cena.broll_cta.toUpperCase()}</div>
       ) : null}
