@@ -37,6 +37,7 @@ export type SplitReactionProps = {
   cenas: CenaSplit[];
   creator_url?: string; // clip do criador (topo, contínuo) — OffthreadVideo
   creator_avatar?: string; // fallback: imagem do criador (topo)
+  creator_live_audio?: boolean; // gravação real: topo toca o áudio (não muta, não loopa)
   paleta_hex: string;
   logo_url: string;
   handle: string;
@@ -106,7 +107,7 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 };
 
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
 
   let cursor = 0;
@@ -123,7 +124,7 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
       {/* TOPO criador (contínuo, fixo) */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: splitY, overflow: 'hidden', backgroundColor: '#0a0f1c' }}>
         {creator_url ? (
-          <OffthreadVideo src={resolveSrc(creator_url)} muted loop style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <OffthreadVideo src={resolveSrc(creator_url)} muted={!creator_live_audio} loop={!creator_live_audio} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : creator_avatar ? (
           <KenBurns src={creator_avatar} />
         ) : null}
