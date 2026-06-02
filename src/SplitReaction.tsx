@@ -71,7 +71,7 @@ const KenBurns: React.FC<{ src: string }> = ({ src }) => {
 const HandleTile: React.FC<{ handle: string }> = ({ handle }) => {
   const row = (handle + '   ').repeat(8);
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.1, zIndex: 1, transform: 'rotate(-30deg) scale(1.7)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 44, pointerEvents: 'none' }}>
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.045, zIndex: 1, transform: 'rotate(-30deg) scale(1.7)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 64, pointerEvents: 'none' }}>
       {Array.from({ length: 12 }).map((_, i) => (
         <div key={i} style={{ whiteSpace: 'nowrap', color: '#fff', fontFamily: 'monospace', fontSize: 40, fontWeight: 700 }}>{row}</div>
       ))}
@@ -83,7 +83,7 @@ const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }>
   <>
     <div style={{ position: 'absolute', top: splitY, left: 0, width: 1080, height: 1920 - splitY, overflow: 'hidden', backgroundColor: '#05060a' }}>
       {cena.video_url ? (
-        <OffthreadVideo src={resolveSrc(cena.video_url)} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <OffthreadVideo src={resolveSrc(cena.video_url)} muted loop style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
         <KenBurns src={cena.imagem_url || ''} />
       )}
