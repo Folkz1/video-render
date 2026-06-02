@@ -16,7 +16,7 @@ import {
 // Áudio por cena (voz do criador / clone), crossfade, branding. 1080x1920 @ 30fps.
 
 const FPS = 30;
-const OVERLAP = 10;
+const OVERLAP = 16;
 
 const resolveSrc = (src: string): string =>
   !src ? src : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
@@ -65,8 +65,8 @@ export const cenasTechParaFrames = (cenas: CenaTech[]) =>
 const MAGENTA = '#ff2bd6';
 const CyberBackground: React.FC<{ accent: string }> = ({ accent }) => {
   const frame = useCurrentFrame();
-  const glow = interpolate(Math.sin(frame / 24), [-1, 1], [0.22, 0.5]);
-  const scroll = (frame * 2) % 80;
+  const glow = interpolate(Math.sin(frame / 38), [-1, 1], [0.30, 0.40]); // pulso mais lento e sutil
+  const scroll = (frame * 0.6) % 80; // grid rolando devagar — menos cansativo
   return (
     <AbsoluteFill style={{ backgroundColor: '#0a0f1c' }}>
       {/* glow de horizonte (sol synthwave) — mais vibrante */}
@@ -132,10 +132,10 @@ const HookAnim: React.FC<{ cena: CenaTech; accent: string }> = ({ cena, accent }
         </div>
       ) : null}
       {(() => {
-        // glitch RGB split: flicker pseudo-aleatório baseado no frame
+        // glitch RGB split: SÓ na entrada do hook (~1s) e raro — antes era o vídeo todo (cansava)
         const g = Math.sin(frame * 12.9898) * 43758.5453;
-        const glitch = (g - Math.floor(g)) > 0.82 ? 1 : 0;
-        const dx = glitch ? 6 : 0;
+        const glitch = (frame < 26 && (g - Math.floor(g)) > 0.9) ? 1 : 0;
+        const dx = glitch ? 4 : 0;
         const layer = (color: string, ox: number, opacity: number) => (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignContent: 'center', gap: '0 22px', color, transform: `translateX(${ox}px)`, opacity, mixBlendMode: 'screen' }}>
             {words.map((w, i) => {
