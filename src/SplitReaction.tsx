@@ -54,6 +54,7 @@ export type SplitReactionProps = {
   creator_focus_y?: number; // default 0.32 (olhos no terço superior)
   creator_zoom?: number;
   creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in
+  creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
   voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa (ducking)
 };
 
@@ -121,7 +122,7 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 };
 
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, voice_windows } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
 
   let cursor = 0;
@@ -158,6 +159,7 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         creator_focus_y={creator_focus_y}
         creator_zoom={creator_zoom}
         creator_punches={creator_punches}
+        creator_face_keyframes={creator_face_keyframes}
       />
 
       {/* música de fundo (com ducking sob a voz quando há voice_windows) */}

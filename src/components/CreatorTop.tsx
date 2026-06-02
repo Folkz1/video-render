@@ -31,6 +31,7 @@ export type CreatorTopProps = {
   creator_focus_y?: number; // 0..1 — vertical; default 0.32 = olhos no terço superior (headroom)
   creator_zoom?: number; // zoom base do painel (default 1.0)
   creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in na ênfase
+  creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
 };
 
 // Ken Burns lento p/ o avatar (idêntico ao do SplitReaction)
@@ -70,6 +71,7 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
   creator_focus_y = 0.32,
   creator_zoom = 1.0,
   creator_punches,
+  creator_face_keyframes,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -85,9 +87,25 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
       break;
     }
   }
-  // object-position calibrado no rosto (terço superior) — rosto GRANDE sem esticar (cover)
-  const objPos = `${Math.round(creator_focus_x * 100)}% ${Math.round(creator_focus_y * 100)}%`;
-  const creatorScale = creator_zoom * pScale;
+  // enquadramento: face-tracking (segue/zooma o rosto detectado) OU foco fixo no terço superior
+  let fx = creator_focus_x;
+  let fy = creator_focus_y;
+  let baseScale = creator_zoom;
+  const kf = [...(creator_face_keyframes ?? [])]
+    .sort((a, b) => a.t - b.t)
+    .filter((k, i, arr) => i === 0 || k.t > arr[i - 1].t); // t estritamente crescente p/ interpolate
+  if (kf.length >= 2) {
+    const ts = kf.map((k) => k.t * fps);
+    const op = { extrapolateLeft: 'clamp' as const, extrapolateRight: 'clamp' as const };
+    fx = interpolate(frame, ts, kf.map((k) => k.cx), op);
+    fy = interpolate(frame, ts, kf.map((k) => k.cy), op);
+    baseScale = creator_zoom * interpolate(frame, ts, kf.map((k) => k.scale), op);
+  } else if (kf.length === 1) {
+    fx = kf[0].cx; fy = kf[0].cy; baseScale = creator_zoom * kf[0].scale;
+  }
+  // object-position calibrado no rosto — rosto GRANDE sem esticar (cover)
+  const objPos = `${Math.round(fx * 100)}% ${Math.round(fy * 100)}%`;
+  const creatorScale = baseScale * pScale;
   return (
     <>
       {/* TOPO criador (contínuo, fixo) */}
