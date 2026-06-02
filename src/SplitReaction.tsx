@@ -49,6 +49,12 @@ export type SplitReactionProps = {
   faixa_tese?: string; // título-tese fixo opcional
   sfx_url?: string;
   music_url?: string;
+  // ── Sprint 1 (deep-study): enquadramento do criador + ducking de áudio ──
+  creator_focus_x?: number; // object-position do rosto (0..1)
+  creator_focus_y?: number; // default 0.32 (olhos no terço superior)
+  creator_zoom?: number;
+  creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in
+  voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa (ducking)
 };
 
 export const splitReactionDefaultProps: SplitReactionProps = {
@@ -115,7 +121,7 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 };
 
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, voice_windows } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
 
   let cursor = 0;
@@ -126,6 +132,16 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
     return item;
   });
   const total = Math.max(1, cursor);
+
+  // ducking: música abaixa sob a voz (janelas em s). f começa em 0 quando o Audio entra (from=0).
+  const hasVW = Array.isArray(voice_windows) && voice_windows.length > 0;
+  const musicVol = hasVW
+    ? (f: number) => {
+        const t = f / FPS;
+        const inVoice = voice_windows!.some((w) => t >= w.from - 0.12 && t < w.to + 0.12);
+        return inVoice ? 0.045 : 0.13;
+      }
+    : 0.12;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
@@ -138,12 +154,16 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         logo_url={logo_url}
         paleta_hex={paleta_hex}
         splitY={splitY}
+        creator_focus_x={creator_focus_x}
+        creator_focus_y={creator_focus_y}
+        creator_zoom={creator_zoom}
+        creator_punches={creator_punches}
       />
 
-      {/* música de fundo */}
+      {/* música de fundo (com ducking sob a voz quando há voice_windows) */}
       {music_url ? (
         <Sequence from={0} durationInFrames={total}>
-          <Audio src={resolveSrc(music_url)} volume={0.12} loop />
+          <Audio src={resolveSrc(music_url)} volume={musicVol} loop />
         </Sequence>
       ) : null}
 

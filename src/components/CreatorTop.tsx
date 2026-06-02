@@ -1,9 +1,9 @@
 import React from 'react';
 import {
+  Easing,
   Img,
   OffthreadVideo,
   interpolate,
-  spring,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -26,6 +26,11 @@ export type CreatorTopProps = {
   paleta_hex: string;
   splitY: number; // altura do painel topo em px (canvas 1920)
   faixa_tese?: string; // não renderizada aqui (fica no host) — mantida por compat de assinatura
+  // ── Face-framing + punch-in (Sprint 1 / deep-study): rosto GRANDE e bem enquadrado ──
+  creator_focus_x?: number; // 0..1 — object-position horizontal do rosto (default 0.5 = centro)
+  creator_focus_y?: number; // 0..1 — vertical; default 0.32 = olhos no terço superior (headroom)
+  creator_zoom?: number; // zoom base do painel (default 1.0)
+  creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in na ênfase
 };
 
 // Ken Burns lento p/ o avatar (idêntico ao do SplitReaction)
@@ -61,13 +66,34 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
   logo_url,
   paleta_hex,
   splitY,
+  creator_focus_x = 0.5,
+  creator_focus_y = 0.32,
+  creator_zoom = 1.0,
+  creator_punches,
 }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  // punch-in (zoom sutil 1→1.12→1) nos momentos de ênfase — sinaliza "isso importa"
+  let pScale = 1;
+  for (const p of creator_punches ?? []) {
+    const a = p.from * fps;
+    const b = p.to * fps;
+    if (frame >= a && frame < b) {
+      pScale = interpolate(frame, [a, a + 8, b - 8, b], [1, 1.12, 1.12, 1], {
+        easing: Easing.out(Easing.cubic), extrapolateLeft: 'clamp', extrapolateRight: 'clamp',
+      });
+      break;
+    }
+  }
+  // object-position calibrado no rosto (terço superior) — rosto GRANDE sem esticar (cover)
+  const objPos = `${Math.round(creator_focus_x * 100)}% ${Math.round(creator_focus_y * 100)}%`;
+  const creatorScale = creator_zoom * pScale;
   return (
     <>
       {/* TOPO criador (contínuo, fixo) */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: splitY, overflow: 'hidden', backgroundColor: '#0a0f1c' }}>
         {creator_url ? (
-          <OffthreadVideo src={resolveSrc(creator_url)} muted={!creator_live_audio} loop={!creator_live_audio} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <OffthreadVideo src={resolveSrc(creator_url)} muted={!creator_live_audio} loop={!creator_live_audio} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: objPos, transform: `scale(${creatorScale})` }} />
         ) : creator_avatar ? (
           <KenBurns src={creator_avatar} />
         ) : null}
