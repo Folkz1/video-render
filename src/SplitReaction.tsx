@@ -123,7 +123,7 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
       {/* TOPO criador (contínuo, fixo) */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: splitY, overflow: 'hidden', backgroundColor: '#0a0f1c' }}>
         {creator_url ? (
-          <OffthreadVideo src={resolveSrc(creator_url)} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <OffthreadVideo src={resolveSrc(creator_url)} muted loop style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : creator_avatar ? (
           <KenBurns src={creator_avatar} />
         ) : null}
