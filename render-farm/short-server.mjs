@@ -35,6 +35,7 @@ const ENTRY = path.join(ROOT, 'src', 'index.ts');
 const DATA_DIR = process.env.WORKER_DATA_DIR || path.join(ROOT, 'data');
 const SHORTS_DIR = path.join(DATA_DIR, 'shorts');
 const CLIPS_DIR = path.join(DATA_DIR, 'clips');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 const PORT = Number(process.env.PORT || 3002);
 // public-dir embarcado: fallback p/ props com caminhos RELATIVOS (staticFile).
 // Props com URLs http/data: NAO dependem disto (resolveSrc do ShortV2 usa direto).
@@ -42,6 +43,7 @@ const PUBLIC_DIR = process.env.SHORT_PUBLIC_DIR
   ? path.resolve(ROOT, process.env.SHORT_PUBLIC_DIR)
   : path.join(ROOT, 'public-dentaly');
 const MAX_BODY = 12 * 1024 * 1024; // 12MB de props (data-uri pequenos cabem)
+const MAX_UPLOAD = 220 * 1024 * 1024; // 220MB p/ gravações (webcam); folga sobre o limite de 200MB do backend
 const DEFAULT_CONCURRENCY = Math.max(1, Math.min(4, (os.cpus()?.length || 2) - 1));
 
 const jobs = new Map(); // id -> job
@@ -56,6 +58,7 @@ const log = (...a) => console.log(`[short-server ${nowIso()}]`, ...a);
 async function ensureDirs() {
   await mkdir(SHORTS_DIR, { recursive: true });
   await mkdir(CLIPS_DIR, { recursive: true });
+  await mkdir(UPLOADS_DIR, { recursive: true });
 }
 
 // Clip-to-Short: baixa o TRECHO de um vídeo do YouTube (yt-dlp) e corta em 9:16.
@@ -229,11 +232,11 @@ function readBody(req) {
   });
 }
 
-function streamVideo(req, res, file) {
+function streamVideo(req, res, file, contentType = 'video/mp4') {
   const st = fs.statSync(file);
   if (req.method === 'HEAD') {
     res.writeHead(200, {
-      'content-type': 'video/mp4',
+      'content-type': contentType,
       'content-length': st.size,
       'accept-ranges': 'bytes',
       'access-control-allow-origin': '*',
@@ -250,7 +253,7 @@ function streamVideo(req, res, file) {
       return res.end();
     }
     res.writeHead(206, {
-      'content-type': 'video/mp4',
+      'content-type': contentType,
       'content-range': `bytes ${start}-${end}/${st.size}`,
       'accept-ranges': 'bytes',
       'content-length': end - start + 1,
@@ -259,13 +262,21 @@ function streamVideo(req, res, file) {
     return fs.createReadStream(file, { start, end }).pipe(res);
   }
   res.writeHead(200, {
-    'content-type': 'video/mp4',
+    'content-type': contentType,
     'content-length': st.size,
     'accept-ranges': 'bytes',
     'access-control-allow-origin': '*',
     'content-disposition': `inline; filename="${path.basename(file)}"`,
   });
   return fs.createReadStream(file).pipe(res);
+}
+
+// Mapeia extensão de arquivo → content-type de vídeo (uploads podem ser .webm ou .mp4).
+function videoContentType(file) {
+  const ext = path.extname(file).toLowerCase();
+  if (ext === '.webm') return 'video/webm';
+  if (ext === '.mov') return 'video/quicktime';
+  return 'video/mp4';
 }
 
 const server = http.createServer(async (req, res) => {
@@ -347,6 +358,45 @@ const server = http.createServer(async (req, res) => {
       const f = path.join(CLIPS_DIR, `${parts[3]}.mp4`);
       if (!fs.existsSync(f)) return jsonResponse(res, 404, { error: 'clip not found' });
       return streamVideo(req, res, f);
+    }
+
+    // Object storage genérico p/ gravações (webm/mp4) — usado quando o B2 não está
+    // configurado em prod. Lê o body como BINÁRIO (NÃO usa readBody, que é string).
+    if (req.method === 'POST' && u.pathname === '/api/v1/upload') {
+      const ext = String(u.searchParams.get('ext') || 'webm').toLowerCase().replace(/[^a-z0-9]/g, '') || 'webm';
+      const id = randomUUID();
+      const out = path.join(UPLOADS_DIR, `${id}.${ext}`);
+      try {
+        let size = 0;
+        const chunks = [];
+        for await (const chunk of req) {
+          size += chunk.length;
+          if (size > MAX_UPLOAD) {
+            req.destroy();
+            return jsonResponse(res, 413, { error: 'upload too large' });
+          }
+          chunks.push(chunk);
+        }
+        const buf = Buffer.concat(chunks);
+        if (buf.length === 0) return jsonResponse(res, 400, { error: 'empty body' });
+        fs.writeFileSync(out, buf);
+        log('upload', id, ext, buf.length, 'bytes');
+        return jsonResponse(res, 200, { id, url: `/api/v1/uploads/${id}/video`, sizeBytes: buf.length });
+      } catch (err) {
+        log('upload error', err?.message || err);
+        return jsonResponse(res, 500, { error: 'upload failed', detail: String(err?.message || err).slice(0, 300) });
+      }
+    }
+
+    if ((req.method === 'GET' || req.method === 'HEAD') && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'uploads' && parts[3] && parts[4] === 'video') {
+      // o arquivo pode ser .webm ou .mp4 — acha por prefixo do id
+      let f;
+      try {
+        const name = fs.readdirSync(UPLOADS_DIR).find((n) => n.startsWith(`${parts[3]}.`));
+        if (name) f = path.join(UPLOADS_DIR, name);
+      } catch {}
+      if (!f || !fs.existsSync(f)) return jsonResponse(res, 404, { error: 'upload not found' });
+      return streamVideo(req, res, f, videoContentType(f));
     }
 
     if ((req.method === 'GET' || req.method === 'HEAD') && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'shorts' && parts[3]) {

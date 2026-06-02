@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
+import { CreatorTop } from './components/CreatorTop';
 
 // SplitReaction — formato B (split 50/50 permanente): TOPO = rosto do criador (fixo,
 // retenção facial + autoridade); BAIXO = b-roll/clip do tema que troca a cada cena;
@@ -71,18 +72,6 @@ const KenBurns: React.FC<{ src: string }> = ({ src }) => {
   return <Img src={resolveSrc(src)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translateX(${panX}px)` }} />;
 };
 
-// assinatura anti-repost: handle repetido em diagonal, bem sutil, atrás do criador
-const HandleTile: React.FC<{ handle: string }> = ({ handle }) => {
-  const row = (handle + '   ').repeat(8);
-  return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.045, zIndex: 1, transform: 'rotate(-30deg) scale(1.7)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 64, pointerEvents: 'none' }}>
-      {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} style={{ whiteSpace: 'nowrap', color: '#fff', fontFamily: 'monospace', fontSize: 40, fontWeight: 700 }}>{row}</div>
-      ))}
-    </div>
-  );
-};
-
 // logo do nicho "exemplificando" a fala: entra com mola, glow pulsante e leve float
 const LogoBadge: React.FC<{ src: string; accent: string }> = ({ src, accent }) => {
   const frame = useCurrentFrame();
@@ -140,23 +129,16 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
-      {/* TOPO criador (contínuo, fixo) */}
-      <div style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: splitY, overflow: 'hidden', backgroundColor: '#0a0f1c' }}>
-        {creator_url ? (
-          <OffthreadVideo src={resolveSrc(creator_url)} muted={!creator_live_audio} loop={!creator_live_audio} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : creator_avatar ? (
-          <KenBurns src={creator_avatar} />
-        ) : null}
-        <HandleTile handle={handle} />
-        {logo_url ? (
-          <div style={{ position: 'absolute', top: 40, right: 40, width: 96, height: 96, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.3)', zIndex: 50 }}>
-            <Img src={resolveSrc(logo_url)} style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
-          </div>
-        ) : null}
-      </div>
-
-      {/* linha divisória neon */}
-      <div style={{ position: 'absolute', top: splitY - 3, left: 0, width: 1080, height: 6, background: paleta_hex, opacity: 0.95, zIndex: 35, boxShadow: `0 0 18px ${paleta_hex}` }} />
+      {/* TOPO criador (contínuo, fixo) + linha divisória neon — componente reutilizável */}
+      <CreatorTop
+        creator_url={creator_url}
+        creator_avatar={creator_avatar}
+        creator_live_audio={creator_live_audio}
+        handle={handle}
+        logo_url={logo_url}
+        paleta_hex={paleta_hex}
+        splitY={splitY}
+      />
 
       {/* música de fundo */}
       {music_url ? (

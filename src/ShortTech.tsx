@@ -10,13 +10,18 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
+import { CreatorTop } from './components/CreatorTop';
 
 // Short vertical TÉCNICO (canal pessoal de IA/dev): cenas ANIMADAS (motion graphics)
 // em vez de fotos — terminal, diagrama de agentes, conceito, stat, hook, cta.
 // Áudio por cena (voz do criador / clone), crossfade, branding. 1080x1920 @ 30fps.
+//
+// SPLIT UNIVERSAL (opt-in): show_creator_panel=true encaixa o painel do criador no topo
+// (CreatorTop) e confina as animações + fundo cyberpunk à metade de baixo. Default = atual.
 
 const FPS = 30;
 const OVERLAP = 16;
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 const resolveSrc = (src: string): string =>
   !src ? src : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
@@ -44,6 +49,12 @@ export type ShortTechProps = {
   logo_url?: string;
   sfx_url?: string;
   music_url?: string;
+  // ── SPLIT UNIVERSAL (opt-in; default = comportamento atual) ──
+  show_creator_panel?: boolean; // true => painel do criador no topo + animações confinadas embaixo
+  creator_url?: string; // clip/gravação do criador (topo)
+  creator_avatar?: string; // fallback imagem do criador (topo)
+  creator_live_audio?: boolean; // gravação real: topo toca o áudio (não muta, não loopa)
+  split_ratio?: number; // fração da altura do painel topo (0.42-0.62)
 };
 
 export const shortTechDefaultProps: ShortTechProps = {
@@ -304,7 +315,10 @@ const Branding: React.FC<{ handle: string; accent: string }> = ({ handle, accent
   </div>
 );
 
-export const ShortTech: React.FC<ShortTechProps> = ({ cenas, accent, handle, logo_url, sfx_url, music_url }) => {
+export const ShortTech: React.FC<ShortTechProps> = ({
+  cenas, accent, handle, logo_url, sfx_url, music_url,
+  show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
+}) => {
   let cursor = 0;
   const build = (cenas ?? []).map((cena) => {
     const dur = Math.max(1, Math.round((cena.duracao_s ?? 3) * FPS));
@@ -314,9 +328,34 @@ export const ShortTech: React.FC<ShortTechProps> = ({ cenas, accent, handle, log
   });
   const total = Math.max(1, cursor);
 
+  // SPLIT UNIVERSAL: fundo + animações confinados abaixo do painel do criador
+  const splitY = show_creator_panel ? Math.round(clamp(split_ratio, 0.42, 0.62) * 1920) : 0;
+  const liveAudio = Boolean(show_creator_panel && creator_live_audio);
+
+  // box que vira a nova origem das animações (AbsoluteFill ancora nele); sem split = full canvas
+  const contentBox: React.CSSProperties = show_creator_panel
+    ? { position: 'absolute', top: splitY, left: 0, width: 1080, height: 1920 - splitY, overflow: 'hidden' }
+    : { position: 'absolute', inset: 0 };
+
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
-      <CyberBackground accent={accent} />
+      <div style={contentBox}>
+        <CyberBackground accent={accent} />
+
+        {build.map((b, i) => {
+          const dd = b.dur + (i === 0 ? 0 : OVERLAP);
+          return (
+            <Sequence key={`v${i}`} from={Math.max(0, b.from - (i === 0 ? 0 : OVERLAP))} durationInFrames={dd}>
+              <SceneWrap dur={dd}>
+                {renderAnim(b.cena, accent, handle, logo_url, dd)}
+                {b.cena.anim !== 'hook' && b.cena.anim !== 'cta' ? (
+                  <Caption kicker={b.cena.kicker} texto={b.cena.texto} accent={accent} dur={dd} />
+                ) : null}
+              </SceneWrap>
+            </Sequence>
+          );
+        })}
+      </div>
 
       {music_url ? (
         <Sequence from={0} durationInFrames={total}>
@@ -324,11 +363,14 @@ export const ShortTech: React.FC<ShortTechProps> = ({ cenas, accent, handle, log
         </Sequence>
       ) : null}
 
-      {build.map((b, i) => (
-        <Sequence key={`a${i}`} from={b.from} durationInFrames={b.dur}>
-          {b.cena.audio_url ? <Audio src={resolveSrc(b.cena.audio_url)} volume={1} /> : null}
-        </Sequence>
-      ))}
+      {/* narração por cena — suprimida em modo gravação (áudio vem do vídeo do criador) */}
+      {!liveAudio
+        ? build.map((b, i) => (
+            <Sequence key={`a${i}`} from={b.from} durationInFrames={b.dur}>
+              {b.cena.audio_url ? <Audio src={resolveSrc(b.cena.audio_url)} volume={1} /> : null}
+            </Sequence>
+          ))
+        : null}
 
       {sfx_url
         ? build.slice(1).map((b, i) => (
@@ -338,19 +380,18 @@ export const ShortTech: React.FC<ShortTechProps> = ({ cenas, accent, handle, log
           ))
         : null}
 
-      {build.map((b, i) => {
-        const dd = b.dur + (i === 0 ? 0 : OVERLAP);
-        return (
-          <Sequence key={`v${i}`} from={Math.max(0, b.from - (i === 0 ? 0 : OVERLAP))} durationInFrames={dd}>
-            <SceneWrap dur={dd}>
-              {renderAnim(b.cena, accent, handle, logo_url, dd)}
-              {b.cena.anim !== 'hook' && b.cena.anim !== 'cta' ? (
-                <Caption kicker={b.cena.kicker} texto={b.cena.texto} accent={accent} dur={dd} />
-              ) : null}
-            </SceneWrap>
-          </Sequence>
-        );
-      })}
+      {/* painel do criador no topo */}
+      {show_creator_panel ? (
+        <CreatorTop
+          creator_url={creator_url}
+          creator_avatar={creator_avatar}
+          creator_live_audio={creator_live_audio}
+          handle={handle}
+          logo_url={logo_url}
+          paleta_hex={accent}
+          splitY={splitY}
+        />
+      ) : null}
 
       <Branding handle={handle} accent={accent} />
     </AbsoluteFill>

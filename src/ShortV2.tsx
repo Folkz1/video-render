@@ -11,12 +11,17 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
+import { CreatorTop } from './components/CreatorTop';
 
 // Short vertical v2 (alta qualidade): áudio POR CENA (sincronizado), crossfade entre
 // cenas, texto animado, SFX opcional, branding. Cada cena dura o tempo da sua narração.
+//
+// SPLIT UNIVERSAL (opt-in): show_creator_panel=true encaixa o painel do criador no topo
+// (CreatorTop) e empurra o conteúdo principal pra baixo. Default = comportamento atual.
 
 const FPS = 30;
 const OVERLAP = 12; // frames de crossfade visual entre cenas
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 const resolveSrc = (src: string): string =>
   !src ? src : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
@@ -37,6 +42,12 @@ export type ShortV2Props = {
   handle: string;
   sfx_url?: string; // whoosh tocado no corte de cada cena
   music_url?: string; // trilha de fundo (volume baixo)
+  // ── SPLIT UNIVERSAL (opt-in; default = comportamento atual) ──
+  show_creator_panel?: boolean; // true => painel do criador no topo + conteúdo empurrado pra baixo
+  creator_url?: string; // clip/gravação do criador (topo)
+  creator_avatar?: string; // fallback imagem do criador (topo)
+  creator_live_audio?: boolean; // gravação real: topo toca o áudio (não muta, não loopa)
+  split_ratio?: number; // fração da altura do painel topo (0.42-0.62)
 };
 
 export const shortV2DefaultProps: ShortV2Props = {
@@ -52,7 +63,7 @@ export const shortV2DefaultProps: ShortV2Props = {
 export const cenasV2ParaFrames = (cenas: CenaV2[]) =>
   (cenas ?? []).reduce((acc, c) => acc + Math.max(1, Math.round((c.duracao_s ?? 3) * FPS)), 0);
 
-const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number }> = ({ cena, accent, dur }) => {
+const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number; topOffset?: number }> = ({ cena, accent, dur, topOffset = 0 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -73,26 +84,32 @@ const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number }> = ({ c
     extrapolateRight: 'clamp',
   });
 
+  // quando o painel do criador ocupa o topo, o conteúdo da cena fica confinado abaixo dele
+  const visualTop = Math.max(0, topOffset);
+  const visualHeight = 1920 - visualTop;
+
   return (
     <AbsoluteFill style={{ opacity: sceneOpacity, backgroundColor: '#06181b' }}>
-      {cena.video_url ? (
-        <OffthreadVideo
-          src={resolveSrc(cena.video_url)}
-          muted
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      <div style={{ position: 'absolute', top: visualTop, left: 0, width: 1080, height: visualHeight, overflow: 'hidden', backgroundColor: '#06181b' }}>
+        {cena.video_url ? (
+          <OffthreadVideo
+            src={resolveSrc(cena.video_url)}
+            muted
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        ) : (
+          <Img
+            src={resolveSrc(cena.imagem_url || '')}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translateX(${panX}px)` }}
+          />
+        )}
+        <AbsoluteFill
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(4,12,14,0.32) 0%, rgba(4,12,14,0.04) 30%, rgba(4,12,14,0.52) 66%, rgba(4,12,14,0.95) 100%)',
+          }}
         />
-      ) : (
-        <Img
-          src={resolveSrc(cena.imagem_url || '')}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translateX(${panX}px)` }}
-        />
-      )}
-      <AbsoluteFill
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(4,12,14,0.32) 0%, rgba(4,12,14,0.04) 30%, rgba(4,12,14,0.52) 66%, rgba(4,12,14,0.95) 100%)',
-        }}
-      />
+      </div>
       <div style={{ position: 'absolute', left: 64, right: 64, bottom: 240, opacity: textOpacity, transform: `translateY(${(1 - reveal) * 26}px)` }}>
         {cena.kicker ? (
           <div style={{ color: accent, fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: 34, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16, textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>
@@ -128,7 +145,10 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
   );
 };
 
-export const ShortV2: React.FC<ShortV2Props> = ({ cenas, paleta_hex, logo_url, handle, sfx_url, music_url }) => {
+export const ShortV2: React.FC<ShortV2Props> = ({
+  cenas, paleta_hex, logo_url, handle, sfx_url, music_url,
+  show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
+}) => {
   let cursor = 0;
   const build = (cenas ?? []).map((cena) => {
     const dur = Math.max(1, Math.round((cena.duracao_s ?? 3) * FPS));
@@ -137,6 +157,11 @@ export const ShortV2: React.FC<ShortV2Props> = ({ cenas, paleta_hex, logo_url, h
     return item;
   });
   const total = Math.max(1, cursor);
+
+  // SPLIT UNIVERSAL: painel topo + conteúdo empurrado pra baixo
+  const splitY = show_creator_panel ? Math.round(clamp(split_ratio, 0.42, 0.62) * 1920) : 0;
+  // gravação real: o áudio vem do vídeo do criador (topo) — não tocar narração por cena
+  const liveAudio = Boolean(show_creator_panel && creator_live_audio);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#06181b' }}>
@@ -147,12 +172,14 @@ export const ShortV2: React.FC<ShortV2Props> = ({ cenas, paleta_hex, logo_url, h
         </Sequence>
       ) : null}
 
-      {/* narração POR CENA (sequencial, sincronizada) */}
-      {build.map((b, i) => (
-        <Sequence key={`a${i}`} from={b.from} durationInFrames={b.dur}>
-          {b.cena.audio_url ? <Audio src={resolveSrc(b.cena.audio_url)} volume={1} /> : null}
-        </Sequence>
-      ))}
+      {/* narração POR CENA (sequencial, sincronizada) — suprimida em modo gravação (live audio) */}
+      {!liveAudio
+        ? build.map((b, i) => (
+            <Sequence key={`a${i}`} from={b.from} durationInFrames={b.dur}>
+              {b.cena.audio_url ? <Audio src={resolveSrc(b.cena.audio_url)} volume={1} /> : null}
+            </Sequence>
+          ))
+        : null}
 
       {/* SFX (whoosh) no corte de cada cena, exceto a primeira */}
       {sfx_url
@@ -166,9 +193,22 @@ export const ShortV2: React.FC<ShortV2Props> = ({ cenas, paleta_hex, logo_url, h
       {/* VISUAL com crossfade (overlap) — próxima cena entra por cima */}
       {build.map((b, i) => (
         <Sequence key={`v${i}`} from={Math.max(0, b.from - (i === 0 ? 0 : OVERLAP))} durationInFrames={b.dur + (i === 0 ? 0 : OVERLAP)}>
-          <CenaVisual cena={b.cena} accent={paleta_hex} dur={b.dur + (i === 0 ? 0 : OVERLAP)} />
+          <CenaVisual cena={b.cena} accent={paleta_hex} dur={b.dur + (i === 0 ? 0 : OVERLAP)} topOffset={splitY} />
         </Sequence>
       ))}
+
+      {/* painel do criador no topo (fica por cima das cenas, igual ao SplitReaction) */}
+      {show_creator_panel ? (
+        <CreatorTop
+          creator_url={creator_url}
+          creator_avatar={creator_avatar}
+          creator_live_audio={creator_live_audio}
+          handle={handle}
+          logo_url={logo_url}
+          paleta_hex={paleta_hex}
+          splitY={splitY}
+        />
+      ) : null}
 
       <Branding logo_url={logo_url} handle={handle} />
       <ProgressBar total={total} accent={paleta_hex} />
