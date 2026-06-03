@@ -13,6 +13,7 @@ import {
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
 import { CreatorTop } from './components/CreatorTop';
+import { KeywordPop } from './components/KeywordPop';
 
 // SplitReaction — formato B (split 50/50 permanente): TOPO = rosto do criador (fixo,
 // retenção facial + autoridade); BAIXO = b-roll/clip do tema que troca a cada cena;
@@ -56,6 +57,7 @@ export type SplitReactionProps = {
   creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in
   creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
   voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa (ducking)
+  keyword_pops?: { text: string; fromSec: number }[]; // palavras-chave estourando na tela (exemplificar)
 };
 
 export const splitReactionDefaultProps: SplitReactionProps = {
@@ -122,7 +124,7 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 };
 
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
 
   let cursor = 0;
@@ -203,6 +205,18 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
           {faixa_tese}
         </div>
       ) : null}
+
+      {/* KeywordPop: palavra-chave do nicho "estoura" no b-roll no instante em que é falada */}
+      {(keyword_pops ?? []).map((kp, i) => (
+        <KeywordPop
+          key={`kp${i}`}
+          text={kp.text}
+          fromSec={kp.fromSec}
+          accent={paleta_hex}
+          y={Math.round(splitY + (1920 - splitY) * 0.42)}
+          variant="fill"
+        />
+      ))}
 
       <ProgressBar total={total} accent={paleta_hex} />
     </AbsoluteFill>

@@ -114,6 +114,38 @@ async function makeClip(youtubeUrl, start, end, search) {
   return { id, sizeBytes: st.size };
 }
 
+// Pós-processamento de áudio: normaliza loudness pro padrão de feed (Reels/TikTok),
+// -14 LUFS / -1 dBTP, num passe único (rápido: -c:v copy não re-encoda vídeo).
+// Tolerante: se ffmpeg falhar/der timeout ou o resultado for inválido, MANTÉM o
+// original (áudio não-normalizado é melhor que job falho). Só aplica a .mp4.
+async function normalizeAudio(file) {
+  if (path.extname(file).toLowerCase() !== '.mp4') {
+    log('audio loudnorm skip (não é .mp4):', file);
+    return;
+  }
+  const tmp = `${file}.norm.mp4`;
+  try {
+    await execFileP('ffmpeg', [
+      '-y', '-i', file,
+      '-af', 'loudnorm=I=-14:TP=-1.0:LRA=11',
+      '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+      tmp,
+    ], { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
+    // valida o resultado antes de substituir (exit 0 + arquivo > 100KB)
+    const st = fs.statSync(tmp);
+    if (st.size > 100 * 1024) {
+      fs.renameSync(tmp, file); // substitui o original pelo normalizado
+      log('audio loudnorm ok:', file, `(${st.size} bytes)`);
+      return;
+    }
+    log('audio loudnorm skip (tmp inválido/pequeno):', st.size, 'bytes');
+  } catch (err) {
+    log('audio loudnorm skip (falha):', err?.message || err);
+  }
+  // qualquer caminho de falha: garante limpeza do tmp e mantém o original
+  try { fs.unlinkSync(tmp); } catch {}
+}
+
 async function getServeUrl() {
   if (serveUrl) return serveUrl;
   if (!bundling) {
@@ -197,6 +229,8 @@ async function processQueue() {
         job.updatedAt = nowIso();
       },
     });
+    // pós-processamento: normaliza o áudio pro padrão de feed (tolerante a falha)
+    await normalizeAudio(job.file);
     const st = await stat(job.file);
     job.sizeBytes = st.size;
     job.status = 'completed';
