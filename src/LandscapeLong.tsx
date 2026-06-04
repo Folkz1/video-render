@@ -11,7 +11,46 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
-import { KeywordPop } from './components/KeywordPop';
+
+// Ênfase pontual ROBUSTA (inline, sem depender do kit KeywordPop que não renderizava aqui):
+// palavra/frase-chave que estoura no rodapé, accent neon, scale spring + fade. Coração do
+// "modo ênfase" do formato longo (você fala mostrando a tela; o destaque marca o ponto-chave).
+const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent }) => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 12, stiffness: 200, mass: 0.6 } });
+  const scale = interpolate(appear, [0, 1], [0.55, 1]);
+  const op = interpolate(
+    frame,
+    [0, 5, Math.max(6, durationInFrames - 8), durationInFrames],
+    [0, 1, 1, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+  );
+  return (
+    <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 130 }}>
+      <div
+        style={{
+          opacity: op,
+          transform: `scale(${scale}) rotate(-3deg)`,
+          fontFamily: 'Inter, Arial, sans-serif',
+          fontWeight: 900,
+          fontSize: 112,
+          lineHeight: 1,
+          color: accent,
+          WebkitTextStroke: '3px rgba(5,6,10,0.65)',
+          paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
+          textShadow: `0 0 26px ${accent}, 0 6px 20px rgba(0,0,0,0.6)`,
+          letterSpacing: '0.01em',
+          textTransform: 'uppercase',
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {texto}
+      </div>
+    </AbsoluteFill>
+  );
+};
 
 // LandscapeLong — composition 16:9 (1920x1080) pro formato de vídeo LONGO (YouTube, 10min+)
 // do Creative-Autopost. Plano base = gravação HORIZONTAL do criador em FULLSCREEN com áudio
@@ -371,16 +410,7 @@ export const LandscapeLong: React.FC<LandscapeLongProps> = (props) => {
         const durFrames = Math.max(1, Math.round(durSec * FPS));
         return (
           <Sequence key={`enf${i}`} from={from} durationInFrames={durFrames}>
-            <KeywordPop
-              text={enf.texto}
-              accent={accent}
-              fromSec={0}
-              durSec={durSec}
-              x={960}
-              y={840}
-              fontSize={104}
-              variant="fill"
-            />
+            <EnfasePop texto={enf.texto} accent={accent} />
           </Sequence>
         );
       })}
