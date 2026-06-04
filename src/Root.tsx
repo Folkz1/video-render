@@ -26,6 +26,7 @@ import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
 import { ShortTech, shortTechDefaultProps, cenasTechParaFrames } from './ShortTech';
 import { SplitReaction, splitReactionDefaultProps, cenasSplitParaFrames } from './SplitReaction';
 import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './CaptionClip';
+import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } from './LandscapeLong';
 
 const FPS = 30;
 
@@ -111,6 +112,21 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={captionClipDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, captionClipParaFrames(props)),
+        })}
+      />
+
+      {/* LandscapeLong — vídeo LONGO 16:9 (YouTube 10min+): criador fullscreen (áudio real)
+          + cold-open/tese + capítulos (ChapterTitle) + cutaways de b-roll + legenda karaokê */}
+      <Composition
+        id="LandscapeLong"
+        component={LandscapeLong}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={420}
+        defaultProps={landscapeLongDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: landscapeLongParaFrames(props.durTotalSec),
         })}
       />
 
