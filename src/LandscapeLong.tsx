@@ -11,12 +11,27 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
+import { KeywordPop } from './components/KeywordPop';
 
 // LandscapeLong — composition 16:9 (1920x1080) pro formato de vídeo LONGO (YouTube, 10min+)
 // do Creative-Autopost. Plano base = gravação HORIZONTAL do criador em FULLSCREEN com áudio
-// real (OffthreadVideo). Por cima: cold-open com a tese, marcadores de capítulo (ChapterTitle
-// reusado do VideoLongBase), cutaways de b-roll temporários, legenda karaokê word-level no
-// rodapé (WordCaptions reusado) e handle discreto no canto. Genérico por paleta/handle.
+// real (OffthreadVideo). O dono grava mostrando tudo na tela e falando, então o DEFAULT é o
+// MODO ÊNFASE (edição simples): SEM legenda karaokê contínua cobrindo o vídeo — em vez disso,
+// destaques PONTUAIS de palavra/frase ("ênfases") que estouram só nos momentos importantes,
+// num terço inferior/central que não tampa o rosto. A legenda karaokê (WordCaptions) é
+// OPCIONAL — só aparece se `words` tiver conteúdo (modo legendado clássico).
+//
+// Contrato das props:
+//   creatorVideoUrl   (string)   gravação horizontal do criador, fullscreen
+//   creatorLiveAudio? (boolean)  default true — toca o áudio real do vídeo
+//   words?            (WordTiming[]) default [] — legenda karaokê CONTÍNUA; vazio ⇒ sem legenda
+//   enfases           (Enfase[]) default [] — destaques PONTUAIS (KeywordPop) em momentos-chave
+//   capitulos?        (Capitulo[]) default [] — lower-thirds de capítulo; vazio ⇒ não renderiza
+//   cutaways?         (Cutaway[])  default [] — b-roll por cima; vazio ⇒ não renderiza
+//   paleta?           (string[])  [fundo, destaque, texto]
+//   handle?           (string)    default "" — @ no canto; vazio ⇒ não renderiza
+//   faixaTese?        (string)    default "" — tese no cold-open; vazio ⇒ não renderiza
+//   durTotalSec       (number)    duração total (durationInFrames = durTotalSec*30)
 
 const FPS = 30;
 
@@ -27,21 +42,28 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 export type { WordTiming };
 
+export type Enfase = {
+  texto: string; // palavra/frase-chave que estoura
+  startSec: number; // instante (absoluto) em que a fala bate o termo
+  durSec?: number; // quanto fica na tela; default ~1.8s
+};
+
 export type LandscapeLongProps = {
   creatorVideoUrl: string; // gravação horizontal do criador (fullscreen, áudio real)
   creatorLiveAudio?: boolean; // default true (toca o áudio do vídeo)
-  words: WordTiming[]; // transcrição absoluta (legenda karaokê, cobre o vídeo todo)
-  capitulos: { titulo: string; startSec: number }[]; // lower-third/ChapterTitle nos pontos
-  cutaways: {
+  words?: WordTiming[]; // legenda karaokê CONTÍNUA; default [] — vazio ⇒ sem legenda contínua
+  enfases?: Enfase[]; // destaques PONTUAIS (KeywordPop) nos momentos-chave; default []
+  capitulos?: { titulo: string; startSec: number }[]; // lower-third nos pontos; default []
+  cutaways?: {
     startSec: number;
     durSec: number;
     videoUrl?: string;
     imageUrl?: string;
     label?: string;
-  }[]; // b-roll por cima
+  }[]; // b-roll por cima; default []
   paleta?: string[]; // [fundo, destaque, texto]
-  handle?: string; // ex "@GuyFolks" no canto
-  faixaTese?: string; // título/tese opcional no cold-open
+  handle?: string; // ex "@GuyFolks" no canto; default ""
+  faixaTese?: string; // título/tese opcional no cold-open; default ""
   durTotalSec: number; // duração total (define durationInFrames = durTotalSec*30)
 };
 
@@ -50,12 +72,17 @@ const DEFAULT_PALETA = ['#0A0F1C', '#00E5FF', '#FFFFFF'];
 export const landscapeLongDefaultProps: LandscapeLongProps = {
   creatorVideoUrl: '2026-03-07_17-20-29_limpo.mp4',
   creatorLiveAudio: true,
+  // MODO ÊNFASE: sem legenda karaokê contínua (words vazio ⇒ WordCaptions não renderiza)
   words: [],
-  capitulos: [
-    { titulo: 'O Problema', startSec: 2 },
-    { titulo: 'A Virada', startSec: 8 },
+  // destaques PONTUAIS que estouram só nos momentos-chave (preview mostra o beat de ênfase)
+  enfases: [
+    { texto: 'SOBERANIA', startSec: 3, durSec: 1.8 },
+    { texto: 'DESCENTRALIZA', startSec: 7, durSec: 1.8 },
+    { texto: 'SEM PERMISSÃO', startSec: 11, durSec: 1.8 },
   ],
-  cutaways: [{ startSec: 5, durSec: 3, imageUrl: 'https://picsum.photos/1920/1080?7', label: 'EXEMPLO' }],
+  // edição simples: capítulos/cutaways/handle vazios não renderizam; só o cold-open da tese
+  capitulos: [],
+  cutaways: [],
   paleta: DEFAULT_PALETA,
   handle: '@GuyFolkz',
   faixaTese: 'A IA é descentralização — e ninguém te contou.',
@@ -267,12 +294,13 @@ export const LandscapeLong: React.FC<LandscapeLongProps> = (props) => {
   const {
     creatorVideoUrl,
     creatorLiveAudio = true,
-    words,
-    capitulos,
-    cutaways,
+    words = [],
+    enfases = [],
+    capitulos = [],
+    cutaways = [],
     paleta,
-    handle,
-    faixaTese,
+    handle = '',
+    faixaTese = '',
     durTotalSec,
   } = props;
 
@@ -334,20 +362,46 @@ export const LandscapeLong: React.FC<LandscapeLongProps> = (props) => {
         </Sequence>
       ) : null}
 
-      {/* LEGENDA karaokê word-level no rodapé (transcrição absoluta, cobre o vídeo todo) */}
-      <Sequence from={0} durationInFrames={total}>
-        <WordCaptions
-          words={words}
-          fromSec={0}
-          anchorY={1000}
-          accent={accent}
-          fontSize={64}
-          maxWidth={1600}
-          maxWordsPerGroup={4}
-          variant="solta"
-          allCaps
-        />
-      </Sequence>
+      {/* ÊNFASES PONTUAIS: palavra/frase-chave que estoura no startSec (KeywordPop reusado),
+          posicionada no terço inferior/central (y≈840) pra NÃO tampar o rosto do criador.
+          Cada uma vive numa Sequence própria (fromSec=0 local → o pop inicia no frame 0 dela). */}
+      {enfases.map((enf, i) => {
+        const from = Math.max(0, Math.round((enf.startSec ?? 0) * FPS));
+        const durSec = enf.durSec ?? 1.8;
+        const durFrames = Math.max(1, Math.round(durSec * FPS));
+        return (
+          <Sequence key={`enf${i}`} from={from} durationInFrames={durFrames}>
+            <KeywordPop
+              text={enf.texto}
+              accent={accent}
+              fromSec={0}
+              durSec={durSec}
+              x={960}
+              y={840}
+              fontSize={104}
+              variant="fill"
+            />
+          </Sequence>
+        );
+      })}
+
+      {/* LEGENDA karaokê contínua — OPCIONAL: só renderiza se houver transcrição (words).
+          No MODO ÊNFASE words=[] ⇒ esta Sequence nem monta, e nada de legenda contínua aparece. */}
+      {words.length > 0 ? (
+        <Sequence from={0} durationInFrames={total}>
+          <WordCaptions
+            words={words}
+            fromSec={0}
+            anchorY={1000}
+            accent={accent}
+            fontSize={64}
+            maxWidth={1600}
+            maxWordsPerGroup={4}
+            variant="solta"
+            allCaps
+          />
+        </Sequence>
+      ) : null}
 
       {/* HANDLE discreto no canto inferior direito */}
       {handle ? (
