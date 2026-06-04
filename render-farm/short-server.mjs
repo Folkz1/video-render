@@ -221,6 +221,7 @@ async function processQueue() {
       inputProps: job.props,
       outputLocation: job.file,
       concurrency: job.concurrency,
+      scale: job.scale,
       overwrite: true,
       logLevel: 'error',
       onProgress: (p) => {
@@ -353,6 +354,8 @@ const server = http.createServer(async (req, res) => {
         props,
         codec: body.codec || 'h264',
         concurrency: Number(body.concurrency) || DEFAULT_CONCURRENCY,
+        // escala de render: 1 = nativo; <1 acelera (ex 0.667 => 1080p->720p) pra vídeo longo
+        scale: Number(body.scale) > 0 ? Number(body.scale) : 1,
         status: 'queued',
         progress: 0,
         error: null,
