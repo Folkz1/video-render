@@ -239,23 +239,25 @@ async function processQueue() {
       // do criador. Muito mais rápido que renderizar o vídeo-fonte quadro a quadro.
       const creatorUrl = job.props?.creatorVideoUrl;
       if (!creatorUrl) throw new Error('compose=true exige props.creatorVideoUrl');
-      const overlayPath = path.join(os.tmpdir(), `${id}-overlay.webm`);
+      const overlayPath = path.join(os.tmpdir(), `${id}-overlay.mov`);
       const creatorPath = path.join(os.tmpdir(), `${id}-creator.mp4`);
       const overlayProps = { ...job.props, overlayOnly: true };
       try {
-        // a) render do overlay transparente (vp8 => webm com alpha/yuva420p).
-        //    duração vem do calculateMetadata via durTotalSec nos props.
+        // a) render do overlay transparente em ProRes 4444 com alpha (encode "Fast" do Remotion vs
+        //    vp8 "Slow"; ffmpeg decoda ProRes intra-frame muito mais rápido que vp8). Mata o gargalo
+        //    do compose. duração vem do calculateMetadata via durTotalSec nos props.
         const composition = await selectComposition({
           serveUrl: url,
           id: job.compositionId,
           inputProps: overlayProps,
         });
         job.durationInFrames = composition.durationInFrames;
-        log(`compose ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency} (overlay vp8)`);
+        log(`compose ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency} (overlay prores4444)`);
         await renderMedia({
           composition,
           serveUrl: url,
-          codec: 'vp8',
+          codec: 'prores',
+          proResProfile: '4444',
           inputProps: overlayProps,
           outputLocation: overlayPath,
           concurrency: job.concurrency,
