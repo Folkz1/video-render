@@ -71,6 +71,16 @@ const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent 
 //   handle?           (string)    default "" — @ no canto; vazio ⇒ não renderiza
 //   faixaTese?        (string)    default "" — tese no cold-open; vazio ⇒ não renderiza
 //   durTotalSec       (number)    duração total (durationInFrames = durTotalSec*30)
+//   overlayOnly?      (boolean)   default false — MODO SÓ-OVERLAYS pro pipeline FFmpeg-compose.
+//                                 Quando true: fundo TRANSPARENTE (alpha), NÃO renderiza o
+//                                 OffthreadVideo do criador NEM os cutaways de vídeo (o FFmpeg
+//                                 sobrepõe os overlays no vídeo do criador depois, evitando que
+//                                 o Remotion decodifique o vídeo-fonte quadro a quadro = render
+//                                 muito mais leve/rápido). Mantém todos os overlays de texto/
+//                                 gráfico (ColdOpenTitle, ChapterMarker, EnfasePop, handle e a
+//                                 legenda WordCaptions). O short-server renderiza esse modo com
+//                                 codec vp8 (canal alpha). Default false ⇒ comportamento atual
+//                                 intacto (vídeo + tudo).
 
 const FPS = 30;
 
@@ -104,6 +114,7 @@ export type LandscapeLongProps = {
   handle?: string; // ex "@GuyFolks" no canto; default ""
   faixaTese?: string; // título/tese opcional no cold-open; default ""
   durTotalSec: number; // duração total (define durationInFrames = durTotalSec*30)
+  overlayOnly?: boolean; // default false — só overlays sobre fundo transparente (FFmpeg-compose)
 };
 
 const DEFAULT_PALETA = ['#0A0F1C', '#00E5FF', '#FFFFFF'];
@@ -126,6 +137,8 @@ export const landscapeLongDefaultProps: LandscapeLongProps = {
   handle: '@GuyFolkz',
   faixaTese: 'A IA é descentralização — e ninguém te contou.',
   durTotalSec: 14,
+  // preview mostra o vídeo do criador + tudo (modo normal); overlayOnly é só pro FFmpeg-compose
+  overlayOnly: false,
 };
 
 export const landscapeLongParaFrames = (durTotalSec: number) =>
@@ -341,6 +354,7 @@ export const LandscapeLong: React.FC<LandscapeLongProps> = (props) => {
     handle = '',
     faixaTese = '',
     durTotalSec,
+    overlayOnly = false,
   } = props;
 
   const [bg, accent, textColor] = [
@@ -352,9 +366,13 @@ export const LandscapeLong: React.FC<LandscapeLongProps> = (props) => {
   const total = landscapeLongParaFrames(durTotalSec);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: bg }}>
-      {/* PLANO BASE: gravação horizontal do criador, FULLSCREEN, áudio real */}
-      {creatorVideoUrl ? (
+    // overlayOnly: fundo TRANSPARENTE (alpha) — nada opaco cobre a tela toda, só os overlays.
+    // Modo normal: fundo sólido `bg` (atrás do vídeo fullscreen).
+    <AbsoluteFill style={{ backgroundColor: overlayOnly ? 'transparent' : bg }}>
+      {/* PLANO BASE: gravação horizontal do criador, FULLSCREEN, áudio real.
+          overlayOnly ⇒ NÃO renderiza o vídeo (o FFmpeg-compose sobrepõe os overlays no
+          vídeo do criador depois; assim o Remotion não decodifica o vídeo-fonte). */}
+      {!overlayOnly && creatorVideoUrl ? (
         <OffthreadVideo
           src={resolveSrc(creatorVideoUrl)}
           muted={!creatorLiveAudio}
@@ -362,22 +380,25 @@ export const LandscapeLong: React.FC<LandscapeLongProps> = (props) => {
         />
       ) : null}
 
-      {/* CUTAWAYS: b-roll cobrindo a tela por cima do criador (corte temporário) */}
-      {(cutaways ?? []).map((cw, i) => {
-        const from = Math.max(0, Math.round((cw.startSec ?? 0) * FPS));
-        const durFrames = Math.max(1, Math.round((cw.durSec ?? 1) * FPS));
-        return (
-          <Sequence key={`cw${i}`} from={from} durationInFrames={durFrames}>
-            <Cutaway
-              videoUrl={cw.videoUrl}
-              imageUrl={cw.imageUrl}
-              label={cw.label}
-              durFrames={durFrames}
-              accent={accent}
-            />
-          </Sequence>
-        );
-      })}
+      {/* CUTAWAYS: b-roll cobrindo a tela por cima do criador (corte temporário).
+          overlayOnly ⇒ pulamos TODOS os cutaways: os de vídeo dependem do vídeo base (que o
+          FFmpeg cuida) e, por simplicidade, os de imagem também são omitidos neste modo. */}
+      {!overlayOnly &&
+        (cutaways ?? []).map((cw, i) => {
+          const from = Math.max(0, Math.round((cw.startSec ?? 0) * FPS));
+          const durFrames = Math.max(1, Math.round((cw.durSec ?? 1) * FPS));
+          return (
+            <Sequence key={`cw${i}`} from={from} durationInFrames={durFrames}>
+              <Cutaway
+                videoUrl={cw.videoUrl}
+                imageUrl={cw.imageUrl}
+                label={cw.label}
+                durFrames={durFrames}
+                accent={accent}
+              />
+            </Sequence>
+          );
+        })}
 
       {/* CAPÍTULOS: marcador (lower-third) entrando em cada startSec ~3.5s na tela */}
       {(capitulos ?? []).map((cap, i) => {

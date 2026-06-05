@@ -146,6 +146,32 @@ async function normalizeAudio(file) {
   try { fs.unlinkSync(tmp); } catch {}
 }
 
+// Baixa uma URL http(s) para um arquivo local (usa fetch global do Node 22).
+// Usado no MODO COMPOSE p/ trazer o vídeo do criador antes do overlay-compose.
+async function downloadToFile(url, dest) {
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`download falhou (${resp.status} ${resp.statusText}) ${url}`);
+  const buf = Buffer.from(await resp.arrayBuffer());
+  if (buf.length === 0) throw new Error(`download vazio: ${url}`);
+  fs.writeFileSync(dest, buf);
+  return buf.length;
+}
+
+// MODO COMPOSE: sobrepõe o overlay (webm com alpha) no vídeo do criador via ffmpeg.
+// scale+crop garante 1920x1080 (16:9) cobrindo qualquer aspect; overlay=shortest=1
+// corta na menor faixa; -map 0:a? copia o áudio do criador se existir (? = opcional).
+async function composeOverlay(creatorFile, overlayFile, outFile) {
+  await execFileP('ffmpeg', [
+    '-y', '-i', creatorFile, '-i', overlayFile,
+    '-filter_complex',
+    '[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1[bg];[bg][1:v]overlay=shortest=1[v]',
+    '-map', '[v]', '-map', '0:a?',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
+    '-c:a', 'aac', '-movflags', '+faststart',
+    outFile,
+  ], { timeout: 60 * 60 * 1000, maxBuffer: 1024 * 1024 * 16 });
+}
+
 async function getServeUrl() {
   if (serveUrl) return serveUrl;
   if (!bundling) {
@@ -207,37 +233,100 @@ async function processQueue() {
   job.updatedAt = nowIso();
   try {
     const url = await getServeUrl();
-    const composition = await selectComposition({
-      serveUrl: url,
-      id: job.compositionId,
-      inputProps: job.props,
-    });
-    job.durationInFrames = composition.durationInFrames;
-    log(`render ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency}`);
-    await renderMedia({
-      composition,
-      serveUrl: url,
-      codec: job.codec,
-      inputProps: job.props,
-      outputLocation: job.file,
-      concurrency: job.concurrency,
-      scale: job.scale,
-      overwrite: true,
-      logLevel: 'error',
-      onProgress: (p) => {
-        const pr = typeof p === 'number' ? p : p?.progress ?? 0;
-        job.progress = Math.round(pr * 100);
+    if (job.compose) {
+      // ===== MODO COMPOSE (formato longo) =====
+      // Remotion renderiza SÓ os overlays (transparente) -> ffmpeg sobrepõe no vídeo
+      // do criador. Muito mais rápido que renderizar o vídeo-fonte quadro a quadro.
+      const creatorUrl = job.props?.creatorVideoUrl;
+      if (!creatorUrl) throw new Error('compose=true exige props.creatorVideoUrl');
+      const overlayPath = path.join(os.tmpdir(), `${id}-overlay.webm`);
+      const creatorPath = path.join(os.tmpdir(), `${id}-creator.mp4`);
+      const overlayProps = { ...job.props, overlayOnly: true };
+      try {
+        // a) render do overlay transparente (vp8 => webm com alpha/yuva420p).
+        //    duração vem do calculateMetadata via durTotalSec nos props.
+        const composition = await selectComposition({
+          serveUrl: url,
+          id: job.compositionId,
+          inputProps: overlayProps,
+        });
+        job.durationInFrames = composition.durationInFrames;
+        log(`compose ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency} (overlay vp8)`);
+        await renderMedia({
+          composition,
+          serveUrl: url,
+          codec: 'vp8',
+          inputProps: overlayProps,
+          outputLocation: overlayPath,
+          concurrency: job.concurrency,
+          scale: job.scale,
+          overwrite: true,
+          logLevel: 'error',
+          onProgress: (p) => {
+            const pr = typeof p === 'number' ? p : p?.progress ?? 0;
+            // overlay = ~90% do tempo; reserva 90-100 pro download+ffmpeg
+            job.progress = Math.round(pr * 90);
+            job.updatedAt = nowIso();
+          },
+        });
+        // b) baixa o vídeo do criador
+        log(`compose ${id} baixando creator -> ${creatorPath}`);
+        const dlBytes = await downloadToFile(creatorUrl, creatorPath);
+        log(`compose ${id} creator baixado (${dlBytes} bytes)`);
+        job.progress = 92;
         job.updatedAt = nowIso();
-      },
-    });
-    // pós-processamento: normaliza o áudio pro padrão de feed (tolerante a falha)
-    await normalizeAudio(job.file);
-    const st = await stat(job.file);
-    job.sizeBytes = st.size;
-    job.status = 'completed';
-    job.progress = 100;
-    job.finishedAt = nowIso();
-    log(`done ${id} -> ${job.file} (${st.size} bytes)`);
+        // c) ffmpeg overlay-compose -> job.file
+        log(`compose ${id} ffmpeg overlay -> ${job.file}`);
+        await composeOverlay(creatorPath, overlayPath, job.file);
+        job.progress = 98;
+        job.updatedAt = nowIso();
+        // d) pós-processamento + finalização (igual ao fluxo normal)
+        await normalizeAudio(job.file);
+        const st = await stat(job.file);
+        job.sizeBytes = st.size;
+        job.status = 'completed';
+        job.progress = 100;
+        job.finishedAt = nowIso();
+        log(`done ${id} (compose) -> ${job.file} (${st.size} bytes)`);
+      } finally {
+        // e) limpa temporários (não derruba o job se a limpeza falhar)
+        try { fs.unlinkSync(overlayPath); } catch {}
+        try { fs.unlinkSync(creatorPath); } catch {}
+      }
+    } else {
+      // ===== FLUXO NORMAL (renderMedia h264) — INTACTO =====
+      const composition = await selectComposition({
+        serveUrl: url,
+        id: job.compositionId,
+        inputProps: job.props,
+      });
+      job.durationInFrames = composition.durationInFrames;
+      log(`render ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency}`);
+      await renderMedia({
+        composition,
+        serveUrl: url,
+        codec: job.codec,
+        inputProps: job.props,
+        outputLocation: job.file,
+        concurrency: job.concurrency,
+        scale: job.scale,
+        overwrite: true,
+        logLevel: 'error',
+        onProgress: (p) => {
+          const pr = typeof p === 'number' ? p : p?.progress ?? 0;
+          job.progress = Math.round(pr * 100);
+          job.updatedAt = nowIso();
+        },
+      });
+      // pós-processamento: normaliza o áudio pro padrão de feed (tolerante a falha)
+      await normalizeAudio(job.file);
+      const st = await stat(job.file);
+      job.sizeBytes = st.size;
+      job.status = 'completed';
+      job.progress = 100;
+      job.finishedAt = nowIso();
+      log(`done ${id} -> ${job.file} (${st.size} bytes)`);
+    }
   } catch (err) {
     job.error = err instanceof Error ? err.message : String(err);
     job.status = 'failed';
@@ -356,6 +445,10 @@ const server = http.createServer(async (req, res) => {
         concurrency: Number(body.concurrency) || DEFAULT_CONCURRENCY,
         // escala de render: 1 = nativo; <1 acelera (ex 0.667 => 1080p->720p) pra vídeo longo
         scale: Number(body.scale) > 0 ? Number(body.scale) : 1,
+        // MODO COMPOSE (formato longo): Remotion renderiza SÓ os overlays (transparente,
+        // leve) e o ffmpeg sobrepõe no vídeo do criador (rápido). Evita decodificar o
+        // vídeo-fonte quadro a quadro no Remotion (~2h/10min). Requer props.creatorVideoUrl.
+        compose: body.compose === true,
         status: 'queued',
         progress: 0,
         error: null,
