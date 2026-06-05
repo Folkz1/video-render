@@ -26,6 +26,8 @@ import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
 import { ShortTech, shortTechDefaultProps, cenasTechParaFrames } from './ShortTech';
 import { SplitReaction, splitReactionDefaultProps, cenasSplitParaFrames } from './SplitReaction';
 import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './CaptionClip';
+import { CaptionBold, captionBoldDefaultProps, captionBoldParaFrames } from './CaptionBold';
+import { QuoteCard, quoteCardDefaultProps, quoteCardParaFrames } from './QuoteCard';
 import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } from './LandscapeLong';
 
 const FPS = 30;
@@ -112,6 +114,36 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={captionClipDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, captionClipParaFrames(props)),
+        })}
+      />
+
+      {/* CaptionBold — variação do CaptionClip: tipografia bold gigante + faixas sólidas
+          alternando + KeywordPop agressivo. MESMO contrato de props do CaptionClip. */}
+      <Composition
+        id="CaptionBold"
+        component={CaptionBold}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={240}
+        defaultProps={captionBoldDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, captionBoldParaFrames(props)),
+        })}
+      />
+
+      {/* QuoteCard — citação minimalista: fundo gradiente animado + frase palavra-a-palavra
+          (words/tese). MESMO contrato de props do CaptionClip (usa só words + tema_linhas). */}
+      <Composition
+        id="QuoteCard"
+        component={QuoteCard}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={240}
+        defaultProps={quoteCardDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, quoteCardParaFrames(props)),
         })}
       />
 
