@@ -164,6 +164,14 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         creator_face_keyframes={creator_face_keyframes}
       />
 
+      {/* room-tone: leito de presença a ~-44dB sob a voz — mata o "vazio digital" do TTS.
+          Só no caminho sintético (a gravação real já tem ambiente próprio). volume tunável; validar no servidor. */}
+      {!creator_live_audio ? (
+        <Sequence from={0} durationInFrames={total}>
+          <Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop />
+        </Sequence>
+      ) : null}
+
       {/* música de fundo (com ducking sob a voz quando há voice_windows) */}
       {music_url ? (
         <Sequence from={0} durationInFrames={total}>

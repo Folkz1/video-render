@@ -363,6 +363,13 @@ export const ShortTech: React.FC<ShortTechProps> = ({
         </Sequence>
       ) : null}
 
+      {/* room-tone: leito de presença ~-44dB sob a voz sintética (mata o "vazio digital"). volume tunável. */}
+      {!liveAudio ? (
+        <Sequence from={0} durationInFrames={total}>
+          <Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop />
+        </Sequence>
+      ) : null}
+
       {/* narração por cena — suprimida em modo gravação (áudio vem do vídeo do criador) */}
       {!liveAudio
         ? build.map((b, i) => (

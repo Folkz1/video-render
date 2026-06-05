@@ -234,6 +234,8 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
       {/* ÁUDIO: narração única + trilha (vol baixo, fades) + whoosh nos cortes.
           Em modo gravação (live audio), o som vem do vídeo do criador — não tocar a narração. */}
       {!liveAudio && mute_video && audio_url ? <Audio src={resolveSrc(audio_url)} volume={1} /> : null}
+      {/* room-tone: leito de presença ~-44dB sob a voz sintética (mata o "vazio digital"). volume tunável. */}
+      {!liveAudio ? <Sequence from={0} durationInFrames={total}><Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop /></Sequence> : null}
       {music_url ? (
         <Audio
           src={resolveSrc(music_url)}
