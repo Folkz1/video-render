@@ -67,15 +67,15 @@ export const dossieDefaultProps: DossieProps = {
   ],
 };
 
-// fade-in nos primeiros 0.4s da janela + fade-out nos ultimos 0.3s
-const useSegAnim = (inicio_s: number, fim_s: number) => {
+// frame e RELATIVO ao <Sequence> (reseta a 0 no `from`). Anima por DURACAO da janela:
+// fade-in nos primeiros 0.4s + fade-out nos ultimos 0.3s. (NAO usar tempos absolutos aqui.)
+const useSegAnim = (durSec: number) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
-  const inEnd = inicio_s + 0.4;
-  const outStart = fim_s - 0.3;
-  const opacity = interpolate(t, [inicio_s, inEnd, outStart, fim_s], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const appear = spring({ frame: Math.max(0, frame - Math.round(inicio_s * fps)), fps, config: { damping: 16, mass: 0.7 } });
+  const d = Math.max(0.8, durSec);
+  const opacity = interpolate(t, [0, 0.4, d - 0.3, d], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const appear = spring({ frame, fps, config: { damping: 16, mass: 0.7 } });
   return { opacity, appear };
 };
 
@@ -102,7 +102,7 @@ const Chip: React.FC<{ children: React.ReactNode; accent: string }> = ({ childre
 );
 
 const AnoCard: React.FC<{ seg: SegAno; pal: typeof DEF_PAL }> = ({ seg, pal }) => {
-  const { opacity, appear } = useSegAnim(seg.inicio_s, seg.fim_s);
+  const { opacity, appear } = useSegAnim(seg.fim_s - seg.inicio_s);
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', opacity }}>
       <div style={{ textAlign: 'center', transform: `translateY(${(1 - appear) * 24}px)`, padding: '0 60px' }}>
@@ -117,7 +117,7 @@ const AnoCard: React.FC<{ seg: SegAno; pal: typeof DEF_PAL }> = ({ seg, pal }) =
 const dot = (c: string): React.CSSProperties => ({ width: 13, height: 13, borderRadius: '50%', background: c, display: 'inline-block' });
 
 const TimelineCard: React.FC<{ seg: SegTimeline; pal: typeof DEF_PAL }> = ({ seg, pal }) => {
-  const { opacity, appear } = useSegAnim(seg.inicio_s, seg.fim_s);
+  const { opacity, appear } = useSegAnim(seg.fim_s - seg.inicio_s);
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', opacity }}>
       <div style={{ display: 'flex', gap: 26, transform: `translateY(${(1 - appear) * 24}px)`, alignItems: 'flex-end' }}>
@@ -133,7 +133,7 @@ const TimelineCard: React.FC<{ seg: SegTimeline; pal: typeof DEF_PAL }> = ({ seg
 };
 
 const StatCard: React.FC<{ seg: SegStat; pal: typeof DEF_PAL }> = ({ seg, pal }) => {
-  const { opacity, appear } = useSegAnim(seg.inicio_s, seg.fim_s);
+  const { opacity, appear } = useSegAnim(seg.fim_s - seg.inicio_s);
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'center', opacity }}>
       <div style={{ textAlign: 'center', transform: `scale(${interpolate(appear, [0, 1], [0.7, 1])})` }}>
@@ -145,7 +145,7 @@ const StatCard: React.FC<{ seg: SegStat; pal: typeof DEF_PAL }> = ({ seg, pal })
 };
 
 const BannerCard: React.FC<{ seg: SegBanner; pal: typeof DEF_PAL }> = ({ seg, pal }) => {
-  const { opacity, appear } = useSegAnim(seg.inicio_s, seg.fim_s);
+  const { opacity, appear } = useSegAnim(seg.fim_s - seg.inicio_s);
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 360, opacity }}>
       <div style={{ width: '84%', transform: `translateX(${(1 - appear) * -40}px)` }}>
@@ -157,7 +157,7 @@ const BannerCard: React.FC<{ seg: SegBanner; pal: typeof DEF_PAL }> = ({ seg, pa
 };
 
 const FechoCard: React.FC<{ seg: SegFecho; pal: typeof DEF_PAL; handle?: string; tagline?: string }> = ({ seg, pal, handle, tagline }) => {
-  const { opacity, appear } = useSegAnim(seg.inicio_s, seg.fim_s);
+  const { opacity, appear } = useSegAnim(seg.fim_s - seg.inicio_s);
   return (
     <AbsoluteFill style={{ background: '#000', alignItems: 'center', justifyContent: 'center', opacity }}>
       <div style={{ textAlign: 'center', padding: '0 70px', transform: `translateY(${(1 - appear) * 20}px)` }}>
