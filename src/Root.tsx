@@ -29,6 +29,7 @@ import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './C
 import { CaptionBold, captionBoldDefaultProps, captionBoldParaFrames } from './CaptionBold';
 import { QuoteCard, quoteCardDefaultProps, quoteCardParaFrames } from './QuoteCard';
 import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } from './LandscapeLong';
+import { Dossie, dossieDefaultProps, dossieParaFrames } from './Dossie';
 
 const FPS = 30;
 
@@ -159,6 +160,21 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={landscapeLongDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: landscapeLongParaFrames(props.durTotalSec),
+        })}
+      />
+
+      {/* Dossie — DOCUMENTARIO ANIMADO (faceless + voz real): retrato escurecido +
+          cards ano/timeline/stat/banner + fecho editorial. 9:16. Formato-heroi GuyFolkz. */}
+      <Composition
+        id="Dossie"
+        component={Dossie}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={420}
+        defaultProps={dossieDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: dossieParaFrames(props),
         })}
       />
 
