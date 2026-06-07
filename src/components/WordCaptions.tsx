@@ -76,9 +76,12 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   const strokeStyle: React.CSSProperties =
     variant === 'solta'
       ? {
-          WebkitTextStroke: '8px #000',
+          WebkitTextStroke: '9px #000',
           paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
-          textShadow: '0 4px 12px rgba(0,0,0,0.6)',
+          // HALO ESCURO MULTICAMADA: escurece o fundo imediato atrás das letras, garantindo
+          // contraste em QUALQUER b-roll (claro OU escuro). A legenda nunca mais some.
+          textShadow:
+            '0 0 10px rgba(0,0,0,0.98), 0 0 22px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.75), 0 5px 16px rgba(0,0,0,0.98)',
         }
       : {};
 
