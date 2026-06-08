@@ -24,7 +24,7 @@ import {EP02_SHORTS} from './data/ep02-shorts-data';
 import { ShortParametrizavel, shortDefaultProps, cenasParaFrames } from './ShortParametrizavel';
 import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
 import { ShortTech, shortTechDefaultProps, cenasTechParaFrames } from './ShortTech';
-import { SplitReaction, splitReactionDefaultProps, cenasSplitParaFrames } from './SplitReaction';
+import { SplitReaction, splitReactionDefaultProps, splitReactionParaFrames } from './SplitReaction';
 import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './CaptionClip';
 import { CaptionBold, captionBoldDefaultProps, captionBoldParaFrames } from './CaptionBold';
 import { QuoteCard, quoteCardDefaultProps, quoteCardParaFrames } from './QuoteCard';
@@ -100,7 +100,7 @@ export const RemotionRoot: React.FC = () => {
         durationInFrames={900}
         defaultProps={splitReactionDefaultProps}
         calculateMetadata={({ props }) => ({
-          durationInFrames: Math.max(1, cenasSplitParaFrames(props.cenas)),
+          durationInFrames: Math.max(1, splitReactionParaFrames(props)),
         })}
       />
 

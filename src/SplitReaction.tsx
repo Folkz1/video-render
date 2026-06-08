@@ -58,6 +58,10 @@ export type SplitReactionProps = {
   creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
   voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa (ducking)
   keyword_pops?: { text: string; fromSec: number }[]; // palavras-chave estourando na tela (exemplificar)
+  // ── FIEL IA 2-ATOS: ATO 2 "a fonte fala" ──
+  // Quando presente, APÓS as cenas (ATO 1) o creator_url toca em TELA CHEIA com o ÁUDIO
+  // ORIGINAL (muted=false) + legenda limpa da transcrição. Ausente => comportamento atual.
+  fonte_fala?: { dur_s: number; legenda?: string };
 };
 
 export const splitReactionDefaultProps: SplitReactionProps = {
@@ -73,6 +77,11 @@ export const splitReactionDefaultProps: SplitReactionProps = {
 
 export const cenasSplitParaFrames = (cenas: CenaSplit[]) =>
   (cenas ?? []).reduce((acc, c) => acc + Math.max(1, Math.round((c.duracao_s ?? 3) * FPS)), 0);
+
+// total de frames do SplitReaction = ATO 1 (cenas) + ATO 2 (fonte_fala) quando presente.
+export const splitReactionParaFrames = (props: { cenas: CenaSplit[]; fonte_fala?: { dur_s: number } }) =>
+  cenasSplitParaFrames(props.cenas) +
+  (props.fonte_fala?.dur_s ? Math.max(1, Math.round(props.fonte_fala.dur_s * FPS)) : 0);
 
 const KenBurns: React.FC<{ src: string }> = ({ src }) => {
   const frame = useCurrentFrame();
@@ -123,8 +132,24 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
   );
 };
 
+// ── ATO 2 (FIEL IA "a fonte fala") ──
+// creator_url em TELA CHEIA (1080x1920, cover) com ÁUDIO ORIGINAL (muted=false) +
+// legenda limpa branca (transcrição do trecho, frase a frase via WordCaptions variant="limpa").
+const FonteFala: React.FC<{ creator_url?: string; legenda?: string; durSec: number; accent: string }> = ({ creator_url, legenda, durSec, accent }) => (
+  <AbsoluteFill style={{ backgroundColor: '#000' }}>
+    {creator_url ? (
+      <OffthreadVideo src={resolveSrc(creator_url)} muted={false} style={{ width: 1080, height: 1920, objectFit: 'cover' }} />
+    ) : null}
+    {/* leve vinheta inferior p/ legibilidade da legenda */}
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 620, background: 'linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0))', zIndex: 20 }} />
+    {legenda ? (
+      <WordCaptions text={legenda} durSec={durSec} fromSec={0} anchorY={1500} accent={accent} fontSize={62} maxWordsPerGroup={4} variant="limpa" />
+    ) : null}
+  </AbsoluteFill>
+);
+
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops, fonte_fala } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
 
   let cursor = 0;
@@ -148,21 +173,25 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
-      {/* TOPO criador (contínuo, fixo) + linha divisória neon — componente reutilizável */}
-      <CreatorTop
-        creator_url={creator_url}
-        creator_avatar={creator_avatar}
-        creator_live_audio={creator_live_audio}
-        handle={handle}
-        logo_url={logo_url}
-        paleta_hex={paleta_hex}
-        splitY={splitY}
-        creator_focus_x={creator_focus_x}
-        creator_focus_y={creator_focus_y}
-        creator_zoom={creator_zoom}
-        creator_punches={creator_punches}
-        creator_face_keyframes={creator_face_keyframes}
-      />
+      {/* TOPO criador (contínuo, fixo) + linha divisória neon — componente reutilizável.
+          Limitado ao ATO 1 (`total`): no ATO 2 (fonte_fala) o creator vira tela cheia.
+          Quando fonte_fala ausente, total == duração total → comportamento idêntico ao atual. */}
+      <Sequence from={0} durationInFrames={total}>
+        <CreatorTop
+          creator_url={creator_url}
+          creator_avatar={creator_avatar}
+          creator_live_audio={creator_live_audio}
+          handle={handle}
+          logo_url={logo_url}
+          paleta_hex={paleta_hex}
+          splitY={splitY}
+          creator_focus_x={creator_focus_x}
+          creator_focus_y={creator_focus_y}
+          creator_zoom={creator_zoom}
+          creator_punches={creator_punches}
+          creator_face_keyframes={creator_face_keyframes}
+        />
+      </Sequence>
 
       {/* room-tone: leito de presença a ~-44dB sob a voz — mata o "vazio digital" do TTS.
           Só no caminho sintético (a gravação real já tem ambiente próprio). volume tunável; validar no servidor. */}
@@ -202,31 +231,44 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         </Sequence>
       ))}
 
-      {/* handle badge — canto superior esquerdo (fora da costura: não colide com a legenda karaokê) */}
-      <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
-        {handle.toUpperCase()}
-      </div>
-
-      {/* faixa-tese fixa opcional */}
-      {faixa_tese ? (
-        <div style={{ position: 'absolute', top: 36, left: 60, right: 60, textAlign: 'center', zIndex: 45, color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 46, lineHeight: 1.05, fontStyle: 'italic', WebkitTextStroke: '6px #000', paintOrder: 'stroke fill', textShadow: '0 3px 14px rgba(0,0,0,0.6)' }}>
-          {faixa_tese}
+      {/* Overlays do ATO 1 (handle / faixa-tese / KeywordPop): bounded a `total` p/ não
+          vazarem sobre o ATO 2. Sem fonte_fala, total == duração total → idêntico ao atual. */}
+      <Sequence from={0} durationInFrames={total}>
+        {/* handle badge — canto superior esquerdo (fora da costura: não colide com a legenda karaokê) */}
+        <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
+          {handle.toUpperCase()}
         </div>
+
+        {/* faixa-tese fixa opcional */}
+        {faixa_tese ? (
+          <div style={{ position: 'absolute', top: 36, left: 60, right: 60, textAlign: 'center', zIndex: 45, color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 46, lineHeight: 1.05, fontStyle: 'italic', WebkitTextStroke: '6px #000', paintOrder: 'stroke fill', textShadow: '0 3px 14px rgba(0,0,0,0.6)' }}>
+            {faixa_tese}
+          </div>
+        ) : null}
+
+        {/* KeywordPop: palavra-chave do nicho "estoura" no b-roll no instante em que é falada */}
+        {(keyword_pops ?? []).map((kp, i) => (
+          <KeywordPop
+            key={`kp${i}`}
+            text={kp.text}
+            fromSec={kp.fromSec}
+            accent={paleta_hex}
+            y={Math.round(splitY + (1920 - splitY) * 0.42)}
+            variant="fill"
+          />
+        ))}
+      </Sequence>
+
+      {/* ATO 2 — "a fonte fala": DEPOIS das cenas (ATO 1). creator_url em tela cheia com
+          áudio ORIGINAL + legenda limpa. A música (acima) só vai até `total`, então silencia aqui. */}
+      {fonte_fala && fonte_fala.dur_s > 0 ? (
+        <Sequence from={total} durationInFrames={Math.max(1, Math.round(fonte_fala.dur_s * FPS))}>
+          <FonteFala creator_url={creator_url} legenda={fonte_fala.legenda} durSec={fonte_fala.dur_s} accent={paleta_hex} />
+        </Sequence>
       ) : null}
 
-      {/* KeywordPop: palavra-chave do nicho "estoura" no b-roll no instante em que é falada */}
-      {(keyword_pops ?? []).map((kp, i) => (
-        <KeywordPop
-          key={`kp${i}`}
-          text={kp.text}
-          fromSec={kp.fromSec}
-          accent={paleta_hex}
-          y={Math.round(splitY + (1920 - splitY) * 0.42)}
-          variant="fill"
-        />
-      ))}
-
-      <ProgressBar total={total} accent={paleta_hex} />
+      {/* progress bar cobre o vídeo inteiro (ATO 1 + ATO 2) */}
+      <ProgressBar total={total + (fonte_fala?.dur_s ? Math.round(fonte_fala.dur_s * FPS) : 0)} accent={paleta_hex} />
     </AbsoluteFill>
   );
 };
