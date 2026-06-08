@@ -65,7 +65,11 @@ async function ensureDirs() {
 // start/end em segundos. Retorna o id do clip salvo em CLIPS_DIR.
 async function resolveSearch(query) {
   // acha a melhor URL de vídeo no YouTube para um termo (yt-dlp ytsearch, mesma infra+proxy)
-  const args = ['--no-playlist', '--no-download', '--print', 'webpage_url'];
+  const args = ['--no-playlist', '--no-download', '--print', 'webpage_url',
+    '--extractor-args', 'youtube:player_client=web_safari,android',
+    '--user-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    '--socket-timeout', '20'];
+  if (process.env.YTDLP_COOKIES_FILE) args.push('--cookies', process.env.YTDLP_COOKIES_FILE);
   if (process.env.YTDLP_PROXY) args.push('--proxy', process.env.YTDLP_PROXY);
   // ytsearch3 + filtro de duração no formato p/ evitar lives/vídeos enormes; pega o 1º válido
   args.push(`ytsearch3:${query}`);
@@ -86,14 +90,23 @@ async function makeClip(youtubeUrl, start, end, search) {
   //    Deixa o yt-dlp escolher a extensão (%(ext)s): merge vp9+opus vira .webm/.mkv,
   //    não .mp4 — fixar .mp4 fazia o ffmpeg não achar o arquivo.
   const rawTpl = path.join(CLIPS_DIR, `${id}-raw.%(ext)s`);
-  const ytArgs = [
-    '-f', 'bestvideo[height<=1080]+bestaudio/best/best',
-    '--download-sections', `*${start}-${end}`,
-    '--force-keyframes-at-cuts', '--no-playlist', '-o', rawTpl,
+  // Defesa anti-bot 2026: só --proxy não basta — YouTube exige player_client + user-agent reais
+  // (senão responde "confirme que não é robô"). player_client web_safari/android são menos vigiados.
+  const ytCommon = [
+    '--extractor-args', 'youtube:player_client=web_safari,android',
+    '--user-agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+    '--retries', '3', '--fragment-retries', '5', '--socket-timeout', '20',
   ];
-  if (process.env.YTDLP_PROXY) ytArgs.push('--proxy', process.env.YTDLP_PROXY);
-  ytArgs.push(youtubeUrl);
-  await execFileP('yt-dlp', ytArgs, { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
+  if (process.env.YTDLP_COOKIES_FILE) ytCommon.push('--cookies', process.env.YTDLP_COOKIES_FILE);
+  if (process.env.YTDLP_PROXY) ytCommon.push('--proxy', process.env.YTDLP_PROXY);
+  const dl = async (fmt) => {
+    const ytArgs = ['-f', fmt, '--download-sections', `*${start}-${end}`,
+      '--force-keyframes-at-cuts', '--no-playlist', '-o', rawTpl, ...ytCommon, youtubeUrl];
+    await execFileP('yt-dlp', ytArgs, { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
+  };
+  // fallback de formato: se o merge bestvideo+bestaudio falhar, tenta formato único 720p (mais resiliente)
+  try { await dl('bestvideo[height<=1080]+bestaudio/best/best'); }
+  catch (e) { log('clip dl fallback 720', String(e && e.message).slice(0, 140)); await dl('best[height<=720]/best'); }
   // localiza o arquivo realmente gerado (qualquer extensão), ignorando
   // fragmentos intermediários do merge (ex: {id}-raw.f137.webm) e pegando o maior.
   const raw = fs.readdirSync(CLIPS_DIR)
