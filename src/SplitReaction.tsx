@@ -25,7 +25,7 @@ const FPS = 30;
 // INSCREVA-SE/LIKE/nome + legenda própria da fonte) nos ~13% de baixo. Damos um leve zoom
 // e empurramos o vídeo PRA CIMA pra que essa faixa saia do frame. Conservador: o rosto de
 // quem fala fica no centro-superior e não é cortado.
-const SOURCE_CROP = 0.13; // fração de baixo a remover do frame da fonte
+const SOURCE_CROP = 0.18; // fração de baixo a remover do frame da fonte (tira banner + legenda própria do canal)
 const SOURCE_ZOOM = 1 / (1 - SOURCE_CROP); // ~1.15
 
 const resolveSrc = (src?: string): string =>
