@@ -58,6 +58,7 @@ export type CaptionClipProps = {
   tema_linhas?: string[]; // faixa-tese (entra/sai)
   tema_y?: number;
   titulo_topo?: string;
+  caption_style?: 'karaoke' | 'limpa'; // 'karaoke' (amarelo, 1 palavra) | 'limpa' (essay, branco/frase) — default karaoke
   keyword_hero?: string; // keyword global (fallback se nenhum plano tem keyword)
   circulo_em?: { start: number; end: number }[];
   // ── SPLIT UNIVERSAL (opt-in; default = comportamento atual) ──
@@ -215,8 +216,12 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
         <div style={{ position: 'absolute', top: show_creator_panel ? splitY + 24 : 150, left: 60, right: 60, textAlign: 'center', zIndex: 30, color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 700, fontSize: 44, lineHeight: 1.1, WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>{titulo_topo}</div>
       ) : null}
 
-      {/* legenda karaokê CONTÍNUA (uma só, cobre todos os planos) */}
-      <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={captionAnchor} accent={paleta_hex} fontSize={86} maxWordsPerGroup={1} variant="solta" numberPop />
+      {/* legenda CONTÍNUA — karaokê (amarelo, 1 palavra) OU limpa estilo essay (branco, frase) */}
+      {props.caption_style === 'limpa' ? (
+        <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={captionAnchor} accent="#FFFFFF" fontSize={60} maxWordsPerGroup={5} variant="limpa" numberPop={false} />
+      ) : (
+        <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={captionAnchor} accent={paleta_hex} fontSize={86} maxWordsPerGroup={1} variant="solta" numberPop />
+      )}
 
       {/* painel do criador no topo (split universal) */}
       {show_creator_panel ? (

@@ -17,7 +17,7 @@ export type WordCaptionsProps = {
   maxWordsPerGroup?: number; // 1 = karaokê puro; >1 = frase com palavra ativa destacada
   fontSize?: number;
   maxWidth?: number;
-  variant?: 'solta' | 'pilula';
+  variant?: 'solta' | 'pilula' | 'limpa';
   numberPop?: boolean; // count-up quando a palavra ativa tem número
   allCaps?: boolean;
 };
@@ -71,7 +71,7 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   const groupStart = Math.floor(active / maxWordsPerGroup) * maxWordsPerGroup;
   const group = ws.slice(groupStart, groupStart + maxWordsPerGroup);
 
-  const fmt = (s: string) => (allCaps ? s.toUpperCase() : s);
+  const fmt = (s: string) => (allCaps && variant !== 'limpa' ? s.toUpperCase() : s);
 
   const strokeStyle: React.CSSProperties =
     variant === 'solta'
@@ -83,7 +83,13 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
           textShadow:
             '0 0 10px rgba(0,0,0,0.98), 0 0 22px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.75), 0 5px 16px rgba(0,0,0,0.98)',
         }
-      : {};
+      : variant === 'limpa'
+        ? {
+            // MODO ESSAY (estilo Alex Wei): legenda LIMPA — branco, sombra sutil, sem stroke grosso.
+            // Elegante e discreta; não compete com a fala. Frase por vez (maxWordsPerGroup alto).
+            textShadow: '0 2px 8px rgba(0,0,0,0.92), 0 1px 3px rgba(0,0,0,0.97)',
+          }
+        : {};
 
   const renderWord = (w: WordTiming, idxInGroup: number) => {
     const globalIdx = groupStart + idxInGroup;
@@ -94,7 +100,8 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
     const scale = interpolate(s, [0, 1], [1.15, 1.0]);
     const opacity = interpolate(s, [0, 1], [0, 1]);
     const reallyActive = globalIdx === active;
-    const color = reallyActive || isKaraoke ? accent : '#FFFFFF';
+    // MODO LIMPA (essay): tudo branco, sem destaque de cor (legenda elegante, não karaokê).
+    const color = variant === 'limpa' ? '#FFFFFF' : (reallyActive || isKaraoke ? accent : '#FFFFFF');
 
     let display = fmt(w.word);
     if (numberPop && reallyActive) {
@@ -142,7 +149,7 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
         textAlign: 'center',
         zIndex: 40,
         fontFamily: FONT,
-        fontWeight: 900,
+        fontWeight: variant === 'limpa' ? 600 : 900,
         fontSize,
         lineHeight: 1.05,
         ...(variant === 'pilula'
