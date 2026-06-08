@@ -58,10 +58,14 @@ export type SplitReactionProps = {
   creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
   voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa (ducking)
   keyword_pops?: { text: string; fromSec: number }[]; // palavras-chave estourando na tela (exemplificar)
-  // ── FIEL IA 2-ATOS: ATO 2 "a fonte fala" ──
-  // Quando presente, APÓS as cenas (ATO 1) o creator_url toca em TELA CHEIA com o ÁUDIO
-  // ORIGINAL (muted=false) + legenda limpa da transcrição. Ausente => comportamento atual.
+  // ── FIEL IA: ATO "a fonte fala" (CORTE em tela cheia) ──
+  // Quando presente, o creator_url toca em TELA CHEIA com o ÁUDIO ORIGINAL (muted=false)
+  // + legenda limpa da transcrição. Ausente => comportamento atual.
   fonte_fala?: { dur_s: number; legenda?: string };
+  // ── FIEL IA 3-ATOS: HOOK → CORTE → COMENTÁRIO ──
+  // hook_n = nº de cenas ANTES do corte (ATO 1 HOOK). As cenas restantes (ATO 3 COMENTÁRIO)
+  // renderizam DEPOIS do corte. Ausente/0 => formato atual (todas as cenas, depois fonte_fala).
+  hook_n?: number;
 };
 
 export const splitReactionDefaultProps: SplitReactionProps = {
@@ -149,17 +153,35 @@ const FonteFala: React.FC<{ creator_url?: string; legenda?: string; durSec: numb
 );
 
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops, fonte_fala } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops, fonte_fala, hook_n = 0 } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
 
+  // CORTE (fonte_fala) em frames; quando 3-atos (hook_n>0) ele entra ENTRE as cenas.
+  const corteFrames = fonte_fala && fonte_fala.dur_s > 0 ? Math.max(1, Math.round(fonte_fala.dur_s * FPS)) : 0;
+  const nCenas = (cenas ?? []).length;
+  // posição do corte: 3-atos => após `hook_n` cenas; senão (legado) => após TODAS as cenas.
+  const corteAfter = hook_n > 0 ? clamp(hook_n, 0, nCenas) : nCenas;
+
+  // Layout: cada cena ganha `from`. As cenas a partir de `corteAfter` são empurradas
+  // pela duração do corte (ATO 3 COMENTÁRIO vem DEPOIS do corte).
   let cursor = 0;
-  const build = (cenas ?? []).map((cena) => {
+  let corteFrom = 0;
+  const build = (cenas ?? []).map((cena, i) => {
+    if (i === corteAfter) cursor += corteFrames; // abre espaço pro corte antes desta cena
     const dur = Math.max(1, Math.round((cena.duracao_s ?? 3) * FPS));
     const item = { cena, from: cursor, dur };
     cursor += dur;
     return item;
   });
-  const total = Math.max(1, cursor);
+  // corte no fim (legado, corteAfter == nCenas) ou se não houve cena no índice
+  corteFrom = corteAfter < build.length ? build[corteAfter].from - corteFrames : cursor;
+  if (corteAfter >= nCenas) cursor += corteFrames; // corte ao final ainda não somado
+  const totalAll = Math.max(1, cursor); // duração total (ATO 1 + CORTE + ATO 3)
+
+  // janelas de SPLIT (cenas) = tudo MENOS o corte. ATO 1 = [0, corteFrom); ATO 3 = [corteFrom+corteFrames, totalAll).
+  const win1 = { from: 0, dur: Math.max(1, corteFrom) };
+  const win3from = corteFrom + corteFrames;
+  const win3dur = Math.max(0, totalAll - win3from);
 
   // ducking: música abaixa sob a voz (janelas em s). f começa em 0 quando o Audio entra (from=0).
   const hasVW = Array.isArray(voice_windows) && voice_windows.length > 0;
@@ -174,39 +196,46 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
       {/* TOPO criador (contínuo, fixo) + linha divisória neon — componente reutilizável.
-          Limitado ao ATO 1 (`total`): no ATO 2 (fonte_fala) o creator vira tela cheia.
-          Quando fonte_fala ausente, total == duração total → comportamento idêntico ao atual. */}
-      <Sequence from={0} durationInFrames={total}>
-        <CreatorTop
-          creator_url={creator_url}
-          creator_avatar={creator_avatar}
-          creator_live_audio={creator_live_audio}
-          handle={handle}
-          logo_url={logo_url}
-          paleta_hex={paleta_hex}
-          splitY={splitY}
-          creator_focus_x={creator_focus_x}
-          creator_focus_y={creator_focus_y}
-          creator_zoom={creator_zoom}
-          creator_punches={creator_punches}
-          creator_face_keyframes={creator_face_keyframes}
-        />
-      </Sequence>
+          Renderiza nas janelas de SPLIT (ATO 1 HOOK + ATO 3 COMENTÁRIO); DURANTE o corte
+          o creator vira tela cheia (FonteFala). 3-atos: 2 janelas; legado: 1 janela = tudo
+          antes do corte final. */}
+      {[win1, { from: win3from, dur: win3dur }].filter((w) => w.dur > 0).map((w, wi) => (
+        <Sequence key={`topo${wi}`} from={w.from} durationInFrames={w.dur}>
+          <CreatorTop
+            creator_url={creator_url}
+            creator_avatar={creator_avatar}
+            creator_live_audio={creator_live_audio}
+            handle={handle}
+            logo_url={logo_url}
+            paleta_hex={paleta_hex}
+            splitY={splitY}
+            creator_focus_x={creator_focus_x}
+            creator_focus_y={creator_focus_y}
+            creator_zoom={creator_zoom}
+            creator_punches={creator_punches}
+            creator_face_keyframes={creator_face_keyframes}
+          />
+        </Sequence>
+      ))}
 
       {/* room-tone: leito de presença a ~-44dB sob a voz — mata o "vazio digital" do TTS.
-          Só no caminho sintético (a gravação real já tem ambiente próprio). volume tunável; validar no servidor. */}
+          Só no caminho sintético (a gravação real já tem ambiente próprio). Cobre o vídeo
+          inteiro (loop) — não interfere no áudio original do corte. */}
       {!creator_live_audio ? (
-        <Sequence from={0} durationInFrames={total}>
+        <Sequence from={0} durationInFrames={totalAll}>
           <Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop />
         </Sequence>
       ) : null}
 
-      {/* música de fundo (com ducking sob a voz quando há voice_windows) */}
-      {music_url ? (
-        <Sequence from={0} durationInFrames={total}>
-          <Audio src={resolveSrc(music_url)} volume={musicVol} loop />
-        </Sequence>
-      ) : null}
+      {/* música de fundo (com ducking sob a voz). Renderiza nas janelas de SPLIT e SILENCIA
+          durante o corte (não vaza sobre o áudio original da fonte). */}
+      {music_url
+        ? [win1, { from: win3from, dur: win3dur }].filter((w) => w.dur > 0).map((w, wi) => (
+            <Sequence key={`mus${wi}`} from={w.from} durationInFrames={w.dur}>
+              <Audio src={resolveSrc(music_url)} volume={musicVol} loop />
+            </Sequence>
+          ))
+        : null}
 
       {/* narração por cena */}
       {build.map((b, i) => (
@@ -231,9 +260,10 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         </Sequence>
       ))}
 
-      {/* Overlays do ATO 1 (handle / faixa-tese / KeywordPop): bounded a `total` p/ não
-          vazarem sobre o ATO 2. Sem fonte_fala, total == duração total → idêntico ao atual. */}
-      <Sequence from={0} durationInFrames={total}>
+      {/* Overlays (handle / faixa-tese / KeywordPop): rendem nas janelas de SPLIT p/ não
+          vazarem sobre o corte. Usamos a 1ª janela como base; em 3-atos o handle reaparece
+          no ATO 3 via a janela win3 abaixo. Sem fonte_fala, win1 == duração total. */}
+      <Sequence from={win1.from} durationInFrames={win1.dur}>
         {/* handle badge — canto superior esquerdo (fora da costura: não colide com a legenda karaokê) */}
         <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
           {handle.toUpperCase()}
@@ -259,16 +289,26 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
         ))}
       </Sequence>
 
-      {/* ATO 2 — "a fonte fala": DEPOIS das cenas (ATO 1). creator_url em tela cheia com
-          áudio ORIGINAL + legenda limpa. A música (acima) só vai até `total`, então silencia aqui. */}
-      {fonte_fala && fonte_fala.dur_s > 0 ? (
-        <Sequence from={total} durationInFrames={Math.max(1, Math.round(fonte_fala.dur_s * FPS))}>
-          <FonteFala creator_url={creator_url} legenda={fonte_fala.legenda} durSec={fonte_fala.dur_s} accent={paleta_hex} />
+      {/* handle badge também no ATO 3 COMENTÁRIO (3-atos) — a 1ª janela cobre só o HOOK */}
+      {win3dur > 0 ? (
+        <Sequence from={win3from} durationInFrames={win3dur}>
+          <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
+            {handle.toUpperCase()}
+          </div>
         </Sequence>
       ) : null}
 
-      {/* progress bar cobre o vídeo inteiro (ATO 1 + ATO 2) */}
-      <ProgressBar total={total + (fonte_fala?.dur_s ? Math.round(fonte_fala.dur_s * FPS) : 0)} accent={paleta_hex} />
+      {/* CORTE — "a fonte fala": entre HOOK e COMENTÁRIO (3-atos) ou ao final (legado).
+          creator_url em tela cheia com
+          áudio ORIGINAL + legenda limpa. A música (acima) só vai até `total`, então silencia aqui. */}
+      {corteFrames > 0 ? (
+        <Sequence from={corteFrom} durationInFrames={corteFrames}>
+          <FonteFala creator_url={creator_url} legenda={fonte_fala!.legenda} durSec={fonte_fala!.dur_s} accent={paleta_hex} />
+        </Sequence>
+      ) : null}
+
+      {/* progress bar cobre o vídeo inteiro (HOOK + CORTE + COMENTÁRIO) */}
+      <ProgressBar total={totalAll} accent={paleta_hex} />
     </AbsoluteFill>
   );
 };
