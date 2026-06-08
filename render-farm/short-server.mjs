@@ -27,6 +27,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia } from '@remotion/renderer';
+import { recordPage } from './record-page.mjs';
 
 const execFileP = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -233,6 +234,23 @@ function publicJob(job) {
     sizeBytes: job.sizeBytes,
     downloadUrl: job.status === 'completed' ? `/api/v1/shorts/${job.id}/video` : null,
   };
+}
+
+// Serializa um job pesado (Chromium do Playwright) contra a MESMA trava `working`
+// dos renders Remotion — só 1 Chromium por vez na máquina. Espera a trava liberar
+// (poll leve), claim, roda, libera e reativa a fila de renders. Usado pelo
+// /api/v1/record-page (Playwright). makeClip (yt-dlp+ffmpeg) não precisa disto.
+async function runExclusive(fn) {
+  while (working) {
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  working = true;
+  try {
+    return await fn();
+  } finally {
+    working = false;
+    setImmediate(processQueue); // destrava renders que estavam na fila
+  }
 }
 
 async function processQueue() {
@@ -496,6 +514,36 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         log('clip error', err?.message || err);
         return jsonResponse(res, 502, { error: 'falha ao cortar clip', detail: String(err?.message || err).slice(0, 300) });
+      }
+    }
+
+    // Gravação de tela (Playwright): grava uma URL (notícia/tweet/post) em mp4 9:16
+    // pra virar footage do Fiel IA quando NÃO há vídeo do YouTube. Síncrono (igual
+    // ao /clip), mas Chromium é pesado -> roda na MESMA trava `working` dos renders
+    // (runExclusive: 1 Chromium por vez). Salva em CLIPS_DIR e é servível pelo
+    // /api/v1/clips/{id}/video existente.
+    if (req.method === 'POST' && u.pathname === '/api/v1/record-page') {
+      const raw = await readBody(req);
+      let body;
+      try { body = JSON.parse(raw || '{}'); } catch { return jsonResponse(res, 400, { error: 'invalid json' }); }
+      const { url, seconds, clipSelector } = body;
+      if (!url || typeof url !== 'string') {
+        return jsonResponse(res, 400, { error: 'url (string) é obrigatória' });
+      }
+      try {
+        const r = await runExclusive(() => recordPage(
+          { url, seconds: seconds != null ? Number(seconds) : undefined, clipSelector },
+          CLIPS_DIR,
+        ));
+        return jsonResponse(res, 200, {
+          id: r.id,
+          videoUrl: `/api/v1/clips/${r.id}/video`,
+          sizeBytes: r.sizeBytes,
+          text: r.text,
+        });
+      } catch (err) {
+        log('record-page error', err?.message || err);
+        return jsonResponse(res, 502, { error: 'falha ao gravar tela', detail: String(err?.message || err).slice(0, 300) });
       }
     }
 
