@@ -32,6 +32,10 @@ export type CreatorTopProps = {
   creator_zoom?: number; // zoom base do painel (default 1.0)
   creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in na ênfase
   creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
+  // ── FIEL IA: o clip-fonte tem overlays QUEIMADOS do canal (faixa INSCREVA-SE/LIKE + legenda
+  // da fonte) nos ~13% de baixo. source_crop>0 dá leve zoom + empurra pra cima p/ tirá-los do
+  // frame. Opt-in (só Fiel); GuyFolkz (gravação própria) passa 0 e NÃO muda de comportamento.
+  source_crop?: number; // fração de baixo a remover (0 = sem crop, default)
 };
 
 // Ken Burns lento p/ o avatar (idêntico ao do SplitReaction)
@@ -72,6 +76,7 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
   creator_zoom = 1.0,
   creator_punches,
   creator_face_keyframes,
+  source_crop = 0,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -103,9 +108,13 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
   } else if (kf.length === 1) {
     fx = kf[0].cx; fy = kf[0].cy; baseScale = creator_zoom * kf[0].scale;
   }
+  // FIEL IA: leve zoom + ancora no TOPO p/ tirar a faixa do canal-fonte de baixo (conservador:
+  // rosto fica no centro-superior). GuyFolkz (source_crop=0) mantém o enquadramento original.
+  const srcZoom = source_crop > 0 ? 1 / (1 - source_crop) : 1;
+  const fyEff = source_crop > 0 ? 0 : fy; // ancora topo quando cortando a fonte
   // object-position calibrado no rosto — rosto GRANDE sem esticar (cover)
-  const objPos = `${Math.round(fx * 100)}% ${Math.round(fy * 100)}%`;
-  const creatorScale = baseScale * pScale;
+  const objPos = `${Math.round(fx * 100)}% ${Math.round(fyEff * 100)}%`;
+  const creatorScale = baseScale * pScale * srcZoom;
   return (
     <>
       {/* TOPO criador (contínuo, fixo) */}

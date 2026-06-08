@@ -21,6 +21,13 @@ import { KeywordPop } from './components/KeywordPop';
 
 const FPS = 30;
 
+// FIEL IA — o clip da fonte tem overlays QUEIMADOS do canal de origem (faixa inferior
+// INSCREVA-SE/LIKE/nome + legenda própria da fonte) nos ~13% de baixo. Damos um leve zoom
+// e empurramos o vídeo PRA CIMA pra que essa faixa saia do frame. Conservador: o rosto de
+// quem fala fica no centro-superior e não é cortado.
+const SOURCE_CROP = 0.13; // fração de baixo a remover do frame da fonte
+const SOURCE_ZOOM = 1 / (1 - SOURCE_CROP); // ~1.15
+
 const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
 
@@ -61,7 +68,9 @@ export type SplitReactionProps = {
   // ── FIEL IA: ATO "a fonte fala" (CORTE em tela cheia) ──
   // Quando presente, o creator_url toca em TELA CHEIA com o ÁUDIO ORIGINAL (muted=false)
   // + legenda limpa da transcrição. Ausente => comportamento atual.
-  fonte_fala?: { dur_s: number; legenda?: string };
+  // words = transcrição do trecho COM timing [{t: seg relativo ao início do clip, text}].
+  // Presente => legenda SINCRONIZADA (cada frase de t[i] até t[i+1]); ausente => fallback uniforme.
+  fonte_fala?: { dur_s: number; legenda?: string; words?: { t: number; text: string }[] };
   // ── FIEL IA 3-ATOS: HOOK → CORTE → COMENTÁRIO ──
   // hook_n = nº de cenas ANTES do corte (ATO 1 HOOK). As cenas restantes (ATO 3 COMENTÁRIO)
   // renderizam DEPOIS do corte. Ausente/0 => formato atual (todas as cenas, depois fonte_fala).
@@ -139,14 +148,48 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 // ── ATO 2 (FIEL IA "a fonte fala") ──
 // creator_url em TELA CHEIA (1080x1920, cover) com ÁUDIO ORIGINAL (muted=false) +
 // legenda limpa branca (transcrição do trecho, frase a frase via WordCaptions variant="limpa").
-const FonteFala: React.FC<{ creator_url?: string; legenda?: string; durSec: number; accent: string }> = ({ creator_url, legenda, durSec, accent }) => (
+// Legenda SINCRONIZADA do trecho da fonte: cada frase aparece de words[i].t até words[i+1].t
+// (ou o fim do clip). Estilo limpo/branco (mesma vibe do variant="limpa" do WordCaptions).
+const SyncedSourceCaption: React.FC<{ words: { t: number; text: string }[]; durSec: number }> = ({ words, durSec }) => {
+  const frame = useCurrentFrame();
+  const t = frame / FPS;
+  // frase ativa = última cujo t já passou
+  let active = -1;
+  for (let i = 0; i < words.length; i++) {
+    if ((words[i]?.t ?? 0) <= t) active = i;
+    else break;
+  }
+  if (active < 0) return null;
+  const end = active + 1 < words.length ? words[active + 1].t : durSec;
+  if (t >= end) return null; // segurança (não deve ocorrer: active é sempre o último <= t)
+  const txt = (words[active]?.text || '').trim();
+  if (!txt) return null;
+  return (
+    <div
+      style={{
+        position: 'absolute', left: '50%', top: 1500, transform: 'translate(-50%, -50%)',
+        width: 920, maxWidth: 920, textAlign: 'center', zIndex: 40,
+        fontFamily: 'Montserrat, Poppins, Inter, Segoe UI, sans-serif', fontWeight: 600,
+        fontSize: 62, lineHeight: 1.1, color: '#FFFFFF',
+        textShadow: '0 2px 8px rgba(0,0,0,0.92), 0 1px 3px rgba(0,0,0,0.97)',
+      }}
+    >
+      {txt}
+    </div>
+  );
+};
+
+const FonteFala: React.FC<{ creator_url?: string; legenda?: string; words?: { t: number; text: string }[]; durSec: number; accent: string }> = ({ creator_url, legenda, words, durSec, accent }) => (
   <AbsoluteFill style={{ backgroundColor: '#000' }}>
     {creator_url ? (
-      <OffthreadVideo src={resolveSrc(creator_url)} muted={false} style={{ width: 1080, height: 1920, objectFit: 'cover' }} />
+      // leve zoom + empurra pra cima (objectPosition top) p/ tirar a faixa do canal-fonte de baixo
+      <OffthreadVideo src={resolveSrc(creator_url)} muted={false} style={{ width: 1080, height: 1920, objectFit: 'cover', objectPosition: '50% 0%', transform: `scale(${SOURCE_ZOOM})`, transformOrigin: 'top center' }} />
     ) : null}
     {/* leve vinheta inferior p/ legibilidade da legenda */}
     <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 620, background: 'linear-gradient(to top, rgba(0,0,0,0.72), rgba(0,0,0,0))', zIndex: 20 }} />
-    {legenda ? (
+    {words && words.length ? (
+      <SyncedSourceCaption words={words} durSec={durSec} />
+    ) : legenda ? (
       <WordCaptions text={legenda} durSec={durSec} fromSec={0} anchorY={1500} accent={accent} fontSize={62} maxWordsPerGroup={4} variant="limpa" />
     ) : null}
   </AbsoluteFill>
@@ -214,6 +257,7 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
             creator_zoom={creator_zoom}
             creator_punches={creator_punches}
             creator_face_keyframes={creator_face_keyframes}
+            source_crop={fonte_fala ? SOURCE_CROP : 0}
           />
         </Sequence>
       ))}
@@ -303,7 +347,7 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
           áudio ORIGINAL + legenda limpa. A música (acima) só vai até `total`, então silencia aqui. */}
       {corteFrames > 0 ? (
         <Sequence from={corteFrom} durationInFrames={corteFrames}>
-          <FonteFala creator_url={creator_url} legenda={fonte_fala!.legenda} durSec={fonte_fala!.dur_s} accent={paleta_hex} />
+          <FonteFala creator_url={creator_url} legenda={fonte_fala!.legenda} words={fonte_fala!.words} durSec={fonte_fala!.dur_s} accent={paleta_hex} />
         </Sequence>
       ) : null}
 
