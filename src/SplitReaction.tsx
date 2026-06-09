@@ -14,6 +14,8 @@ import {
 import { WordCaptions, WordTiming } from './components/WordCaptions';
 import { CreatorTop } from './components/CreatorTop';
 import { KeywordPop } from './components/KeywordPop';
+import { TransitionScene, type EntryAnim } from './kit/sceneTransitions';
+import type { SlideDir } from './kit/animationPresets';
 
 // SplitReaction — formato B (split 50/50 permanente): TOPO = rosto do criador (fixo,
 // retenção facial + autoridade); BAIXO = b-roll/clip do tema que troca a cada cena;
@@ -43,6 +45,11 @@ export type CenaSplit = {
   words?: WordTiming[]; // timestamps por palavra (relativos ao áudio da cena)
   broll_cta?: string; // overlay opcional no rodapé do b-roll
   logo_url?: string; // logo do nicho p/ "exemplificar" (entra animado quando a fala cita a ferramenta)
+  // ── PRESETS de animação (opt-in; default = slideIn sutil de baixo) ──
+  // Aplica-se à ENTRADA da faixa de texto da cena (ATO 1 HOOK / ATO 3 COMENTÁRIO).
+  // O CORTE (ATO 2 FonteFala) e a estrutura dos atos ficam INTACTOS.
+  entrada_anim?: EntryAnim; // 'popIn' | 'slideIn' | 'fade' | 'none'
+  entrada_dir?: SlideDir;   // direção do slideIn (default 'up')
 };
 
 export type SplitReactionProps = {
@@ -128,7 +135,16 @@ const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }>
       )}
       {cena.logo_url ? <LogoBadge src={cena.logo_url} accent={accent} /> : null}
       {cena.broll_cta ? (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 44, textAlign: 'center', color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 38, letterSpacing: '0.04em', WebkitTextStroke: '5px #000', paintOrder: 'stroke fill' }}>{cena.broll_cta.toUpperCase()}</div>
+        // ENTRADA animada da faixa (preset). Default = slideIn sutil de baixo ~12f.
+        // Override por cena: cena.entrada_anim / cena.entrada_dir. Aditivo: sem
+        // broll_cta, nada muda; o FonteFala (ATO 2) e a estrutura ficam intactos.
+        <TransitionScene
+          entryAnim={cena.entrada_anim ?? 'slideIn'}
+          entryDir={cena.entrada_dir ?? 'up'}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 44 }}
+        >
+          <div style={{ textAlign: 'center', color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 38, letterSpacing: '0.04em', WebkitTextStroke: '5px #000', paintOrder: 'stroke fill' }}>{cena.broll_cta.toUpperCase()}</div>
+        </TransitionScene>
       ) : null}
     </div>
     <WordCaptions words={cena.words} text={cena.texto} durSec={cena.duracao_s} fromSec={0} anchorY={splitY} accent={accent} fontSize={72} maxWordsPerGroup={2} variant="solta" allCaps />

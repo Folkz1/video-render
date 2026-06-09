@@ -6,12 +6,13 @@ import {
   OffthreadVideo,
   Sequence,
   interpolate,
-  spring,
   staticFile,
   useCurrentFrame,
-  useVideoConfig,
 } from 'remotion';
 import { CreatorTop } from './components/CreatorTop';
+import { TransitionScene, type EntryAnim } from './kit/sceneTransitions';
+import type { SlideDir } from './kit/animationPresets';
+import type { TransitionName } from './kit/transitions';
 
 // Short vertical v2 (alta qualidade): áudio POR CENA (sincronizado), crossfade entre
 // cenas, texto animado, SFX opcional, branding. Cada cena dura o tempo da sua narração.
@@ -33,6 +34,10 @@ export type CenaV2 = {
   video_url?: string; // se presente, usa OffthreadVideo (hook em vídeo AI)
   audio_url: string;
   duracao_s: number;
+  // ── PRESETS de animação (opt-in; default = slideIn sutil de baixo) ──
+  entrada_anim?: EntryAnim; // 'popIn' | 'slideIn' | 'fade' | 'none'
+  entrada_dir?: SlideDir;   // direção do slideIn (default 'up')
+  transicao?: TransitionName; // reservado p/ transição entre cenas (futuro)
 };
 
 export type ShortV2Props = {
@@ -65,7 +70,6 @@ export const cenasV2ParaFrames = (cenas: CenaV2[]) =>
 
 const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number; topOffset?: number }> = ({ cena, accent, dur, topOffset = 0 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
   // Ken Burns
   const scale = interpolate(frame, [0, dur], [1.05, 1.18], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
@@ -77,8 +81,8 @@ const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number; topOffse
     extrapolateRight: 'clamp',
   });
 
-  // texto: slide-up + fade
-  const reveal = spring({ frame: frame - OVERLAP, fps, config: { damping: 18, mass: 0.6 } });
+  // texto: crossfade da cena (entra/sai). A ENTRADA animada (slide/pop) é feita
+  // pelo <TransitionScene> abaixo; aqui guardamos só a opacity de saída no fim.
   const textOpacity = interpolate(frame, [OVERLAP, OVERLAP + 8, dur - OVERLAP - 6, dur - OVERLAP], [0, 1, 1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
@@ -110,15 +114,24 @@ const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number; topOffse
           }}
         />
       </div>
-      <div style={{ position: 'absolute', left: 64, right: 64, bottom: 240, opacity: textOpacity, transform: `translateY(${(1 - reveal) * 26}px)` }}>
-        {cena.kicker ? (
-          <div style={{ color: accent, fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: 34, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16, textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>
-            {cena.kicker}
+      <div style={{ position: 'absolute', left: 64, right: 64, bottom: 240, opacity: textOpacity }}>
+        {/* ENTRADA animada do texto (preset). Default = slideIn sutil de baixo ~12f.
+            Override por cena: cena.entrada_anim / cena.entrada_dir. Começa quando a
+            cena já apareceu (após o crossfade OVERLAP). */}
+        <TransitionScene
+          entryAnim={cena.entrada_anim ?? 'slideIn'}
+          entryDir={cena.entrada_dir ?? 'up'}
+          startFrame={OVERLAP}
+        >
+          {cena.kicker ? (
+            <div style={{ color: accent, fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: 34, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 16, textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>
+              {cena.kicker}
+            </div>
+          ) : null}
+          <div style={{ color: '#fff', fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: 76, fontWeight: 900, lineHeight: 1.04, letterSpacing: '-0.01em', textShadow: '0 3px 20px rgba(0,0,0,0.65)' }}>
+            {cena.texto}
           </div>
-        ) : null}
-        <div style={{ color: '#fff', fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: 76, fontWeight: 900, lineHeight: 1.04, letterSpacing: '-0.01em', textShadow: '0 3px 20px rgba(0,0,0,0.65)' }}>
-          {cena.texto}
-        </div>
+        </TransitionScene>
       </div>
     </AbsoluteFill>
   );

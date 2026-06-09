@@ -138,6 +138,17 @@ export const glitchCut = (progress: number, opts: TransitionOpts = {}): Transiti
   };
 };
 
+// ─── 4b. FADE — crossfade simples (A esmaece, B aparece) ─────────────────────
+// Transição mais sutil e segura do kit: nenhum transform, só opacity. Boa como
+// DEFAULT profissional entre cenas (não chama atenção, sempre "limpa").
+export const fade = (progress: number): TransitionPair => {
+  const t = p(progress);
+  return {
+    outgoing: { opacity: 1 - t },
+    incoming: { opacity: t },
+  };
+};
+
 // ─── 5. WHIP PAN — movimento rápido + motion blur lateral (estilo MrBeast) ───
 export const whipPan = (progress: number, opts: TransitionOpts = {}): TransitionPair => {
   const t = p(progress);
@@ -175,6 +186,7 @@ export const TRANSITIONS: Record<string, TransitionFn> = {
   zoomBlur,
   glitchCut,
   whipPan,
+  fade,
 };
 
 export type TransitionName = keyof typeof TRANSITIONS;
