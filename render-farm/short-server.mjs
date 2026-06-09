@@ -602,6 +602,39 @@ const server = http.createServer(async (req, res) => {
         if (!fs.existsSync(file)) return jsonResponse(res, 404, { error: 'video not found' });
         return streamVideo(req, res, file);
       }
+      if (parts[4] === 'poster' || parts[4] === 'poster.jpg') {
+        // Thumbnail: extrai 1 frame (~3s) do vídeo via ffmpeg e CACHEIA o jpg ao lado do mp4.
+        const file = job?.file || path.join(SHORTS_DIR, `${parts[3]}.mp4`);
+        if (!fs.existsSync(file)) return jsonResponse(res, 404, { error: 'video not found' });
+        const poster = `${file}.poster.jpg`;
+        try {
+          if (!fs.existsSync(poster)) {
+            const extract = async (ss) => {
+              await execFileP('ffmpeg', [
+                '-y', '-ss', String(ss), '-i', file,
+                '-frames:v', '1', '-vf', 'scale=540:-1', '-q:v', '5', poster,
+              ], { timeout: 30000 });
+            };
+            try {
+              await extract(3);
+              if (!fs.existsSync(poster)) await extract(0); // vídeo < 3s
+            } catch {
+              await extract(0); // fallback: seek pra 3s falhou (vídeo curto)
+            }
+          }
+          if (!fs.existsSync(poster)) return jsonResponse(res, 500, { error: 'poster generation failed' });
+          const st = fs.statSync(poster);
+          res.writeHead(200, {
+            'Content-Type': 'image/jpeg',
+            'Content-Length': st.size,
+            'Cache-Control': 'public, max-age=86400',
+          });
+          if (req.method === 'HEAD') return res.end();
+          return fs.createReadStream(poster).pipe(res);
+        } catch (err) {
+          return jsonResponse(res, 500, { error: 'poster failed', detail: String(err?.message || err).slice(0, 300) });
+        }
+      }
       if (!job) return jsonResponse(res, 404, { error: 'job not found' });
       return jsonResponse(res, 200, publicJob(job));
     }
