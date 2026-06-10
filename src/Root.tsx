@@ -29,6 +29,7 @@ import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './C
 import { CaptionBold, captionBoldDefaultProps, captionBoldParaFrames } from './CaptionBold';
 import { QuoteCard, quoteCardDefaultProps, quoteCardParaFrames } from './QuoteCard';
 import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } from './LandscapeLong';
+import { VerticalLong, verticalLongDefaultProps, verticalLongParaFrames } from './VerticalLong';
 import { Dossie, dossieDefaultProps, dossieParaFrames } from './Dossie';
 
 const FPS = 30;
@@ -160,6 +161,24 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={landscapeLongDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: landscapeLongParaFrames(props.durTotalSec),
+        })}
+      />
+
+      {/* VerticalLong — lado 9:16 (1080x1920) do DUAL-FORMAT: gêmeo vertical do LandscapeLong
+          (MESMO contrato de props). Criador recropado no rosto (CreatorTop: face-framing/punches)
+          num painel ~62% no topo + área de apoio ~38% (cutaways/Ken Burns OU painel de marca) +
+          legenda karaokê na costura + ênfases reposicionadas pro vertical. Frame-cheio (sem
+          FFmpeg-compose: aqui o recorte do criador É a composição). */}
+      <Composition
+        id="VerticalLong"
+        component={VerticalLong}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={420}
+        defaultProps={verticalLongDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: verticalLongParaFrames(props.durTotalSec),
         })}
       />
 
