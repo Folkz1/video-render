@@ -37,8 +37,21 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
 
-// usa os defaults do CaptionClip pra manter contrato idêntico
-export { captionClipDefaultProps as captionBoldDefaultProps } from './CaptionClip';
+// MESMO contrato de props do CaptionClip. Default próprio (media-only) pra preservar o
+// preview deste formato — o CaptionClip enriqueceu o seu default com planos-card
+// (stat/keyword/banner/quote/capitulo) que o look bold não renderiza por aqui.
+export const captionBoldDefaultProps: CaptionClipProps = {
+  planos: [],
+  imagem_url: 'https://picsum.photos/1080/1920?7',
+  audio_url: '',
+  words: [],
+  texto: 'caraca esse cara vale trinta milhões agora',
+  paleta_hex: '#FFD400',
+  logo_url: '',
+  handle: '@fiel.ia',
+  duracao_s: 8,
+  mute_video: true,
+};
 export const captionBoldParaFrames = captionClipParaFrames;
 
 // fundo de UM plano — Ken Burns + leve dessaturação/escurecimento pra a tipografia

@@ -13,6 +13,15 @@ import {
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
 import { CreatorTop } from './components/CreatorTop';
+import {
+  StatCard,
+  KeywordCard,
+  BannerCard,
+  QuoteCard,
+  ChapterCard,
+  isEditorialCardTipo,
+} from './components/EditorialCards';
+import { TRANSITIONS, type TransitionName } from './kit/transitions';
 
 // CaptionClip — formato A (monolayer). MULTI-PLANO: o b-roll troca no ritmo da fala
 // (cada chunk = 1 plano cortado), enquanto a narração é ÚNICA e a legenda karaokê é
@@ -29,15 +38,27 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
 
+// tipo do plano. Sem tipo (ou 'imagem'/'video') = comportamento ANTIGO (b-roll Ken Burns).
+// Os demais tipos disparam um CARD EDITORIAL (EditorialCards) sobre o plano anterior
+// escurecido (ou sobre a paleta, via fundo_solido). 100% retrocompatível.
+export type PlanoTipo = 'imagem' | 'video' | 'stat' | 'keyword' | 'banner' | 'quote' | 'capitulo';
+
 export type Plano = {
   inicio_s: number;
   fim_s: number;
-  tipo?: string;
+  tipo?: PlanoTipo | string; // sem tipo => imagem/vídeo (legado)
   video_url?: string;
   imagem_url?: string;
-  numero?: string; // numeral gigante nesta janela
-  keyword?: string; // keyword-hero nesta janela
+  numero?: string; // numeral gigante nesta janela (legado; ainda suportado)
+  keyword?: string; // keyword-hero nesta janela (legado; ainda suportado)
   kenburns?: 'in' | 'out' | 'pan';
+  // ── campos dos cards editoriais (tipo != imagem/vídeo) ──
+  texto?: string; // banner/quote/capitulo: texto principal; keyword: a(s) palavra(s); stat: label
+  valor?: string; // stat: número ("700", "R$40M", "100M", "3x"); capitulo: numeração ("01")
+  sub?: string; // banner: subtítulo; quote: autor da citação
+  transicao?: TransitionName; // transição DESTE plano em relação ao anterior (kit); senão crossfade
+  anim_in?: string; // reservado (entrada custom); hoje cada card já tem sua entrada
+  fundo_solido?: boolean; // true => card sobre backdrop da paleta (não sobre o plano anterior)
 };
 
 export type CaptionClipProps = {
@@ -70,24 +91,38 @@ export type CaptionClipProps = {
 };
 
 export const captionClipDefaultProps: CaptionClipProps = {
-  planos: [],
+  // Demo de NARRAÇÃO LONGA nível editor: 1 exemplo de CADA tipo de plano.
+  // (planos-mídia = Ken Burns + punch-in; planos-card = motion-graphics + transições)
+  planos: [
+    { inicio_s: 0, fim_s: 4, tipo: 'imagem', imagem_url: 'https://picsum.photos/1080/1920?11', kenburns: 'in' },
+    { inicio_s: 4, fim_s: 7.5, tipo: 'capitulo', valor: '01', texto: 'Como tudo começou', transicao: 'slidePush' },
+    { inicio_s: 7.5, fim_s: 11.5, tipo: 'imagem', imagem_url: 'https://picsum.photos/1080/1920?22', kenburns: 'pan', transicao: 'wipe' },
+    { inicio_s: 11.5, fim_s: 15, tipo: 'keyword', texto: 'DESCENTRALIZA', transicao: 'glitchCut' },
+    { inicio_s: 15, fim_s: 19, tipo: 'stat', valor: 'R$40M', texto: 'em 18 meses, do zero', transicao: 'zoomBlur', fundo_solido: true },
+    { inicio_s: 19, fim_s: 22.5, tipo: 'banner', texto: 'Ninguém viu chegando', sub: 'Enquanto os incumbentes dormiam, o mercado virou.', transicao: 'whipPan' },
+    { inicio_s: 22.5, fim_s: 26.5, tipo: 'imagem', imagem_url: 'https://picsum.photos/1080/1920?33', kenburns: 'out', transicao: 'fade' },
+    { inicio_s: 26.5, fim_s: 30, tipo: 'quote', texto: 'A diferença entre o fracasso e a revolução é só apertar o botão.', sub: 'GuyFolkz', transicao: 'fade', fundo_solido: true },
+  ],
   imagem_url: 'https://picsum.photos/1080/1920?7',
   audio_url: '',
   words: [],
-  texto: 'caraca esse cara vale trinta milhões agora',
+  texto: 'caraca esse cara vale trinta milhões agora e ninguém viu chegando',
   paleta_hex: '#FFD400',
   logo_url: '',
   handle: '@fiel.ia',
-  duracao_s: 8,
+  duracao_s: 30,
   mute_video: true,
 };
 
 export const captionClipParaFrames = (p: { duracao_s?: number }) =>
   Math.max(1, Math.round((p?.duracao_s ?? 8) * FPS));
 
-// fundo de UM plano (Ken Burns; nenhum plano fica 100% estático)
-// topOffset>0 (split universal): o plano fica confinado abaixo do painel do criador.
-const PlanoBg: React.FC<{ plano: Plano; dur: number; idx: number; topOffset?: number }> = ({ plano, dur, idx, topOffset = 0 }) => {
+const isMediaPlano = (p: Plano): boolean =>
+  !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' || (!isEditorialCardTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
+
+// mídia bruta de UM plano (Ken Burns + punch-in). Reusado como camada de fundo do
+// plano-mídia E como BACKDROP escurecido sob os cards editoriais (modo `darken`).
+const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: boolean; punch?: boolean }> = ({ plano, dur, idx, darken, punch }) => {
   const frame = useCurrentFrame();
   const kb = plano.kenburns || (idx % 3 === 0 ? 'in' : idx % 3 === 1 ? 'pan' : 'out');
   let scale = 1.1;
@@ -95,17 +130,106 @@ const PlanoBg: React.FC<{ plano: Plano; dur: number; idx: number; topOffset?: nu
   if (kb === 'in') scale = interpolate(frame, [0, dur], [1.05, 1.17], { extrapolateRight: 'clamp' });
   else if (kb === 'out') scale = interpolate(frame, [0, dur], [1.17, 1.05], { extrapolateRight: 'clamp' });
   else panX = interpolate(frame, [0, dur], [-26, 26], { extrapolateRight: 'clamp' });
-  const fadeIn = idx === 0 ? 1 : interpolate(frame, [0, XF], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-  const style: React.CSSProperties = { width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translateX(${panX}px)` };
+  // PUNCH-IN sutil: planos longos (>4s) ganham um leve scale 1→1.06 por cima do Ken
+  // Burns — "respira" e sinaliza vida (sem competir com a legenda). Off em cards.
+  const punchScale = punch && dur > 4 * FPS ? interpolate(frame, [0, dur], [1.0, 1.06], { extrapolateRight: 'clamp' }) : 1;
+  const style: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    transform: `scale(${scale * punchScale}) translateX(${panX}px)`,
+    filter: darken ? 'brightness(0.42) saturate(0.9)' : undefined,
+  };
+  return plano.video_url ? (
+    <OffthreadVideo src={resolveSrc(plano.video_url)} muted style={style} />
+  ) : (
+    <Img src={resolveSrc(plano.imagem_url || '')} style={style} />
+  );
+};
+
+// fundo de UM plano. topOffset>0 (split universal): plano confinado abaixo do painel.
+// Plano-mídia (imagem/vídeo) => Ken Burns + punch-in. Plano-card (stat/keyword/banner/
+// quote/capitulo) => backdrop (plano anterior escurecido OU paleta) + o CARD editorial.
+// `transicao`: quando presente, a ENTRADA deste plano usa a transição do kit (wipe/
+// slidePush/zoomBlur/glitchCut/whipPan/fade) revelando sobre o plano anterior (que segue
+// embaixo no overlap); sem `transicao` => crossfade clássico (opacity em XF frames).
+const PlanoBg: React.FC<{
+  plano: Plano;
+  backdropPlano?: Plano; // plano-mídia anterior, mostrado escurecido sob um card
+  dur: number;
+  idx: number;
+  topOffset?: number;
+  accent: string;
+  heroOffset?: number;
+}> = ({ plano, backdropPlano, dur, idx, topOffset = 0, accent, heroOffset = 0 }) => {
+  const frame = useCurrentFrame();
+  const media = isMediaPlano(plano);
+
+  // ── ENTRADA: transição do kit OU crossfade clássico ──
+  let containerStyle: React.CSSProperties = {};
+  if (idx === 0) {
+    containerStyle = { opacity: 1 };
+  } else if (plano.transicao && TRANSITIONS[plano.transicao]) {
+    // progresso 0..1 ao longo da janela de overlap (XF frames). Reveal sobre o anterior.
+    const progress = interpolate(frame, [0, XF + 2], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+    const pair = TRANSITIONS[plano.transicao](progress, { accent, size: 1080 });
+    containerStyle = pair.incoming;
+  } else {
+    containerStyle = { opacity: interpolate(frame, [0, XF], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) };
+  }
+
   return (
-    <div style={{ position: 'absolute', top: topOffset, left: 0, width: 1080, height: 1920 - topOffset, overflow: 'hidden', opacity: fadeIn, backgroundColor: '#05060a' }}>
-      {plano.video_url ? (
-        <OffthreadVideo src={resolveSrc(plano.video_url)} muted style={style} />
+    <div
+      style={{
+        position: 'absolute',
+        top: topOffset,
+        left: 0,
+        width: 1080,
+        height: 1920 - topOffset,
+        overflow: 'hidden',
+        backgroundColor: '#05060a',
+        ...containerStyle,
+      }}
+    >
+      {media ? (
+        // plano-mídia normal: Ken Burns + punch-in
+        <PlanoMedia plano={plano} dur={dur} idx={idx} punch />
       ) : (
-        <Img src={resolveSrc(plano.imagem_url || '')} style={style} />
+        <>
+          {/* backdrop do card:
+              - fundo_solido => o PRÓPRIO card pinta um backdrop da paleta (Backdrop interno);
+              - senão, se há plano-mídia anterior => mostra-o ESCURECIDO (continuidade visual);
+              - senão (sem mídia anterior) => gradiente leve da paleta. */}
+          {!plano.fundo_solido && backdropPlano ? (
+            <PlanoMedia plano={backdropPlano} dur={dur} idx={idx} darken />
+          ) : !plano.fundo_solido ? (
+            <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(120% 90% at 50% 36%, ${accent}1f 0%, #05060a 60%)` }} />
+          ) : null}
+          {/* o card editorial preenche a janela */}
+          <EditorialCardForPlano plano={plano} dur={dur} accent={accent} offsetY={heroOffset} />
+        </>
       )}
     </div>
   );
+};
+
+// despacha o card certo conforme plano.tipo. offsetY empurra pra metade de baixo no split.
+const EditorialCardForPlano: React.FC<{ plano: Plano; dur: number; accent: string; offsetY?: number }> = ({ plano, dur, accent, offsetY = 0 }) => {
+  const durSec = dur / FPS;
+  switch (plano.tipo) {
+    case 'stat':
+      return <StatCard valor={plano.valor ?? plano.numero ?? ''} texto={plano.texto} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
+    case 'keyword':
+      return <KeywordCard texto={plano.texto ?? plano.keyword ?? ''} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
+    case 'banner':
+      return <BannerCard texto={plano.texto ?? ''} sub={plano.sub} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
+    case 'quote':
+      return <QuoteCard texto={plano.texto ?? ''} autor={plano.sub} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
+    case 'capitulo':
+      return <ChapterCard texto={plano.texto ?? ''} valor={plano.valor} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
+    default:
+      return null;
+  }
 };
 
 const KeywordHero: React.FC<{ text: string; accent: string; offsetY?: number }> = ({ text, accent, offsetY = 0 }) => {
@@ -175,13 +299,17 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
-      {/* CAMADA DE FUNDO: planos trocando no ritmo */}
+      {/* CAMADA DE FUNDO: planos trocando no ritmo (mídia OU card editorial) */}
       {planos.map((p, i) => {
         const fromF = Math.max(0, Math.round(p.inicio_s * FPS) - (i === 0 ? 0 : XF));
         const durF = Math.max(1, Math.round((p.fim_s - p.inicio_s) * FPS) + (i === 0 ? 0 : XF));
+        // backdrop dos cards = último plano-mídia ANTERIOR (mostrado escurecido p/ continuidade)
+        const backdropPlano = isMediaPlano(p)
+          ? undefined
+          : planos.slice(0, i).reverse().find((q) => isMediaPlano(q));
         return (
           <Sequence key={`p${i}`} from={fromF} durationInFrames={durF} layout="none">
-            <PlanoBg plano={p} dur={durF} idx={i} topOffset={splitY} />
+            <PlanoBg plano={p} backdropPlano={backdropPlano} dur={durF} idx={i} topOffset={splitY} accent={paleta_hex} heroOffset={heroOffset} />
           </Sequence>
         );
       })}
@@ -189,9 +317,11 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
       {/* gradiente de legibilidade (global) */}
       <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(4,6,10,0.5) 0%, rgba(4,6,10,0.06) 24%, rgba(4,6,10,0.48) 62%, rgba(4,6,10,0.92) 100%)', zIndex: 5 }} />
 
-      {/* keyword-hero / numeral por plano — UM destaque por vez: suprime enquanto a tese
-          (hook) está na tela, pra não empilhar texto. */}
+      {/* keyword-hero / numeral por plano (LEGADO, planos-mídia) — UM destaque por vez:
+          suprime enquanto a tese (hook) está na tela, pra não empilhar texto. Planos com
+          tipo de card editorial NÃO entram aqui (já desenham o próprio card no fundo). */}
       {planos.map((p, i) => {
+        if (isEditorialCardTipo(p.tipo)) return null;
         const fromF = Math.round(p.inicio_s * FPS);
         const durF = Math.max(1, Math.round((p.fim_s - p.inicio_s) * FPS));
         const noHook = Boolean(tema_linhas && tema_linhas.length) && p.inicio_s < temaOut - 0.3;
