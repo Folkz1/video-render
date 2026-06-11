@@ -22,6 +22,13 @@ import {
   isEditorialCardTipo,
 } from './components/EditorialCards';
 import { TRANSITIONS, type TransitionName } from './kit/transitions';
+import {
+  buildMusicVolume,
+  sfxCueWindow,
+  type VoiceWindow,
+  type SilenceWindow,
+  type SfxCue,
+} from './kit/musicTrack';
 
 // CaptionClip — formato A (monolayer). MULTI-PLANO: o b-roll troca no ritmo da fala
 // (cada chunk = 1 plano cortado), enquanto a narração é ÚNICA e a legenda karaokê é
@@ -76,6 +83,12 @@ export type CaptionClipProps = {
   mute_video?: boolean;
   music_url?: string;
   sfx?: { whoosh?: string; ding?: string; pop?: string; riser?: string; impact?: string };
+  // ── DIRETOR MUSICAL (Fase 1; todos opcionais, ausentes = comportamento atual) ──
+  voice_windows?: VoiceWindow[]; // janelas (s) com fala → música abaixa (ducking 0.045↔0.13)
+  silence_windows?: SilenceWindow[]; // janelas (s) onde a música vai a 0 com fade 1.2s (silêncio estratégico)
+  sfx_plan?: SfxCue[]; // cues de riser/sting tocados de sfx.riser_url/sting_url
+  riser_url?: string; // asset do riser (do kit) — sem isto, cue 'riser' não toca
+  sting_url?: string; // asset do sting (do kit) — sem isto, cue 'sting' não toca
   tema_linhas?: string[]; // faixa-tese (entra/sai)
   tema_y?: number;
   titulo_topo?: string;
@@ -277,7 +290,8 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 
 export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
   const { audio_url, words, texto, paleta_hex, logo_url, handle, duracao_s, mute_video = true, music_url, sfx, tema_linhas, tema_y = 1080, titulo_topo, keyword_hero, circulo_em,
-    show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5 } = props;
+    show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
+    voice_windows, silence_windows, sfx_plan, riser_url, sting_url } = props;
   const total = captionClipParaFrames(props);
 
   // monta a lista de planos (multi) ou cai no single (retrocompat)
@@ -371,12 +385,28 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
       {!liveAudio && mute_video && audio_url ? <Audio src={resolveSrc(audio_url)} volume={1} /> : null}
       {/* room-tone: leito de presença ~-44dB sob a voz sintética (mata o "vazio digital"). volume tunável. */}
       {!liveAudio ? <Sequence from={0} durationInFrames={total}><Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop /></Sequence> : null}
+      {/* trilha de fundo: LOOP cobrindo o vídeo inteiro (mata o bug da faixa curta) +
+          ducking sob a voz (voice_windows) + silêncio estratégico (silence_windows) + fades. */}
       {music_url ? (
         <Audio
           src={resolveSrc(music_url)}
-          volume={(f) => interpolate(f, [0, 12, total - 24, total], [0, 0.13, 0.13, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}
+          loop
+          volume={buildMusicVolume({ fps: FPS, totalFrames: total, voiceWindows: voice_windows, silenceWindows: silence_windows })}
         />
       ) : null}
+      {/* SFX plan: riser/sting tocados dos assets do kit nas janelas calculadas (vol 0.3). */}
+      {Array.isArray(sfx_plan)
+        ? sfx_plan.map((cue, i) => {
+            const src = cue.type === 'riser' ? riser_url : sting_url;
+            if (!src) return null;
+            const w = sfxCueWindow(cue, FPS);
+            return (
+              <Sequence key={`sfx${i}`} from={w.from} durationInFrames={w.durationInFrames} layout="none">
+                <Audio src={resolveSrc(src)} volume={0.3} />
+              </Sequence>
+            );
+          })
+        : null}
       {whoosh
         ? planos.slice(1).map((p, i) => (
             <Sequence key={`w${i}`} from={Math.max(0, Math.round(p.inicio_s * FPS) - 4)} durationInFrames={16} layout="none">

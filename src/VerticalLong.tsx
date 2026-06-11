@@ -14,6 +14,7 @@ import {
 import { WordCaptions, type WordTiming } from './components/WordCaptions';
 import { CreatorTop } from './components/CreatorTop';
 import { TransitionScene } from './kit/sceneTransitions';
+import { buildMusicVolume, sfxCueWindow } from './kit/musicTrack';
 import type { LandscapeLongProps, Enfase } from './LandscapeLong';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,6 +76,11 @@ export type VerticalLongProps = LandscapeLongProps & {
   music_url?: string; // música de fundo (com ducking sob a voz). Ausente ⇒ só áudio do criador
   voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa
   sfx_url?: string; // whoosh nos cortes dos cutaways
+  // ── DIRETOR MUSICAL (Fase 1; opcionais, ausentes = comportamento atual) ──
+  silence_windows?: { from: number; to: number }[]; // janelas (s) onde a música vai a 0 com fade 1.2s
+  sfx_plan?: { at_s: number; type: 'riser' | 'sting' }[]; // cues de riser/sting (de riser_url/sting_url)
+  riser_url?: string; // asset do riser (do kit)
+  sting_url?: string; // asset do sting (do kit)
   // fração do painel do criador (0.55–0.68). Default 0.62.
   split_ratio?: number;
 };
@@ -441,6 +447,10 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
     music_url,
     voice_windows,
     sfx_url,
+    silence_windows,
+    sfx_plan,
+    riser_url,
+    sting_url,
     split_ratio = 0.62,
   } = props;
 
@@ -466,15 +476,15 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
     full: isFullscreenCutaway(cw.label),
   }));
 
-  // ducking: música abaixa sob a voz (janelas em s). Igual ao SplitReaction.
-  const hasVW = Array.isArray(voice_windows) && voice_windows.length > 0;
-  const musicVol = hasVW
-    ? (f: number) => {
-        const t = f / FPS;
-        const inVoice = voice_windows!.some((w) => t >= w.from - 0.12 && t < w.to + 0.12);
-        return inVoice ? 0.045 : 0.13;
-      }
-    : 0.12;
+  // ducking sob a voz (igual SplitReaction) + silêncio estratégico (silence_windows).
+  // buildMusicVolume já cobre o vídeo inteiro com fades; o Audio entra com loop (from=0).
+  const musicVol = buildMusicVolume({
+    fps: FPS,
+    totalFrames: total,
+    baseVolume: 0.12,
+    voiceWindows: voice_windows,
+    silenceWindows: silence_windows,
+  });
 
   return (
     <AbsoluteFill style={{ backgroundColor: bg }}>
@@ -613,6 +623,19 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
               <Audio src={resolveSrc(sfx_url)} volume={0.3} />
             </Sequence>
           ))
+        : null}
+      {/* DIRETOR MUSICAL — SFX plan (riser/sting) dos assets do kit nas janelas calculadas. */}
+      {Array.isArray(sfx_plan)
+        ? sfx_plan.map((cue, i) => {
+            const src = cue.type === 'riser' ? riser_url : sting_url;
+            if (!src) return null;
+            const w = sfxCueWindow(cue, FPS);
+            return (
+              <Sequence key={`sfxp${i}`} from={w.from} durationInFrames={w.durationInFrames}>
+                <Audio src={resolveSrc(src)} volume={0.3} />
+              </Sequence>
+            );
+          })
         : null}
 
       {/* ── HANDLE discreto no canto inferior direito (sobre a área de apoio) ── */}

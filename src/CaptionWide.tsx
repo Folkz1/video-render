@@ -22,6 +22,7 @@ import {
   isEditorialCardTipo,
 } from './components/EditorialCards';
 import { TRANSITIONS } from './kit/transitions';
+import { buildMusicVolume, sfxCueWindow } from './kit/musicTrack';
 import {
   type CaptionClipProps,
   type Plano,
@@ -206,7 +207,8 @@ const TemaFaixa: React.FC<{ linhas: string[]; y: number }> = ({ linhas, y }) => 
 
 export const CaptionWide: React.FC<CaptionClipProps> = (props) => {
   const { audio_url, words, texto, paleta_hex, logo_url, handle, duracao_s, mute_video = true, music_url, sfx, tema_linhas, tema_y = 760, titulo_topo, keyword_hero,
-    show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5 } = props;
+    show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
+    voice_windows, silence_windows, sfx_plan, riser_url, sting_url } = props;
   const total = Math.max(1, Math.round((duracao_s ?? 8) * FPS));
 
   const planos: Plano[] = (props.planos && props.planos.length)
@@ -291,12 +293,28 @@ export const CaptionWide: React.FC<CaptionClipProps> = (props) => {
       {/* ÁUDIO: narração única + trilha + whoosh nos cortes (idêntico ao CaptionClip). */}
       {!liveAudio && mute_video && audio_url ? <Audio src={resolveSrc(audio_url)} volume={1} /> : null}
       {!liveAudio ? <Sequence from={0} durationInFrames={total}><Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop /></Sequence> : null}
+      {/* trilha de fundo: LOOP cobrindo o vídeo inteiro (mata o bug da faixa curta) +
+          ducking sob a voz (voice_windows) + silêncio estratégico (silence_windows) + fades. */}
       {music_url ? (
         <Audio
           src={resolveSrc(music_url)}
-          volume={(f) => interpolate(f, [0, 12, total - 24, total], [0, 0.13, 0.13, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })}
+          loop
+          volume={buildMusicVolume({ fps: FPS, totalFrames: total, voiceWindows: voice_windows, silenceWindows: silence_windows })}
         />
       ) : null}
+      {/* SFX plan: riser/sting dos assets do kit nas janelas calculadas (vol 0.3). */}
+      {Array.isArray(sfx_plan)
+        ? sfx_plan.map((cue, i) => {
+            const src = cue.type === 'riser' ? riser_url : sting_url;
+            if (!src) return null;
+            const w = sfxCueWindow(cue, FPS);
+            return (
+              <Sequence key={`sfx${i}`} from={w.from} durationInFrames={w.durationInFrames} layout="none">
+                <Audio src={resolveSrc(src)} volume={0.3} />
+              </Sequence>
+            );
+          })
+        : null}
       {whoosh
         ? planos.slice(1).map((p, i) => (
             <Sequence key={`w${i}`} from={Math.max(0, Math.round(p.inicio_s * FPS) - 4)} durationInFrames={16} layout="none">
