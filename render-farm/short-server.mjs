@@ -45,7 +45,18 @@ const PUBLIC_DIR = process.env.SHORT_PUBLIC_DIR
   : path.join(ROOT, 'public-dentaly');
 const MAX_BODY = 12 * 1024 * 1024; // 12MB de props (data-uri pequenos cabem)
 const MAX_UPLOAD = 220 * 1024 * 1024; // 220MB p/ gravações (webcam); folga sobre o limite de 200MB do backend
-const DEFAULT_CONCURRENCY = Math.max(1, Math.min(4, (os.cpus()?.length || 2) - 1));
+// Teto subido de 4 -> 8 (Contabo tem 8 cores). Math.max(1, cores-1) deixa 1 core livre
+// pro SO/encode-paralelo; clamp em 8 evita estourar o limite do Remotion (--concurrency
+// não pode passar o nº de cores) em servidores menores.
+const DEFAULT_CONCURRENCY = Math.max(1, Math.min(8, (os.cpus()?.length || 2) - 1));
+// PASSO 1 de velocidade: knobs aplicados ao encode H264 final do renderMedia (caminho NORMAL).
+// jpeg em vez de png nos frames intermediários (~3-5x menos I/O por frame; sem alpha, ok no H264);
+// x264 veryfast (encode mais rápido, custo de bitrate aceitável p/ feed); cache de vídeo off-thread
+// maior reduz re-decode quando há b-roll. NÃO usados no overlay ProRes (alpha morre em jpeg).
+const RENDER_IMAGE_FORMAT = 'jpeg';
+const RENDER_JPEG_QUALITY = 80;
+const RENDER_X264_PRESET = 'veryfast';
+const RENDER_OFFTHREAD_CACHE_BYTES = 512 * 1024 * 1024;
 
 const jobs = new Map(); // id -> job
 const queue = [];
@@ -293,6 +304,10 @@ async function processQueue() {
           outputLocation: overlayPath,
           concurrency: job.concurrency,
           scale: job.scale,
+          // NÃO mexer em imageFormat/x264 aqui: overlay é ProRes 4444 com ALPHA
+          // (jpeg mataria o canal alpha e não há encode x264 neste passo). Só o cache
+          // off-thread se aplica (ajuda decode de qualquer vídeo embarcado no overlay).
+          offthreadVideoCacheSizeInBytes: RENDER_OFFTHREAD_CACHE_BYTES,
           overwrite: true,
           logLevel: 'error',
           onProgress: (p) => {
@@ -343,6 +358,12 @@ async function processQueue() {
         outputLocation: job.file,
         concurrency: job.concurrency,
         scale: job.scale,
+        // PASSO 1 velocidade (encode H264 final): jpeg nos frames (menos I/O),
+        // x264 veryfast (encode rápido), cache off-thread maior (menos re-decode de b-roll).
+        imageFormat: RENDER_IMAGE_FORMAT,
+        jpegQuality: RENDER_JPEG_QUALITY,
+        x264Preset: RENDER_X264_PRESET,
+        offthreadVideoCacheSizeInBytes: RENDER_OFFTHREAD_CACHE_BYTES,
         overwrite: true,
         logLevel: 'error',
         onProgress: (p) => {
