@@ -81,7 +81,7 @@ export type VerticalLongProps = LandscapeLongProps & {
 
 export const verticalLongDefaultProps: VerticalLongProps = {
   // === espelha landscapeLongDefaultProps (mesmo contrato) ===
-  creatorVideoUrl: '2026-03-07_17-20-29_limpo.mp4',
+  creatorVideoUrl: '', // vazio: o arquivo-exemplo local não existe no build Docker (trap 404); backend SEMPRE passa
   creatorLiveAudio: true,
   words: [], // MODO ÊNFASE: sem legenda karaokê contínua (igual ao Landscape)
   enfases: [
