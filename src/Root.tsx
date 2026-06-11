@@ -26,6 +26,7 @@ import { ShortV2, shortV2DefaultProps, cenasV2ParaFrames } from './ShortV2';
 import { ShortTech, shortTechDefaultProps, cenasTechParaFrames } from './ShortTech';
 import { SplitReaction, splitReactionDefaultProps, splitReactionParaFrames } from './SplitReaction';
 import { CaptionClip, captionClipDefaultProps, captionClipParaFrames } from './CaptionClip';
+import { CaptionWide, captionWideDefaultProps, captionWideParaFrames } from './CaptionWide';
 import { CaptionBold, captionBoldDefaultProps, captionBoldParaFrames } from './CaptionBold';
 import { QuoteCard, quoteCardDefaultProps, quoteCardParaFrames } from './QuoteCard';
 import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } from './LandscapeLong';
@@ -116,6 +117,22 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={captionClipDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, captionClipParaFrames(props)),
+        })}
+      />
+
+      {/* CaptionWide — o LADO 16:9 (1920x1080) do CaptionClip. Gêmeo horizontal: MESMAS props
+          (planos[] tipados + cards editoriais + narração audio_url + words karaokê). Usado no
+          render áudio-only quando o formato 16:9 é pedido (par com o CaptionClip 9:16). */}
+      <Composition
+        id="CaptionWide"
+        component={CaptionWide}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={240}
+        defaultProps={captionWideDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, captionWideParaFrames(props)),
         })}
       />
 
