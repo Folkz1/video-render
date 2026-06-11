@@ -46,6 +46,9 @@ const defaultRenderConcurrency = Math.max(
   parsePositiveInteger(process.env.WORKER_RENDER_CONCURRENCY ?? '4', 4),
 );
 const dataDir = process.env.WORKER_DATA_DIR ?? path.join(process.cwd(), '.render-farm-worker');
+// FARM_TOKEN compartilhado coordinator<->worker. Se setado, TODA request (exceto health
+// publico opcional) precisa do header x-farm-token igual. Vazio = sem auth (modo legado).
+const farmToken = (process.env.FARM_TOKEN || '').trim();
 const bundleRetentionMs = parsePositiveInteger(
   process.env.WORKER_BUNDLE_RETENTION_MS ?? 2 * 60 * 60_000,
   2 * 60 * 60_000,
@@ -528,6 +531,7 @@ const runJob = async (job) => {
       composition,
       concurrency: job.effectiveRenderConcurrency,
       frameRange: job.frameRange,
+      ...(job.inputProps ? { inputProps: job.inputProps } : {}),
       logLevel: 'error',
       onProgress: (progress) => {
         job.progress = summarizeProgress(progress);
@@ -566,6 +570,12 @@ const route = async (req, res) => {
       workerSlots,
       ...getCapacitySnapshot(),
     });
+  }
+
+  // FARM_TOKEN: se configurado, exige header x-farm-token em TODAS as rotas (exceto /health
+  // acima, que serve de probe publico). Vazio => sem auth (modo legado, comportamento atual).
+  if (farmToken && req.headers['x-farm-token'] !== farmToken) {
+    return jsonResponse(res, 401, { error: 'invalid or missing x-farm-token' });
   }
 
   if (req.method === 'POST' && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'bundles' && parts[3]) {
@@ -640,6 +650,10 @@ const route = async (req, res) => {
       chunkIndex: body.chunkIndex,
       codec: body.codec ?? 'h264',
       compositionId: body.compositionId,
+      // inputProps: shorts dirigidos por props dinamicas (modo FARM do short-server).
+      // Ausente => render sem props (modo coordinator/long-form classico) — inalterado.
+      inputProps:
+        body.inputProps && typeof body.inputProps === 'object' ? body.inputProps : null,
       createdAt: nowIso(),
       effectiveRenderConcurrency: null,
       error: null,

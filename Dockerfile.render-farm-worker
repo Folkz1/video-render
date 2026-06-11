@@ -21,6 +21,8 @@ COPY render-farm/ ./render-farm/
 
 ENV PORT=3001
 ENV WORKER_DATA_DIR=/data
+# FARM_TOKEN (opcional): segredo compartilhado coordinator<->worker (header x-farm-token).
+# Setar via env do painel/run; vazio = sem auth (modo legado). Ver render-farm/FARM.md.
 ENV WORKER_MAX_FREE_CAPACITY_RATIO=0.6
 ENV WORKER_BUNDLE_RETENTION_MS=7200000
 ENV WORKER_JOB_RETENTION_MS=1800000

@@ -28,6 +28,7 @@ import { promisify } from 'node:util';
 import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia } from '@remotion/renderer';
 import { recordPage } from './record-page.mjs';
+import { renderFarm } from './farm.mjs';
 
 const execFileP = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -57,6 +58,20 @@ const RENDER_IMAGE_FORMAT = 'jpeg';
 const RENDER_JPEG_QUALITY = 80;
 const RENDER_X264_PRESET = 'veryfast';
 const RENDER_OFFTHREAD_CACHE_BYTES = 512 * 1024 * 1024;
+
+// PASSO 3 de velocidade: MODO FARM. Quando FARM_ENABLED=true e o render NORMAL (nao-compose)
+// tem durationInFrames > FARM_MIN_FRAMES, em vez de renderMedia local o short-server fatia o
+// timeline e distribui nos nos http-worker do nodes.json (render-farm/farm.mjs), agregando
+// progresso e concatenando. FARM_ENABLED=false => comportamento IDENTICO ao atual.
+// Falha do farm (sem no saudavel, etc) => fallback transparente pro render local.
+const FARM_ENABLED = String(process.env.FARM_ENABLED || '').toLowerCase() === 'true';
+const FARM_MIN_FRAMES = Number(process.env.FARM_MIN_FRAMES || 3000); // ~100s @30fps
+const FARM_NODES_CONFIG = process.env.FARM_NODES_CONFIG
+  ? path.resolve(process.env.FARM_NODES_CONFIG)
+  : path.join(__dirname, 'nodes.json');
+const FARM_CACHE_ROOT = path.join(DATA_DIR, 'farm-cache');
+// override opcional do tamanho do chunk via env (senao usa defaults.framesPerChunk do nodes.json)
+const FARM_FRAMES_PER_CHUNK = Number(process.env.FARM_FRAMES_PER_CHUNK || 0) || null;
 
 const jobs = new Map(); // id -> job
 const queue = [];
@@ -350,6 +365,50 @@ async function processQueue() {
       });
       job.durationInFrames = composition.durationInFrames;
       log(`render ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency}`);
+
+      // ===== MODO FARM (render distribuido) =====
+      // Decide farm vs local: flag explicita do job (props.render_opts.farm) tem precedencia;
+      // senao o server decide pelo tamanho (FARM_ENABLED && frames > FARM_MIN_FRAMES).
+      // serveUrl do short-server e um diretorio de bundle (path) -> serve direto pro farm.
+      const farmFlag = job.props?.render_opts?.farm;
+      const wantFarm =
+        farmFlag === true ||
+        (farmFlag !== false && FARM_ENABLED && composition.durationInFrames > FARM_MIN_FRAMES);
+      if (wantFarm) {
+        try {
+          log(`render ${id} -> MODO FARM (frames=${composition.durationInFrames} > min=${FARM_MIN_FRAMES})`);
+          await renderFarm({
+            bundleDir: url,
+            cacheRoot: FARM_CACHE_ROOT,
+            composition,
+            configPath: FARM_NODES_CONFIG,
+            inputProps: job.props,
+            outputFile: job.file,
+            framesPerChunk: FARM_FRAMES_PER_CHUNK,
+            codec: job.codec,
+            audioCodec: 'aac',
+            onProgress: (frac) => {
+              job.progress = Math.round((typeof frac === 'number' ? frac : 0) * 100);
+              job.updatedAt = nowIso();
+            },
+            log: (...a) => log(`[farm ${id}]`, ...a),
+          });
+          await normalizeAudio(job.file);
+          const stf = await stat(job.file);
+          job.sizeBytes = stf.size;
+          job.status = 'completed';
+          job.progress = 100;
+          job.finishedAt = nowIso();
+          log(`done ${id} (farm) -> ${job.file} (${stf.size} bytes)`);
+          return; // sai do processQueue() — finally re-arma a fila
+        } catch (farmErr) {
+          // fallback transparente: farm indisponivel/falhou -> render local (comportamento atual)
+          log(`render ${id} farm FALHOU, fallback local: ${String(farmErr?.message || farmErr).slice(0, 200)}`);
+          job.progress = 0;
+          job.updatedAt = nowIso();
+        }
+      }
+
       await renderMedia({
         composition,
         serveUrl: url,
