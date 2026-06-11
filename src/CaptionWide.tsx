@@ -21,6 +21,7 @@ import {
   ChapterCard,
   isEditorialCardTipo,
 } from './components/EditorialCards';
+import { ExplainerSceneForPlano, isExplainerTipo } from './components/ExplainerScenes';
 import { TRANSITIONS } from './kit/transitions';
 import { buildMusicVolume, sfxCueWindow } from './kit/musicTrack';
 import {
@@ -51,7 +52,8 @@ const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
 
 const isMediaPlano = (p: Plano): boolean =>
-  !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' || (!isEditorialCardTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
+  !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' ||
+  (!isEditorialCardTipo(p.tipo) && !isExplainerTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
 
 // mídia bruta de UM plano (Ken Burns + punch-in) cobrindo 1920x1080.
 const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: boolean; punch?: boolean }> = ({ plano, dur, idx, darken, punch }) => {
@@ -90,6 +92,11 @@ const EditorialCardForPlano: React.FC<{ plano: Plano; dur: number; accent: strin
       return <QuoteCard texto={plano.texto ?? ''} autor={plano.sub} accent={accent} durSec={durSec} fundoSolido={plano.fundo_solido} />;
     case 'capitulo':
       return <ChapterCard texto={plano.texto ?? ''} valor={plano.valor} accent={accent} durSec={durSec} fundoSolido={plano.fundo_solido} />;
+    case 'fluxo':
+    case 'compara':
+    case 'grafico':
+    case 'timeline':
+      return <ExplainerSceneForPlano tipo={plano.tipo} dados={plano.dados} accent={accent} durSec={durSec} fundoSolido={plano.fundo_solido} />;
     default:
       return null;
   }
@@ -245,7 +252,7 @@ export const CaptionWide: React.FC<CaptionClipProps> = (props) => {
 
       {/* keyword-hero / numeral por plano (LEGADO, planos-mídia) — suprime durante o hook da tese */}
       {planos.map((p, i) => {
-        if (isEditorialCardTipo(p.tipo)) return null;
+        if (isEditorialCardTipo(p.tipo) || isExplainerTipo(p.tipo)) return null;
         const fromF = Math.round(p.inicio_s * FPS);
         const durF = Math.max(1, Math.round((p.fim_s - p.inicio_s) * FPS));
         const noHook = Boolean(tema_linhas && tema_linhas.length) && p.inicio_s < temaOut - 0.3;

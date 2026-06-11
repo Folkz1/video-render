@@ -21,6 +21,7 @@ import {
   ChapterCard,
   isEditorialCardTipo,
 } from './components/EditorialCards';
+import { ExplainerSceneForPlano, isExplainerTipo, type ExplainerDados } from './components/ExplainerScenes';
 import { TRANSITIONS, type TransitionName } from './kit/transitions';
 import {
   buildMusicVolume,
@@ -48,7 +49,13 @@ const resolveSrc = (src?: string): string =>
 // tipo do plano. Sem tipo (ou 'imagem'/'video') = comportamento ANTIGO (b-roll Ken Burns).
 // Os demais tipos disparam um CARD EDITORIAL (EditorialCards) sobre o plano anterior
 // escurecido (ou sobre a paleta, via fundo_solido). 100% retrocompatível.
-export type PlanoTipo = 'imagem' | 'video' | 'stat' | 'keyword' | 'banner' | 'quote' | 'capitulo';
+// Tipos novos 'fluxo'|'compara'|'grafico'|'timeline' = ANIMAÇÕES EXPLICATIVAS (ExplainerScenes)
+// que EXPLICAM conceitos (fluxo, comparação, gráfico que cresce, linha do tempo) a partir do
+// campo `dados` extraído da fala. Aditivo: EDLs sem esses tipos renderizam igual.
+export type PlanoTipo =
+  | 'imagem' | 'video'
+  | 'stat' | 'keyword' | 'banner' | 'quote' | 'capitulo'
+  | 'fluxo' | 'compara' | 'grafico' | 'timeline';
 
 export type Plano = {
   inicio_s: number;
@@ -66,6 +73,9 @@ export type Plano = {
   transicao?: TransitionName; // transição DESTE plano em relação ao anterior (kit); senão crossfade
   anim_in?: string; // reservado (entrada custom); hoje cada card já tem sua entrada
   fundo_solido?: boolean; // true => card sobre backdrop da paleta (não sobre o plano anterior)
+  // ── ANIMAÇÃO EXPLICATIVA (tipo fluxo/compara/grafico/timeline) ──
+  // `dados` carrega o shape da cena (etapas/colunas/valores/eventos) extraído DA FALA.
+  dados?: ExplainerDados | Record<string, unknown>;
 };
 
 export type CaptionClipProps = {
@@ -113,8 +123,9 @@ export const captionClipDefaultProps: CaptionClipProps = {
     { inicio_s: 11.5, fim_s: 15, tipo: 'keyword', texto: 'DESCENTRALIZA', transicao: 'glitchCut' },
     { inicio_s: 15, fim_s: 19, tipo: 'stat', valor: 'R$40M', texto: 'em 18 meses, do zero', transicao: 'zoomBlur', fundo_solido: true },
     { inicio_s: 19, fim_s: 22.5, tipo: 'banner', texto: 'Ninguém viu chegando', sub: 'Enquanto os incumbentes dormiam, o mercado virou.', transicao: 'whipPan' },
-    { inicio_s: 22.5, fim_s: 26.5, tipo: 'imagem', imagem_url: 'https://picsum.photos/1080/1920?33', kenburns: 'out', transicao: 'fade' },
-    { inicio_s: 26.5, fim_s: 30, tipo: 'quote', texto: 'A diferença entre o fracasso e a revolução é só apertar o botão.', sub: 'GuyFolkz', transicao: 'fade', fundo_solido: true },
+    // ── ANIMAÇÃO EXPLICATIVA: linha do tempo construída na frente do espectador ──
+    { inicio_s: 22.5, fim_s: 28.5, tipo: 'timeline', transicao: 'slidePush', fundo_solido: true, dados: { titulo: 'A virada em 3 atos', eventos: [{ ano: '2024', texto: '700 atendentes' }, { ano: '2025', texto: 'recuo' }, { ano: '2026', texto: 'híbrido' }] } },
+    { inicio_s: 28.5, fim_s: 30, tipo: 'quote', texto: 'A diferença entre o fracasso e a revolução é só apertar o botão.', sub: 'GuyFolkz', transicao: 'fade', fundo_solido: true },
   ],
   imagem_url: 'https://picsum.photos/1080/1920?7',
   audio_url: '',
@@ -131,7 +142,8 @@ export const captionClipParaFrames = (p: { duracao_s?: number }) =>
   Math.max(1, Math.round((p?.duracao_s ?? 8) * FPS));
 
 const isMediaPlano = (p: Plano): boolean =>
-  !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' || (!isEditorialCardTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
+  !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' ||
+  (!isEditorialCardTipo(p.tipo) && !isExplainerTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
 
 // mídia bruta de UM plano (Ken Burns + punch-in). Reusado como camada de fundo do
 // plano-mídia E como BACKDROP escurecido sob os cards editoriais (modo `darken`).
@@ -240,6 +252,11 @@ const EditorialCardForPlano: React.FC<{ plano: Plano; dur: number; accent: strin
       return <QuoteCard texto={plano.texto ?? ''} autor={plano.sub} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
     case 'capitulo':
       return <ChapterCard texto={plano.texto ?? ''} valor={plano.valor} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
+    case 'fluxo':
+    case 'compara':
+    case 'grafico':
+    case 'timeline':
+      return <ExplainerSceneForPlano tipo={plano.tipo} dados={plano.dados} accent={accent} durSec={durSec} offsetY={offsetY} fundoSolido={plano.fundo_solido} />;
     default:
       return null;
   }
@@ -335,7 +352,7 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
           suprime enquanto a tese (hook) está na tela, pra não empilhar texto. Planos com
           tipo de card editorial NÃO entram aqui (já desenham o próprio card no fundo). */}
       {planos.map((p, i) => {
-        if (isEditorialCardTipo(p.tipo)) return null;
+        if (isEditorialCardTipo(p.tipo) || isExplainerTipo(p.tipo)) return null;
         const fromF = Math.round(p.inicio_s * FPS);
         const durF = Math.max(1, Math.round((p.fim_s - p.inicio_s) * FPS));
         const noHook = Boolean(tema_linhas && tema_linhas.length) && p.inicio_s < temaOut - 0.3;
