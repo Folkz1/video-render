@@ -92,6 +92,11 @@ const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number; topOffse
   const visualTop = Math.max(0, topOffset);
   const visualHeight = 1920 - visualTop;
 
+  // FONTE RESPONSIVA ao tamanho do texto: evita transbordo (texto de slide longo cortava nas
+  // bordas com o fontSize fixo de 76). Texto curto = grande/impactante; texto longo = menor.
+  const _len = (cena.texto || '').length;
+  const _fs = _len > 150 ? 40 : _len > 110 ? 48 : _len > 75 ? 58 : _len > 45 ? 68 : 76;
+
   return (
     <AbsoluteFill style={{ opacity: sceneOpacity, backgroundColor: '#06181b' }}>
       <div style={{ position: 'absolute', top: visualTop, left: 0, width: 1080, height: visualHeight, overflow: 'hidden', backgroundColor: '#06181b' }}>
@@ -128,7 +133,7 @@ const CenaVisual: React.FC<{ cena: CenaV2; accent: string; dur: number; topOffse
               {cena.kicker}
             </div>
           ) : null}
-          <div style={{ color: '#fff', fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: 76, fontWeight: 900, lineHeight: 1.04, letterSpacing: '-0.01em', textShadow: '0 3px 20px rgba(0,0,0,0.65)' }}>
+          <div style={{ color: '#fff', fontFamily: 'Inter, Segoe UI, sans-serif', fontSize: _fs, fontWeight: 900, lineHeight: 1.06, letterSpacing: '-0.01em', textShadow: '0 3px 20px rgba(0,0,0,0.65)', overflowWrap: 'break-word', wordBreak: 'break-word', hyphens: 'auto' }}>
             {cena.texto}
           </div>
         </TransitionScene>
