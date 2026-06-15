@@ -76,12 +76,11 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   const strokeStyle: React.CSSProperties =
     variant === 'solta'
       ? {
-          WebkitTextStroke: '9px #000',
+          WebkitTextStroke: '8px #000',
           paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
-          // HALO ESCURO MULTICAMADA: escurece o fundo imediato atrás das letras, garantindo
-          // contraste em QUALQUER b-roll (claro OU escuro). A legenda nunca mais some.
-          textShadow:
-            '0 0 10px rgba(0,0,0,0.98), 0 0 22px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.75), 0 5px 16px rgba(0,0,0,0.98)',
+          // Sombra tight só p/ definir a borda da letra; o CONTRASTE agora vem da PLACA
+          // (plateStyle abaixo), não mais de um halo gigante que muddava em b-roll claro/ocupado.
+          textShadow: '0 0 8px rgba(0,0,0,0.95), 0 4px 12px rgba(0,0,0,0.9)',
         }
       : variant === 'limpa'
         ? {
@@ -90,6 +89,19 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
             textShadow: '0 2px 8px rgba(0,0,0,0.92), 0 1px 3px rgba(0,0,0,0.97)',
           }
         : {};
+
+  // PLACA (estilo Hragment/Hormozi): pílula escura translúcida que huga cada palavra. Garante
+  // contraste sobre QUALQUER b-roll (teclado claro, logo no clipe, foto brilhante) — mata o
+  // problema "legenda" do QA. Só no modo karaokê/solta (limpa/pílula têm seu próprio fundo).
+  const plateStyle: React.CSSProperties =
+    variant === 'solta'
+      ? {
+          background: 'rgba(8,10,16,0.66)',
+          borderRadius: 18,
+          padding: '6px 26px',
+          boxDecorationBreak: 'clone' as React.CSSProperties['boxDecorationBreak'],
+        }
+      : {};
 
   const renderWord = (w: WordTiming, idxInGroup: number) => {
     const globalIdx = groupStart + idxInGroup;
@@ -124,6 +136,7 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
           transform: `scale(${scale})`,
           opacity,
           color,
+          ...plateStyle,
           ...strokeStyle,
         }}
       >
