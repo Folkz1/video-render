@@ -32,6 +32,7 @@ import { QuoteCard, quoteCardDefaultProps, quoteCardParaFrames } from './QuoteCa
 import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } from './LandscapeLong';
 import { VerticalLong, verticalLongDefaultProps, verticalLongParaFrames } from './VerticalLong';
 import { Dossie, dossieDefaultProps, dossieParaFrames } from './Dossie';
+import { TalkingHeadShort, talkingHeadShortDefaultProps, talkingHeadShortParaFrames } from './TalkingHeadShort';
 
 const FPS = 30;
 
@@ -211,6 +212,22 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={dossieDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: dossieParaFrames(props),
+        })}
+      />
+
+      {/* TalkingHeadShort — SHORT 9:16 fullscreen+cutaway: criador em tela cheia (9:16, sem
+          corte) + b-roll em CUTAWAY cobrindo a tela em janelas + legenda karaokê. Gêmeo
+          vertical do LandscapeLong; substitui o split (que cortava a cabeça do talking-head). */}
+      <Composition
+        id="TalkingHeadShort"
+        component={TalkingHeadShort}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={900}
+        defaultProps={talkingHeadShortDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, talkingHeadShortParaFrames(props)),
         })}
       />
 

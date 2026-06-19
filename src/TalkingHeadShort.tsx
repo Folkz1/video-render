@@ -1,0 +1,233 @@
+import React from 'react';
+import {
+  AbsoluteFill,
+  Img,
+  OffthreadVideo,
+  Sequence,
+  interpolate,
+  spring,
+  staticFile,
+  useCurrentFrame,
+  useVideoConfig,
+} from 'remotion';
+import { WordCaptions, WordTiming } from './components/WordCaptions';
+
+// TalkingHeadShort — formato SHORT 9:16 (1080x1920): o criador grava em RETRATO e fala em
+// TELA CHEIA (OffthreadVideo, áudio real). Como o vídeo já é 9:16, objectFit:cover NÃO corta
+// (mesma proporção do canvas) — a cabeça fica inteira. As IMAGENS/b-roll entram em CUTAWAY:
+// cobrem a tela em janelas pontuais pra contextualizar a fala e SOMEM (volta pro rosto). A voz
+// do criador continua tocando durante o cutaway (só o visual é coberto). Legenda karaokê
+// word-by-word lower-third. É o gêmeo vertical "fullscreen+cutaway" do LandscapeLong (que é o
+// 16:9) — ao contrário do split (VerticalLong/SplitReaction), aqui NÃO há painel que espreme
+// o 9:16 e corta o topo da cabeça.
+
+const FPS = 30;
+const resolveSrc = (src?: string): string =>
+  !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
+
+export type WordTimingT = WordTiming;
+
+export type TalkingHeadShortProps = {
+  creatorVideoUrl: string; // gravação 9:16 do criador (fullscreen, áudio real)
+  creatorLiveAudio?: boolean; // default true (toca o áudio do vídeo)
+  creatorFocusY?: number; // 0..1 object-position vertical (default 0.28 = headroom; topo do frame)
+  words?: WordTiming[]; // legenda karaokê word-by-word; vazio ⇒ sem legenda
+  texto?: string; // fallback da legenda quando words vazio
+  cutaways?: {
+    startSec: number;
+    durSec: number;
+    videoUrl?: string;
+    imageUrl?: string;
+    label?: string;
+  }[]; // b-roll por cima do criador (corte temporário)
+  enfases?: { texto: string; startSec: number; durSec?: number }[]; // destaques pontuais
+  paleta?: string[]; // [fundo, destaque, texto]
+  handle?: string; // @ no topo
+  logoUrl?: string; // logo badge no topo
+  faixaTese?: string; // tese no cold-open (~3s)
+  durTotalSec: number; // duração total (durationInFrames = durTotalSec*30)
+};
+
+const DEFAULT_PALETA = ['#0A0F1C', '#FFD400', '#FFFFFF'];
+
+export const talkingHeadShortDefaultProps: TalkingHeadShortProps = {
+  creatorVideoUrl: '',
+  creatorLiveAudio: true,
+  creatorFocusY: 0.28,
+  words: [],
+  texto: 'o silêncio da AIMA não está jogando a teu favor',
+  cutaways: [
+    { startSec: 8, durSec: 4, imageUrl: 'https://picsum.photos/1080/1920?31', label: 'AIMA' },
+    { startSec: 20, durSec: 4, imageUrl: 'https://picsum.photos/1080/1920?32' },
+  ],
+  enfases: [{ texto: 'AIMA', startSec: 2, durSec: 1.6 }],
+  paleta: DEFAULT_PALETA,
+  handle: '@advocaciadeguerrilha.pt',
+  logoUrl: '',
+  faixaTese: '',
+  durTotalSec: 30,
+};
+
+export const talkingHeadShortParaFrames = (p: { durTotalSec?: number }) =>
+  Math.max(1, Math.round((p?.durTotalSec ?? 1) * FPS));
+
+// ── Cutaway: b-roll cobrindo a tela por cima do criador, entrada/saída suave + moldura ──
+const Cutaway: React.FC<{
+  videoUrl?: string;
+  imageUrl?: string;
+  label?: string;
+  durFrames: number;
+  accent: string;
+}> = ({ videoUrl, imageUrl, label, durFrames, accent }) => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 8, durFrames - 8, durFrames], [0, 1, 1, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  // leve Ken Burns no cutaway (vida)
+  const scale = interpolate(frame, [0, durFrames], [1.04, 1.12], { extrapolateRight: 'clamp' });
+  return (
+    <AbsoluteFill style={{ opacity, zIndex: 30 }}>
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', backgroundColor: '#05060a' }}>
+        {videoUrl ? (
+          <OffthreadVideo src={resolveSrc(videoUrl)} muted loop style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})` }} />
+        ) : imageUrl ? (
+          <Img src={resolveSrc(imageUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})` }} />
+        ) : null}
+        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 52%, rgba(5,6,10,0.5) 100%)' }} />
+        <div style={{ position: 'absolute', inset: 0, border: `5px solid ${accent}`, boxShadow: `inset 0 0 50px ${accent}55`, pointerEvents: 'none' }} />
+      </div>
+      {label ? (
+        <div style={{ position: 'absolute', top: 150, left: 56, padding: '10px 22px', borderRadius: 8, background: 'rgba(5,6,10,0.78)', border: `2px solid ${accent}`, color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: 2, textTransform: 'uppercase' }}>
+          {label}
+        </div>
+      ) : null}
+    </AbsoluteFill>
+  );
+};
+
+// ── Ênfase pontual: palavra-chave que estoura acima da legenda (não tampa o rosto) ──
+const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent }) => {
+  const frame = useCurrentFrame();
+  const { fps, durationInFrames } = useVideoConfig();
+  const appear = spring({ frame, fps, config: { damping: 12, stiffness: 200, mass: 0.6 } });
+  const scale = interpolate(appear, [0, 1], [0.55, 1]);
+  const op = interpolate(frame, [0, 5, Math.max(6, durationInFrames - 8), durationInFrames], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  return (
+    <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 560, zIndex: 45 }}>
+      <div style={{ opacity: op, transform: `scale(${scale}) rotate(-3deg)`, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 104, lineHeight: 1, color: accent, WebkitTextStroke: '4px rgba(5,6,10,0.7)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: `0 0 26px ${accent}, 0 6px 20px rgba(0,0,0,0.6)`, textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' }}>
+        {texto}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ── Cold open: tese sobreposta nos primeiros ~3s ──
+const ColdOpenTitle: React.FC<{ text: string; accent: string; textColor: string }> = ({ text, accent, textColor }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const s = spring({ frame, fps, config: { damping: 16, mass: 0.6 } });
+  const scale = interpolate(s, [0, 1], [0.92, 1]);
+  const opacity = interpolate(frame, [0, 12, 75, 90], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  return (
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center', opacity, background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.62) 100%)', zIndex: 70 }}>
+      <div style={{ maxWidth: 960, textAlign: 'center', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 78, lineHeight: 1.1, color: textColor, transform: `scale(${scale})`, textShadow: '0 4px 22px rgba(0,0,0,0.75)', padding: '0 60px' }}>
+        {text}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
+  const {
+    creatorVideoUrl,
+    creatorLiveAudio = true,
+    creatorFocusY = 0.28,
+    words = [],
+    texto,
+    cutaways = [],
+    enfases = [],
+    paleta,
+    handle = '',
+    logoUrl = '',
+    faixaTese = '',
+    durTotalSec,
+  } = props;
+
+  const [bg, accent, textColor] = [paleta?.[0] ?? DEFAULT_PALETA[0], paleta?.[1] ?? DEFAULT_PALETA[1], paleta?.[2] ?? DEFAULT_PALETA[2]];
+  const total = talkingHeadShortParaFrames(props);
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: bg }}>
+      {/* PLANO BASE: criador 9:16 FULLSCREEN, áudio real. objectFit cover de 9:16 em 9:16 NÃO
+          corta; objectPosition empurra o enquadramento p/ headroom (cabeça inteira no topo). */}
+      {creatorVideoUrl ? (
+        <OffthreadVideo
+          src={resolveSrc(creatorVideoUrl)}
+          muted={!creatorLiveAudio}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${Math.round(creatorFocusY * 100)}%` }}
+        />
+      ) : null}
+
+      {/* CUTAWAYS: b-roll cobre a tela nas janelas; fora delas, mostra o criador */}
+      {(cutaways ?? []).map((cw, i) => {
+        const from = Math.max(0, Math.round((cw.startSec ?? 0) * FPS));
+        const durFrames = Math.max(1, Math.round((cw.durSec ?? 1) * FPS));
+        return (
+          <Sequence key={`cw${i}`} from={from} durationInFrames={durFrames}>
+            <Cutaway videoUrl={cw.videoUrl} imageUrl={cw.imageUrl} label={cw.label} durFrames={durFrames} accent={accent} />
+          </Sequence>
+        );
+      })}
+
+      {/* gradiente de legibilidade (topo p/ branding, base p/ legenda) */}
+      <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(4,6,10,0.45) 0%, transparent 20%, transparent 58%, rgba(4,6,10,0.9) 100%)', zIndex: 8 }} />
+
+      {/* COLD OPEN: tese nos ~3s iniciais */}
+      {faixaTese ? (
+        <Sequence from={0} durationInFrames={90}>
+          <ColdOpenTitle text={faixaTese} accent={accent} textColor={textColor} />
+        </Sequence>
+      ) : null}
+
+      {/* ÊNFASES pontuais */}
+      {(enfases ?? []).map((enf, i) => {
+        const from = Math.max(0, Math.round((enf.startSec ?? 0) * FPS));
+        const durFrames = Math.max(1, Math.round((enf.durSec ?? 1.6) * FPS));
+        return (
+          <Sequence key={`enf${i}`} from={from} durationInFrames={durFrames}>
+            <EnfasePop texto={enf.texto} accent={accent} />
+          </Sequence>
+        );
+      })}
+
+      {/* LEGENDA karaokê word-by-word (lower-third, amarelo, estilo Reel) */}
+      {(words.length > 0 || texto) ? (
+        <WordCaptions
+          words={words}
+          text={texto}
+          durSec={durTotalSec}
+          fromSec={0}
+          anchorY={1380}
+          accent={accent}
+          fontSize={86}
+          maxWordsPerGroup={1}
+          variant="solta"
+          numberPop
+        />
+      ) : null}
+
+      {/* BRANDING: logo + handle no topo esquerdo */}
+      <div style={{ position: 'absolute', top: 64, left: 56, zIndex: 50, display: 'flex', alignItems: 'center', gap: 14 }}>
+        {logoUrl ? (
+          <div style={{ background: '#fff', borderRadius: 14, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+            <Img src={resolveSrc(logoUrl)} style={{ height: 44, width: 'auto', objectFit: 'contain' }} />
+          </div>
+        ) : null}
+        {handle ? (
+          <span style={{ color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 800, fontSize: 30, textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>{handle}</span>
+        ) : null}
+      </div>
+    </AbsoluteFill>
+  );
+};
