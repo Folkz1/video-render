@@ -122,6 +122,56 @@ const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent 
   );
 };
 
+// ── Criador DINÂMICO: jump-cuts de enquadramento (simula multi-câmera com 1 vídeo) +
+// punch-in suave dentro de cada beat. A cada ~3s o enquadramento TROCA em corte seco
+// (wide→close→médio→close-apertado) e dá um leve zoom — mata o "cheiro de IA" do plano
+// estático. Como o vídeo é 9:16 em 9:16, scale=1 mostra o corpo todo (cabeça inteira) e os
+// closes dão zoom no rosto (transformOrigin no terço superior = headroom preservado). ──
+const FRAMING: { scale: number; ox: number; oy: number }[] = [
+  { scale: 1.0, ox: 50, oy: 30 }, // wide — corpo inteiro (estabelece)
+  { scale: 1.34, ox: 50, oy: 22 }, // close no rosto
+  { scale: 1.14, ox: 45, oy: 26 }, // médio, leve lado
+  { scale: 1.44, ox: 54, oy: 20 }, // close apertado (outro lado)
+  { scale: 1.22, ox: 50, oy: 25 }, // médio-close
+];
+const BEAT_SEC = 3.0; // troca de enquadramento (corte seco) a cada 3s
+
+const CreatorDynamic: React.FC<{ src: string; live: boolean; baseFocusY: number; total: number }> = ({ src, live, baseFocusY, total }) => {
+  const frame = useCurrentFrame();
+  const beatLen = Math.max(1, Math.round(BEAT_SEC * FPS));
+  const idx = Math.floor(frame / beatLen);
+  const f = FRAMING[idx % FRAMING.length];
+  const local = frame - idx * beatLen;
+  // punch-in interno do beat: zoom lento +4% → "respira" e sinaliza vida
+  const punch = interpolate(local, [0, beatLen], [1, 1.04], { extrapolateRight: 'clamp' });
+  const scale = f.scale * punch;
+  return (
+    <OffthreadVideo
+      src={resolveSrc(src)}
+      muted={!live}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        objectPosition: `50% ${Math.round(baseFocusY * 100)}%`,
+        transform: `scale(${scale.toFixed(4)})`,
+        transformOrigin: `${f.ox}% ${f.oy}%`,
+      }}
+    />
+  );
+};
+
+// ── Progress bar (mais um elemento "vivo" na tela) ──
+const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accent }) => {
+  const frame = useCurrentFrame();
+  const p = interpolate(frame, [0, total], [0, 100], { extrapolateRight: 'clamp' });
+  return (
+    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 8, background: 'rgba(255,255,255,0.12)', zIndex: 60 }}>
+      <div style={{ width: `${p}%`, height: '100%', background: accent, boxShadow: `0 0 12px ${accent}` }} />
+    </div>
+  );
+};
+
 // ── Cold open: tese sobreposta nos primeiros ~3s ──
 const ColdOpenTitle: React.FC<{ text: string; accent: string; textColor: string }> = ({ text, accent, textColor }) => {
   const frame = useCurrentFrame();
@@ -159,14 +209,11 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: bg }}>
-      {/* PLANO BASE: criador 9:16 FULLSCREEN, áudio real. objectFit cover de 9:16 em 9:16 NÃO
-          corta; objectPosition empurra o enquadramento p/ headroom (cabeça inteira no topo). */}
+      {/* PLANO BASE: criador 9:16 FULLSCREEN, áudio real + JUMP-CUTS de enquadramento + zoom
+          dinâmico (CreatorDynamic). 9:16 em 9:16 NÃO corta no wide (cabeça inteira); os closes
+          dão zoom no rosto com headroom. A cada beat o enquadramento troca em corte seco. */}
       {creatorVideoUrl ? (
-        <OffthreadVideo
-          src={resolveSrc(creatorVideoUrl)}
-          muted={!creatorLiveAudio}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `50% ${Math.round(creatorFocusY * 100)}%` }}
-        />
+        <CreatorDynamic src={creatorVideoUrl} live={creatorLiveAudio} baseFocusY={creatorFocusY} total={total} />
       ) : null}
 
       {/* CUTAWAYS: b-roll cobre a tela nas janelas; fora delas, mostra o criador */}
@@ -228,6 +275,8 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
           <span style={{ color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 800, fontSize: 30, textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>{handle}</span>
         ) : null}
       </div>
+
+      <ProgressBar total={total} accent={accent} />
     </AbsoluteFill>
   );
 };
