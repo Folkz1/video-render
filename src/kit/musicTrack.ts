@@ -34,6 +34,8 @@ export function buildMusicVolume(opts: {
   fps: number;
   totalFrames: number;
   baseVolume?: number; // volume "de cruzeiro" quando NÃO há voice_windows (default 0.13)
+  duckVoice?: number; // override do volume SOB a fala (default DUCK_VOICE) — talking-head sobe um pouco
+  duckPause?: number; // override do volume nas PAUSAS (default DUCK_PAUSE)
   voiceWindows?: VoiceWindow[];
   silenceWindows?: SilenceWindow[];
   fadeInFrames?: number;
@@ -43,6 +45,8 @@ export function buildMusicVolume(opts: {
     fps,
     totalFrames,
     baseVolume = 0.13,
+    duckVoice = DUCK_VOICE,
+    duckPause = DUCK_PAUSE,
     voiceWindows,
     silenceWindows,
     fadeInFrames = 12,
@@ -57,7 +61,7 @@ export function buildMusicVolume(opts: {
     let vol = baseVolume;
     if (hasVW) {
       const inVoice = voiceWindows!.some((w) => t >= w.from - DUCK_PAD && t < w.to + DUCK_PAD);
-      vol = inVoice ? DUCK_VOICE : DUCK_PAUSE;
+      vol = inVoice ? duckVoice : duckPause;
     }
     // 2) silêncio estratégico: multiplica por um envelope 0..1 com rampa SILENCE_FADE
     if (hasSilence) {

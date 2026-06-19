@@ -301,6 +301,8 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
             totalFrames: total,
             voiceWindows: voice_windows,
             silenceWindows: silence_windows,
+            duckVoice: 0.07, // talking-head: voz é quase contínua → trilha um pouco mais presente sob a fala
+            duckPause: 0.17, // respira mais alto nas pausas (acabamento sem competir com a voz)
           })}
         />
       ) : null}
