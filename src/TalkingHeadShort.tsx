@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   AbsoluteFill,
+  Audio,
   Img,
   OffthreadVideo,
   Sequence,
@@ -11,6 +12,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
+import { buildMusicVolume, type SilenceWindow, type VoiceWindow } from './kit/musicTrack';
 
 // TalkingHeadShort — formato SHORT 9:16 (1080x1920): o criador grava em RETRATO e fala em
 // TELA CHEIA (OffthreadVideo, áudio real). Como o vídeo já é 9:16, objectFit:cover NÃO corta
@@ -45,6 +47,12 @@ export type TalkingHeadShortProps = {
   handle?: string; // @ no topo
   logoUrl?: string; // logo badge no topo
   faixaTese?: string; // tese no cold-open (~3s)
+  // ── Áudio (trilha + SFX): dá o acabamento "editado". Todos opcionais — ausentes = só a voz. ──
+  music_url?: string;            // trilha de fundo (loop, volume baixo + DUCKING sob a voz)
+  sfx_whoosh?: string;           // whoosh tocado na entrada de cada cutaway
+  voice_windows?: VoiceWindow[]; // janelas (s) com fala → a trilha abaixa (ducking)
+  silence_windows?: SilenceWindow[]; // janelas (s) de silêncio estratégico (trilha → 0)
+  room_tone?: boolean;           // leito de presença ~-44dB sob a voz (default true)
   durTotalSec: number; // duração total (durationInFrames = durTotalSec*30)
 };
 
@@ -201,6 +209,11 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
     handle = '',
     logoUrl = '',
     faixaTese = '',
+    music_url,
+    sfx_whoosh,
+    voice_windows,
+    silence_windows,
+    room_tone = true,
     durTotalSec,
   } = props;
 
@@ -275,6 +288,39 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
           <span style={{ color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 800, fontSize: 30, textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>{handle}</span>
         ) : null}
       </div>
+
+      {/* ÁUDIO: a VOZ vem do próprio vídeo do criador (CreatorDynamic). Por baixo: trilha de fundo
+          (loop) com DUCKING sob a fala (voice_windows) + room-tone leve + whoosh na entrada de cada
+          cutaway — o acabamento que faz parecer editado, sem competir com a voz. */}
+      {music_url ? (
+        <Audio
+          src={resolveSrc(music_url)}
+          loop
+          volume={buildMusicVolume({
+            fps: FPS,
+            totalFrames: total,
+            voiceWindows: voice_windows,
+            silenceWindows: silence_windows,
+          })}
+        />
+      ) : null}
+      {room_tone ? (
+        <Sequence from={0} durationInFrames={total} layout="none">
+          <Audio src={resolveSrc('roomtone.mp3')} volume={0.006} loop />
+        </Sequence>
+      ) : null}
+      {sfx_whoosh
+        ? (cutaways ?? []).map((cw, i) => (
+            <Sequence
+              key={`wh${i}`}
+              from={Math.max(0, Math.round((cw.startSec ?? 0) * FPS) - 4)}
+              durationInFrames={16}
+              layout="none"
+            >
+              <Audio src={resolveSrc(sfx_whoosh)} volume={0.4} />
+            </Sequence>
+          ))
+        : null}
 
       <ProgressBar total={total} accent={accent} />
     </AbsoluteFill>
