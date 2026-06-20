@@ -27,7 +27,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { bundle } from '@remotion/bundler';
 import { selectComposition, renderMedia } from '@remotion/renderer';
-import { recordPage } from './record-page.mjs';
+import { recordPage, screencast } from './record-page.mjs';
 import { renderFarm } from './farm.mjs';
 
 const execFileP = promisify(execFile);
@@ -631,6 +631,43 @@ const server = http.createServer(async (req, res) => {
       } catch (err) {
         log('record-page error', err?.message || err);
         return jsonResponse(res, 502, { error: 'falha ao gravar tela', detail: String(err?.message || err).slice(0, 300) });
+      }
+    }
+
+    // SCREEN-OP: grava um SITE REAL "operando" (cursor verde + scroll/move/click com
+    // easing) num viewport DESKTOP e converte pra 9:16 (fit pad|crop). Footage pra
+    // notícias/tutoriais GuyFolkz. Síncrono e pesado (1 Chromium) -> runExclusive,
+    // mesma trava dos renders/clips. Servível pelo /api/v1/clips/{id}/video.
+    if (req.method === 'POST' && u.pathname === '/api/v1/screencast') {
+      const raw = await readBody(req);
+      let body;
+      try { body = JSON.parse(raw || '{}'); } catch { return jsonResponse(res, 400, { error: 'invalid json' }); }
+      const { url, actions, seconds, viewport, fit } = body;
+      if (!url || typeof url !== 'string') {
+        return jsonResponse(res, 400, { error: 'url (string) é obrigatória' });
+      }
+      try {
+        const r = await runExclusive(() => screencast(
+          {
+            url,
+            seconds: seconds != null ? Number(seconds) : undefined,
+            actions: Array.isArray(actions) ? actions : undefined,
+            viewport: viewport && typeof viewport === 'object' ? viewport : undefined,
+            fit,
+          },
+          CLIPS_DIR,
+        ));
+        return jsonResponse(res, 200, {
+          id: r.id,
+          videoUrl: `/api/v1/clips/${r.id}/video`,
+          sizeBytes: r.sizeBytes,
+          fit: r.fit,
+          viewport: r.viewport,
+          text: r.text,
+        });
+      } catch (err) {
+        log('screencast error', err?.message || err);
+        return jsonResponse(res, 502, { error: 'falha ao gravar screencast', detail: String(err?.message || err).slice(0, 300) });
       }
     }
 

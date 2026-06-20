@@ -32,6 +32,7 @@ import {
 } from './kit/musicTrack';
 import { GUYFOLKZ_ACCENT, GUYFOLKZ_ACCENT2, MONO_FONT } from './kit/animationPresets';
 import { FilmGrainScanline } from './components/FilmGrainScanline';
+import { BrowserFrame } from './BrowserFrame';
 
 // CaptionClip — formato A (monolayer). MULTI-PLANO: o b-roll troca no ritmo da fala
 // (cada chunk = 1 plano cortado), enquanto a narração é ÚNICA e a legenda karaokê é
@@ -56,6 +57,7 @@ const resolveSrc = (src?: string): string =>
 // campo `dados` extraído da fala. Aditivo: EDLs sem esses tipos renderizam igual.
 export type PlanoTipo =
   | 'imagem' | 'video'
+  | 'screen' // SCREEN-OP: screencast de site real DENTRO da moldura Terminal-Noir (BrowserFrame)
   | 'stat' | 'keyword' | 'banner' | 'quote' | 'capitulo'
   | 'fluxo' | 'compara' | 'grafico' | 'timeline';
 
@@ -68,6 +70,13 @@ export type Plano = {
   numero?: string; // numeral gigante nesta janela (legado; ainda suportado)
   keyword?: string; // keyword-hero nesta janela (legado; ainda suportado)
   kenburns?: 'in' | 'out' | 'pan';
+  // ── SCREEN-OP (tipo 'screen' OU screencast_url presente) ──
+  // footage de site real "operando" (gerado por POST /api/v1/screencast) renderizado
+  // DENTRO da moldura de navegador Terminal-Noir (BrowserFrame). As faixas pretas do
+  // fit:'pad' do screencast assentam dentro da moldura. Legenda karaokê compõe por cima.
+  screencast_url?: string; // url do screencast (mp4/webm) ou screenshot (img)
+  url_label?: string; // texto da barra de endereço do browser (default 'guyfolkz:~$')
+  cursor?: boolean; // cursor verde extra animado por cima (default false; o footage já traz)
   // ── campos dos cards editoriais (tipo != imagem/vídeo) ──
   texto?: string; // banner/quote/capitulo: texto principal; keyword: a(s) palavra(s); stat: label
   valor?: string; // stat: número ("700", "R$40M", "100M", "3x"); capitulo: numeração ("01")
@@ -180,7 +189,11 @@ export const captionClipDefaultProps: CaptionClipProps = {
 export const captionClipParaFrames = (p: { duracao_s?: number }) =>
   Math.max(1, Math.round((p?.duracao_s ?? 8) * FPS));
 
+// SCREEN-OP: plano de screencast (site real na moldura). tipo 'screen' OU screencast_url.
+const isScreenPlano = (p: Plano): boolean => p.tipo === 'screen' || !!p.screencast_url;
+
 const isMediaPlano = (p: Plano): boolean =>
+  isScreenPlano(p) ||
   !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' ||
   (!isEditorialCardTipo(p.tipo) && !isExplainerTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
 
@@ -190,6 +203,21 @@ const SEG_S = 3.5; // duração-alvo de cada sub-plano quando há b-roll alterna
 
 const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: boolean; punch?: boolean }> = ({ plano, dur, idx, darken, punch }) => {
   const frame = useCurrentFrame();
+  // ── SCREEN-OP: screencast de site real DENTRO da moldura de navegador Terminal-Noir.
+  // Substitui o Ken Burns por BrowserFrame (chrome + URL mono + viewport com o footage).
+  // Em backdrop escurecido (darken) cai pro caminho normal abaixo (sem moldura).
+  const screenSrc = plano.screencast_url || plano.video_url || plano.imagem_url;
+  if (isScreenPlano(plano) && !darken && screenSrc) {
+    return (
+      <BrowserFrame
+        src={screenSrc}
+        dur={dur}
+        urlLabel={plano.url_label}
+        punch={punch !== false}
+        showCursor={!!plano.cursor}
+      />
+    );
+  }
   const kb = plano.kenburns || (idx % 3 === 0 ? 'in' : idx % 3 === 1 ? 'pan' : 'out');
   let scale = 1.1;
   let panX = 0;
