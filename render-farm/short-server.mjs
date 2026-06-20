@@ -52,11 +52,16 @@ const MAX_UPLOAD = 220 * 1024 * 1024; // 220MB p/ gravações (webcam); folga so
 const DEFAULT_CONCURRENCY = Math.max(1, Math.min(8, (os.cpus()?.length || 2) - 1));
 // PASSO 1 de velocidade: knobs aplicados ao encode H264 final do renderMedia (caminho NORMAL).
 // jpeg em vez de png nos frames intermediários (~3-5x menos I/O por frame; sem alpha, ok no H264);
-// x264 veryfast (encode mais rápido, custo de bitrate aceitável p/ feed); cache de vídeo off-thread
-// maior reduz re-decode quando há b-roll. NÃO usados no overlay ProRes (alpha morre em jpeg).
+// x264 superfast + crf:23 (encode mais rápido + arquivo menor que o CRF18 default; bitrate ok p/ feed);
+// cache de vídeo off-thread maior reduz re-decode quando há b-roll. NÃO usados no overlay ProRes
+// (alpha morre em jpeg; lá o codec é ProRes 4444, sem x264/crf). scale fica 1.0 — qualidade preservada.
 const RENDER_IMAGE_FORMAT = 'jpeg';
 const RENDER_JPEG_QUALITY = 80;
-const RENDER_X264_PRESET = 'veryfast';
+const RENDER_X264_PRESET = process.env.RENDER_X264_PRESET || 'superfast';
+// CRF do x264: default do Remotion = CRF18 (arquivo enorme + encode lento). crf:23 corta
+// tamanho e tempo de encode, imperceptível em feed 9:16. Qualidade preservada: scale fica 1.0
+// (NUNCA mexer em scale). Só vale no h264 NORMAL — NÃO no overlay ProRes do caminho compose.
+const RENDER_CRF = Number(process.env.RENDER_CRF || 23);
 const RENDER_OFFTHREAD_CACHE_BYTES = 512 * 1024 * 1024;
 
 // PASSO 3 de velocidade: MODO FARM. Quando FARM_ENABLED=true e o render NORMAL (nao-compose)
@@ -418,10 +423,12 @@ async function processQueue() {
         concurrency: job.concurrency,
         scale: job.scale,
         // PASSO 1 velocidade (encode H264 final): jpeg nos frames (menos I/O),
-        // x264 veryfast (encode rápido), cache off-thread maior (menos re-decode de b-roll).
+        // x264 superfast + crf:23 (encode rápido, arquivo menor; default CRF18 era enorme/lento),
+        // cache off-thread maior (menos re-decode de b-roll). NÃO aplicado no overlay ProRes.
         imageFormat: RENDER_IMAGE_FORMAT,
         jpegQuality: RENDER_JPEG_QUALITY,
         x264Preset: RENDER_X264_PRESET,
+        crf: RENDER_CRF,
         offthreadVideoCacheSizeInBytes: RENDER_OFFTHREAD_CACHE_BYTES,
         overwrite: true,
         logLevel: 'error',

@@ -76,6 +76,37 @@ export type Plano = {
   // ── ANIMAÇÃO EXPLICATIVA (tipo fluxo/compara/grafico/timeline) ──
   // `dados` carrega o shape da cena (etapas/colunas/valores/eventos) extraído DA FALA.
   dados?: ExplainerDados | Record<string, unknown>;
+  // ── B-ROLL ALTERNATIVO (opt-in): outras opções de mídia pra ESTA cena. Quando vêm 2+,
+  // o plano-mídia ALTERNA entre elas (corte a cada ~3.5s) p/ aumentar cortes_por_min e
+  // matar a monotonia do plano estático longo. Aceita 'alternatives' (storyboard) ou os
+  // aliases broll_alternatives/alts. Cada item: string (url) OU {url|video_url|imagem_url}.
+  // Ausente/1 item => comportamento atual (1 plano + punch-in). 100% retrocompatível.
+  alternatives?: Array<string | { url?: string; video_url?: string; imagem_url?: string; source?: string }>;
+  broll_alternatives?: Array<string | { url?: string; video_url?: string; imagem_url?: string; source?: string }>;
+  alts?: Array<string | { url?: string; video_url?: string; imagem_url?: string; source?: string }>;
+};
+
+// extrai a lista de mídias alternativas de um plano (storyboard manda assets.broll.alternatives;
+// aceitamos também o alias direto no plano). Item string = url; objeto = {url|video_url|imagem_url}.
+const planoAlternatives = (p: Plano): Array<{ video_url?: string; imagem_url?: string }> => {
+  const raw = p.alternatives || p.broll_alternatives || p.alts || [];
+  if (!Array.isArray(raw)) return [];
+  const out: Array<{ video_url?: string; imagem_url?: string }> = [];
+  for (const it of raw) {
+    if (!it) continue;
+    if (typeof it === 'string') {
+      const isVid = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(it);
+      out.push(isVid ? { video_url: it } : { imagem_url: it });
+    } else {
+      const v = it.video_url; const i = it.imagem_url;
+      if (v || i) { out.push({ video_url: v, imagem_url: i }); continue; }
+      if (it.url) {
+        const isVid = /\.(mp4|mov|webm|m4v)(\?|$)/i.test(it.url);
+        out.push(isVid ? { video_url: it.url } : { imagem_url: it.url });
+      }
+    }
+  }
+  return out;
 };
 
 export type CaptionClipProps = {
@@ -147,6 +178,8 @@ const isMediaPlano = (p: Plano): boolean =>
 
 // mídia bruta de UM plano (Ken Burns + punch-in). Reusado como camada de fundo do
 // plano-mídia E como BACKDROP escurecido sob os cards editoriais (modo `darken`).
+const SEG_S = 3.5; // duração-alvo de cada sub-plano quando há b-roll alternativo (corte interno)
+
 const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: boolean; punch?: boolean }> = ({ plano, dur, idx, darken, punch }) => {
   const frame = useCurrentFrame();
   const kb = plano.kenburns || (idx % 3 === 0 ? 'in' : idx % 3 === 1 ? 'pan' : 'out');
@@ -155,9 +188,10 @@ const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: bo
   if (kb === 'in') scale = interpolate(frame, [0, dur], [1.05, 1.17], { extrapolateRight: 'clamp' });
   else if (kb === 'out') scale = interpolate(frame, [0, dur], [1.17, 1.05], { extrapolateRight: 'clamp' });
   else panX = interpolate(frame, [0, dur], [-26, 26], { extrapolateRight: 'clamp' });
-  // PUNCH-IN sutil: planos longos (>4s) ganham um leve scale 1→1.06 por cima do Ken
-  // Burns — "respira" e sinaliza vida (sem competir com a legenda). Off em cards.
-  const punchScale = punch && dur > 4 * FPS ? interpolate(frame, [0, dur], [1.0, 1.06], { extrapolateRight: 'clamp' }) : 1;
+  // PUNCH-IN sutil em TODO plano-mídia: leve scale 1→1.06 por cima do Ken Burns — "respira"
+  // e sinaliza vida (sem competir com a legenda). Off em backdrops escurecidos (darken)/cards.
+  // (antes era gated em dur>4s, o que deixava cenas longas paradas → monótono no QA.)
+  const punchScale = punch && !darken ? interpolate(frame, [0, dur], [1.0, 1.06], { extrapolateRight: 'clamp' }) : 1;
   const style: React.CSSProperties = {
     width: '100%',
     height: '100%',
@@ -165,10 +199,31 @@ const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: bo
     transform: `scale(${scale * punchScale}) translateX(${panX}px)`,
     filter: darken ? 'brightness(0.42) saturate(0.9)' : undefined,
   };
-  return plano.video_url ? (
-    <OffthreadVideo src={resolveSrc(plano.video_url)} muted style={style} />
+
+  // ── B-ROLL ALTERNATIVO: se a cena trouxe 2+ mídias E é longa o bastante p/ ≥2 cortes,
+  // alterna entre elas (corte a cada ~SEG_S) sem mexer no Ken Burns/punch (transform contínuo)
+  // → mais cortes_por_min, mesma sincronia de legenda. Não roda em backdrop (darken).
+  const alts = !darken ? planoAlternatives(plano) : [];
+  // candidatos = mídia principal do plano + alternativas (dedup por url)
+  const candidates: Array<{ video_url?: string; imagem_url?: string }> = [];
+  if (plano.video_url || plano.imagem_url) candidates.push({ video_url: plano.video_url, imagem_url: plano.imagem_url });
+  for (const a of alts) candidates.push(a);
+  const seen = new Set<string>();
+  const media = candidates.filter((c) => {
+    const key = (c.video_url || c.imagem_url || '').trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const segFrames = Math.round(SEG_S * FPS);
+  const useAlternation = media.length >= 2 && dur >= 2 * segFrames;
+  const segIdx = useAlternation ? clamp(Math.floor(frame / segFrames), 0, media.length - 1) : 0;
+  const cur = media[segIdx] || { video_url: plano.video_url, imagem_url: plano.imagem_url };
+
+  return cur.video_url ? (
+    <OffthreadVideo src={resolveSrc(cur.video_url)} muted style={style} />
   ) : (
-    <Img src={resolveSrc(plano.imagem_url || '')} style={style} />
+    <Img src={resolveSrc(cur.imagem_url || '')} style={style} />
   );
 };
 
@@ -372,9 +427,11 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
         </Sequence>
       ) : null}
 
-      {/* título fixo no topo — no split universal desce p/ logo abaixo do painel */}
+      {/* título/HOOK fixo no topo — HOOK CURTO (~6-10 palavras) que NÃO corta: auto-fit
+          (fonte encolhe conforme o texto cresce) + clamp em 2 linhas com quebra por palavra.
+          No split universal desce p/ logo abaixo do painel. */}
       {titulo_topo ? (
-        <div style={{ position: 'absolute', top: show_creator_panel ? splitY + 24 : 150, left: 60, right: 60, textAlign: 'center', zIndex: 30, color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 700, fontSize: 44, lineHeight: 1.1, WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>{titulo_topo}</div>
+        <TituloTopo texto={titulo_topo} top={show_creator_panel ? splitY + 24 : 150} />
       ) : null}
 
       {/* legenda CONTÍNUA — karaokê (amarelo, 1 palavra) OU limpa estilo essay (branco, frase) */}
@@ -457,6 +514,56 @@ const TemaFaixa: React.FC<{ linhas: string[]; y: number }> = ({ linhas, y }) => 
       {linhas.map((l, i) => (
         <div key={i} style={{ color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontStyle: 'italic', fontSize: 62, lineHeight: 1.12, WebkitTextStroke: '6px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 3px 14px rgba(0,0,0,0.6)' }}>{l}</div>
       ))}
+    </div>
+  );
+};
+
+// TÍTULO/HOOK do topo — garante "zero texto cortado". O título às vezes chega LONGO (gancho /
+// fala inteira da cena); aqui ele vira um HOOK CURTO e LEGÍVEL: (1) limita a ~10 palavras
+// (sem cortar palavra no meio — corta em fronteira de palavra e fecha com reticências); (2)
+// AUTO-FIT: a fonte encolhe conforme o texto cresce, então sempre cabe em 2 linhas; (3) wrap
+// por palavra (overflowWrap) + clamp de 2 linhas como rede de segurança. Não trunca feio.
+const TituloTopo: React.FC<{ texto: string; top: number }> = ({ texto, top }) => {
+  const limpo = (texto || '').trim();
+  if (!limpo) return null;
+  // (1) HOOK curto: no máx ~10 palavras, cortando só em fronteira de palavra.
+  const palavras = limpo.split(/\s+/).filter(Boolean);
+  const MAX_PAL = 10;
+  const curto = palavras.length > MAX_PAL ? palavras.slice(0, MAX_PAL).join(' ') + '…' : limpo;
+  // (2) AUTO-FIT por comprimento: texto curto = fonte grande; longo = encolhe (até um piso).
+  const n = curto.length;
+  const fontSize =
+    n <= 26 ? 50 :
+    n <= 40 ? 44 :
+    n <= 56 ? 38 :
+    n <= 74 ? 33 : 29;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top,
+        left: 56,
+        right: 56,
+        textAlign: 'center',
+        zIndex: 30,
+        color: '#fff',
+        fontFamily: 'Montserrat, Inter, sans-serif',
+        fontWeight: 700,
+        fontSize,
+        lineHeight: 1.1,
+        WebkitTextStroke: '4px #000',
+        paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
+        textShadow: '0 2px 10px rgba(0,0,0,0.7)',
+        // (3) rede de segurança: quebra por palavra + clamp em 2 linhas (sem cortar no meio).
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical' as React.CSSProperties['WebkitBoxOrient'],
+        overflow: 'hidden',
+        overflowWrap: 'break-word',
+        wordBreak: 'normal',
+      }}
+    >
+      {curto}
     </div>
   );
 };
