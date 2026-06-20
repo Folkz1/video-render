@@ -49,6 +49,8 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
 
+const isVideoUrlStr = (u?: string): boolean => !!u && /\.(mp4|mov|webm|m4v)(\?|$)/i.test(u);
+
 // tipo do plano. Sem tipo (ou 'imagem'/'video') = comportamento ANTIGO (b-roll Ken Burns).
 // Os demais tipos disparam um CARD EDITORIAL (EditorialCards) sobre o plano anterior
 // escurecido (ou sobre a paleta, via fundo_solido). 100% retrocompatível.
@@ -240,9 +242,15 @@ const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: bo
   // alterna entre elas (corte a cada ~SEG_S) sem mexer no Ken Burns/punch (transform contínuo)
   // → mais cortes_por_min, mesma sincronia de legenda. Não roda em backdrop (darken).
   const alts = !darken ? planoAlternatives(plano) : [];
-  // candidatos = mídia principal do plano + alternativas (dedup por url)
+  // candidatos = mídia principal do plano + alternativas (dedup por url).
+  // screencast_url entra como mídia bruta SÓ neste caminho de fallback (darken/backdrop):
+  // no caminho normal o branch acima já renderizou a BrowserFrame e nem chega aqui.
+  const screenFallback = plano.screencast_url
+    ? (isVideoUrlStr(plano.screencast_url) ? { video_url: plano.screencast_url } : { imagem_url: plano.screencast_url })
+    : null;
   const candidates: Array<{ video_url?: string; imagem_url?: string }> = [];
   if (plano.video_url || plano.imagem_url) candidates.push({ video_url: plano.video_url, imagem_url: plano.imagem_url });
+  else if (screenFallback) candidates.push(screenFallback);
   for (const a of alts) candidates.push(a);
   const seen = new Set<string>();
   const media = candidates.filter((c) => {
