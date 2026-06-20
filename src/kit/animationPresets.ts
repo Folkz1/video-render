@@ -1,5 +1,6 @@
 import { interpolate, spring, type SpringConfig } from 'remotion';
 import type { CSSProperties } from 'react';
+import { MONO_FONT } from './fonts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Kit do Editor — FRENTE B — animationPresets.ts
@@ -15,7 +16,14 @@ import type { CSSProperties } from 'react';
 // chamar dentro de qualquer componente Remotion ou em testes.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ACCENT_DEFAULT = '#2FD4C4'; // teal GuyFolkz
+export const ACCENT_DEFAULT = '#2FD4C4'; // teal GuyFolkz (legado)
+
+// ── IDENTIDADE VISUAL "Terminal-Noir" (accent aprovado pelo Diego) ───────────
+// VERDE-TERMINAL DESSATURADO — não o #00FF41 puro (que dá "matrix barato/AI slop").
+// Premium, legível sobre dark, sinaliza "terminal/dev" sem saturar.
+export const GUYFOLKZ_ACCENT = '#3DF07A'; // verde-terminal dessaturado (accent principal)
+export const GUYFOLKZ_ACCENT2 = '#FFB000'; // âmbar — SÓ cards de risco/alerta
+
 export const BG_DARK = '#05060a';
 export const FPS_DEFAULT = 30;
 
@@ -182,3 +190,11 @@ export const heavyStroke = (px = 8): CSSProperties => ({
 
 /** Fonte display padrão GuyFolkz. */
 export const DISPLAY_FONT = 'Montserrat, Poppins, Inter, Segoe UI, sans-serif';
+
+/**
+ * Fonte MONOSPACE real (JetBrains Mono, registrada via @remotion/google-fonts).
+ * Usar em NUMERAIS (count-up), labels e nome de marca — senão a assinatura
+ * "terminal" some por fallback de monospace do SO no render headless.
+ * Re-exportada de ./fonts pra centralizar o token no kit.
+ */
+export { MONO_FONT };

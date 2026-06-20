@@ -30,6 +30,8 @@ import {
   type SilenceWindow,
   type SfxCue,
 } from './kit/musicTrack';
+import { GUYFOLKZ_ACCENT, GUYFOLKZ_ACCENT2, MONO_FONT } from './kit/animationPresets';
+import { FilmGrainScanline } from './components/FilmGrainScanline';
 
 // CaptionClip — formato A (monolayer). MULTI-PLANO: o b-roll troca no ritmo da fala
 // (cada chunk = 1 plano cortado), enquanto a narração é ÚNICA e a legenda karaokê é
@@ -73,6 +75,8 @@ export type Plano = {
   transicao?: TransitionName; // transição DESTE plano em relação ao anterior (kit); senão crossfade
   anim_in?: string; // reservado (entrada custom); hoje cada card já tem sua entrada
   fundo_solido?: boolean; // true => card sobre backdrop da paleta (não sobre o plano anterior)
+  accent?: string; // OVERRIDE de cor DESTE plano (ex.: âmbar GUYFOLKZ_ACCENT2 em card de RISCO);
+                   // ausente => usa o accent global do clip (default defensivo).
   // ── ANIMAÇÃO EXPLICATIVA (tipo fluxo/compara/grafico/timeline) ──
   // `dados` carrega o shape da cena (etapas/colunas/valores/eventos) extraído DA FALA.
   dados?: ExplainerDados | Record<string, unknown>;
@@ -118,6 +122,7 @@ export type CaptionClipProps = {
   words: WordTiming[]; // timestamps por palavra (cobre o vídeo inteiro)
   texto?: string;
   paleta_hex: string;
+  accent2?: string; // âmbar (GUYFOLKZ_ACCENT2): cor de RISCO/alerta. Default defensivo = paleta_hex.
   logo_url: string;
   handle: string;
   duracao_s: number;
@@ -153,7 +158,8 @@ export const captionClipDefaultProps: CaptionClipProps = {
     { inicio_s: 7.5, fim_s: 11.5, tipo: 'imagem', imagem_url: 'https://picsum.photos/1080/1920?22', kenburns: 'pan', transicao: 'wipe' },
     { inicio_s: 11.5, fim_s: 15, tipo: 'keyword', texto: 'DESCENTRALIZA', transicao: 'glitchCut' },
     { inicio_s: 15, fim_s: 19, tipo: 'stat', valor: 'R$40M', texto: 'em 18 meses, do zero', transicao: 'zoomBlur', fundo_solido: true },
-    { inicio_s: 19, fim_s: 22.5, tipo: 'banner', texto: 'Ninguém viu chegando', sub: 'Enquanto os incumbentes dormiam, o mercado virou.', transicao: 'whipPan' },
+    // card de RISCO usa o âmbar (accent2) via sentinela declarativa:
+    { inicio_s: 19, fim_s: 22.5, tipo: 'banner', texto: 'Ninguém viu chegando', sub: 'Enquanto os incumbentes dormiam, o mercado virou.', transicao: 'whipPan', accent: 'accent2' },
     // ── ANIMAÇÃO EXPLICATIVA: linha do tempo construída na frente do espectador ──
     { inicio_s: 22.5, fim_s: 28.5, tipo: 'timeline', transicao: 'slidePush', fundo_solido: true, dados: { titulo: 'A virada em 3 atos', eventos: [{ ano: '2024', texto: '700 atendentes' }, { ano: '2025', texto: 'recuo' }, { ano: '2026', texto: 'híbrido' }] } },
     { inicio_s: 28.5, fim_s: 30, tipo: 'quote', texto: 'A diferença entre o fracasso e a revolução é só apertar o botão.', sub: 'GuyFolkz', transicao: 'fade', fundo_solido: true },
@@ -162,9 +168,11 @@ export const captionClipDefaultProps: CaptionClipProps = {
   audio_url: '',
   words: [],
   texto: 'caraca esse cara vale trinta milhões agora e ninguém viu chegando',
-  paleta_hex: '#FFD400',
+  // IDENTIDADE "Terminal-Noir": accent verde-terminal dessaturado + âmbar de risco.
+  paleta_hex: GUYFOLKZ_ACCENT,
+  accent2: GUYFOLKZ_ACCENT2,
   logo_url: '',
-  handle: '@fiel.ia',
+  handle: '@guyfolkz',
   duracao_s: 30,
   mute_video: true,
 };
@@ -241,7 +249,8 @@ const PlanoBg: React.FC<{
   topOffset?: number;
   accent: string;
   heroOffset?: number;
-}> = ({ plano, backdropPlano, dur, idx, topOffset = 0, accent, heroOffset = 0 }) => {
+  glitchFlash?: boolean; // money-shot: só este plano deixa o glitchCut FLASHAR o accent
+}> = ({ plano, backdropPlano, dur, idx, topOffset = 0, accent, heroOffset = 0, glitchFlash = false }) => {
   const frame = useCurrentFrame();
   const media = isMediaPlano(plano);
 
@@ -252,7 +261,8 @@ const PlanoBg: React.FC<{
   } else if (plano.transicao && TRANSITIONS[plano.transicao]) {
     // progresso 0..1 ao longo da janela de overlap (XF frames). Reveal sobre o anterior.
     const progress = interpolate(frame, [0, XF + 2], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-    const pair = TRANSITIONS[plano.transicao](progress, { accent, size: 1080 });
+    // flash de accent SÓ no money-shot (glitchFlash); demais glitchCut entram sem flash.
+    const pair = TRANSITIONS[plano.transicao](progress, { accent, size: 1080, flash: glitchFlash });
     containerStyle = pair.incoming;
   } else {
     containerStyle = { opacity: interpolate(frame, [0, XF], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) };
@@ -345,7 +355,8 @@ const NumeralBig: React.FC<{ numero: string; accent: string; offsetY?: number }>
   const scale = interpolate(s, [0, 1], [0.5, 1.0]);
   return (
     <div style={{ position: 'absolute', top: 560 + offsetY, left: 0, width: 1080, textAlign: 'center', zIndex: 36, transform: `scale(${scale})`, transformOrigin: 'center' }}>
-      <span style={{ color: accent, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 180, WebkitTextStroke: '12px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], letterSpacing: '-0.03em' }}>{display}</span>
+      {/* Terminal-Noir: numeral gigante em MONOSPACE real (assinatura "dado/terminal"). */}
+      <span style={{ color: accent, fontFamily: MONO_FONT, fontWeight: 700, fontSize: 180, WebkitTextStroke: '12px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], letterSpacing: '-0.03em' }}>{display}</span>
     </div>
   );
 };
@@ -361,15 +372,42 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 };
 
 export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
-  const { audio_url, words, texto, paleta_hex, logo_url, handle, duracao_s, mute_video = true, music_url, sfx, tema_linhas, tema_y = 1080, titulo_topo, keyword_hero, circulo_em,
+  const { audio_url, words, texto, paleta_hex, accent2, logo_url, handle, duracao_s, mute_video = true, music_url, sfx, tema_linhas, tema_y = 1080, titulo_topo, keyword_hero, circulo_em,
     show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
     voice_windows, silence_windows, sfx_plan, riser_url, sting_url } = props;
   const total = captionClipParaFrames(props);
+  // accent2 (âmbar de RISCO) — DEFENSIVO: ausente => cai no accent principal (sem âmbar).
+  const accent2Resolved = accent2 || GUYFOLKZ_ACCENT2 || paleta_hex;
+  // accent EFETIVO de um plano: override por plano (plano.accent) tem prioridade; senão global.
+  // Sentinela 'accent2' => usa o âmbar de risco (token do clip) — açúcar declarativo pro
+  // motor de roteiro marcar um card de risco/alerta sem repetir o hex. Default = accent global.
+  const planoAccent = (p: Plano): string =>
+    !p.accent ? paleta_hex : p.accent === 'accent2' ? accent2Resolved : p.accent;
 
   // monta a lista de planos (multi) ou cai no single (retrocompat)
-  const planos: Plano[] = (props.planos && props.planos.length)
+  const planosRaw: Plano[] = (props.planos && props.planos.length)
     ? props.planos
     : [{ inicio_s: 0, fim_s: duracao_s, video_url: props.video_url, imagem_url: props.imagem_url, keyword: keyword_hero }];
+
+  // ── AJUSTE DO JUIZ: limitar glitchCut a 1-2 viradas por peça; o resto vira fade/slidePush.
+  // O FLASH de accent fica só no "money-shot" (a 1ª glitchCut mantida). Excesso de glitch é
+  // demovido alternando fade/slidePush (variedade sem o corte cyber estourado o vídeo todo).
+  const MAX_GLITCH = 2;
+  let glitchKept = 0;
+  let demoteToggle = 0;
+  const glitchFlashIdx = new Set<number>(); // índices que MANTÊM o flash (money-shot)
+  const planos: Plano[] = planosRaw.map((p, i) => {
+    if (p.transicao !== 'glitchCut') return p;
+    if (glitchKept < MAX_GLITCH) {
+      if (glitchKept === 0) glitchFlashIdx.add(i); // money-shot = 1ª glitch mantida
+      glitchKept += 1;
+      return p;
+    }
+    // excesso: demove pra fade/slidePush (alterna) — mais seguro/limpo.
+    const repl: TransitionName = demoteToggle % 2 === 0 ? 'fade' : 'slidePush';
+    demoteToggle += 1;
+    return { ...p, transicao: repl };
+  });
 
   const whoosh = sfx?.whoosh;
 
@@ -395,7 +433,7 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
           : planos.slice(0, i).reverse().find((q) => isMediaPlano(q));
         return (
           <Sequence key={`p${i}`} from={fromF} durationInFrames={durF} layout="none">
-            <PlanoBg plano={p} backdropPlano={backdropPlano} dur={durF} idx={i} topOffset={splitY} accent={paleta_hex} heroOffset={heroOffset} />
+            <PlanoBg plano={p} backdropPlano={backdropPlano} dur={durF} idx={i} topOffset={splitY} accent={planoAccent(p)} heroOffset={heroOffset} glitchFlash={glitchFlashIdx.has(i)} />
           </Sequence>
         );
       })}
@@ -412,10 +450,10 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
         const durF = Math.max(1, Math.round((p.fim_s - p.inicio_s) * FPS));
         const noHook = Boolean(tema_linhas && tema_linhas.length) && p.inicio_s < temaOut - 0.3;
         if (p.numero && !noHook) {
-          return <Sequence key={`n${i}`} from={fromF} durationInFrames={durF} layout="none"><NumeralBig numero={p.numero} accent={paleta_hex} offsetY={heroOffset} /></Sequence>;
+          return <Sequence key={`n${i}`} from={fromF} durationInFrames={durF} layout="none"><NumeralBig numero={p.numero} accent={planoAccent(p)} offsetY={heroOffset} /></Sequence>;
         }
         if (p.keyword && !noHook) {
-          return <Sequence key={`k${i}`} from={fromF} durationInFrames={durF} layout="none"><KeywordHero text={p.keyword} accent={paleta_hex} offsetY={heroOffset} /></Sequence>;
+          return <Sequence key={`k${i}`} from={fromF} durationInFrames={durF} layout="none"><KeywordHero text={p.keyword} accent={planoAccent(p)} offsetY={heroOffset} /></Sequence>;
         }
         return null;
       })}
@@ -489,18 +527,75 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
           ))
         : null}
 
-      {/* branding */}
-      <div style={{ position: 'absolute', top: 70, left: 56, zIndex: 50, display: 'flex', alignItems: 'center', gap: 16 }}>
-        {logo_url ? (
-          <div style={{ background: '#fff', borderRadius: 16, padding: '8px 14px', display: 'flex', alignItems: 'center' }}>
-            <Img src={resolveSrc(logo_url)} style={{ height: 48, width: 'auto', objectFit: 'contain' }} />
-          </div>
-        ) : null}
-        <span style={{ color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 800, fontSize: 32, textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}>{handle}</span>
-      </div>
+      {/* branding — assinatura Terminal-Noir (prompt mono + cursor block piscando) */}
+      <BrandLowerThird handle={handle} logo_url={logo_url} accent={paleta_hex} />
 
       <ProgressBar total={total} accent={paleta_hex} />
+
+      {/* OVERLAY GLOBAL Terminal-Noir — SEMPRE no fim: film grain + scanline CRT + vignette.
+          É o que mata o aspecto "AI slop". zIndex alto (acima de tudo), intensidade discreta. */}
+      <FilmGrainScanline />
     </AbsoluteFill>
+  );
+};
+
+// BrandLowerThird — assinatura "Terminal-Noir": prompt de shell `<slug>:~$` em MONOSPACE
+// + cursor BLOCK piscando. Substitui o handle em Montserrat 800. O blink é step-end ~1s
+// via interpolate (ZERO @keyframes): liga/desliga em degraus duros (cara de cursor de TTY).
+// Posição/anim constantes em TODO o vídeo (não entra/sai). Deriva o slug do handle
+// (@guyfolkz / @fiel.ia → guyfolkz / fiel.ia); fallback 'guyfolkz'.
+const handleToSlug = (handle?: string): string => {
+  const s = (handle || '').trim().replace(/^@+/, '');
+  return s || 'guyfolkz';
+};
+
+const BrandLowerThird: React.FC<{ handle: string; logo_url?: string; accent: string }> = ({ handle, logo_url, accent }) => {
+  const frame = useCurrentFrame();
+  const slug = handleToSlug(handle);
+  // cursor block: ON ~0.55s, OFF ~0.45s (ciclo ~1s = 30 frames), borda dura (step-end).
+  const cyc = frame % 30;
+  const cursorOn = cyc < 17 ? 1 : 0;
+  return (
+    <div style={{ position: 'absolute', top: 70, left: 56, zIndex: 50, display: 'flex', alignItems: 'center', gap: 14 }}>
+      {logo_url ? (
+        <div style={{ background: '#fff', borderRadius: 12, padding: '6px 12px', display: 'flex', alignItems: 'center' }}>
+          <Img src={resolveSrc(logo_url)} style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+        </div>
+      ) : null}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 2,
+          background: 'rgba(8,10,16,0.62)',
+          border: `1px solid ${accent}55`,
+          borderRadius: 8,
+          padding: '7px 14px',
+          fontFamily: MONO_FONT,
+          fontWeight: 500,
+          fontSize: 30,
+          letterSpacing: '0.01em',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+        }}
+      >
+        <span style={{ color: accent }}>{slug}</span>
+        <span style={{ color: 'rgba(255,255,255,0.65)' }}>{':~'}</span>
+        <span style={{ color: accent }}>{'$'}</span>
+        {/* cursor block piscando */}
+        <span
+          style={{
+            display: 'inline-block',
+            width: 16,
+            height: 30,
+            marginLeft: 8,
+            transform: 'translateY(4px)',
+            background: accent,
+            opacity: cursorOn,
+            boxShadow: `0 0 10px ${accent}88`,
+          }}
+        />
+      </div>
+    </div>
   );
 };
 

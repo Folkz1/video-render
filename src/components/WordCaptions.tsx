@@ -25,6 +25,14 @@ export type WordCaptionsProps = {
 const FONT = 'Montserrat, Poppins, Inter, Segoe UI, sans-serif';
 const HAS_DIGIT = /\d/;
 
+// IDENTIDADE "Terminal-Noir": quando o accent é o verde-terminal aprovado (#3DF07A),
+// a karaokê ganha tratamento "premium dev": caixa MISTA (não all-caps agressivo),
+// peso médio (700, não 900 berrante), micro-pop sutil e um glow do accent na palavra
+// ativa. Comparação por hex normalizado (tolera maiúsc/minúsc e #abreviado).
+const norm = (hex?: string) => (hex || '').trim().toLowerCase().replace(/^#/, '');
+const TERMINAL_GREEN = '3df07a';
+const isTerminalAccent = (hex?: string) => norm(hex) === TERMINAL_GREEN;
+
 function buildWords(words?: WordTiming[], text?: string, durSec?: number): WordTiming[] {
   if (words && words.length) return words;
   if (text && durSec && durSec > 0) {
@@ -71,12 +79,17 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   const groupStart = Math.floor(active / maxWordsPerGroup) * maxWordsPerGroup;
   const group = ws.slice(groupStart, groupStart + maxWordsPerGroup);
 
-  const fmt = (s: string) => (allCaps && variant !== 'limpa' ? s.toUpperCase() : s);
+  // Terminal-Noir: o accent verde-terminal NUNCA vai a all-caps (caixa mista), mesmo
+  // que allCaps=true seja passado — é a regra do brief (sem all-caps agressivo).
+  const term = isTerminalAccent(accent);
+  const fmt = (s: string) => (allCaps && !term && variant !== 'limpa' ? s.toUpperCase() : s);
 
   const strokeStyle: React.CSSProperties =
     variant === 'solta'
       ? {
-          WebkitTextStroke: '8px #000',
+          // Terminal-Noir usa stroke um pouco mais fino (6px) pra casar com o peso 700
+          // (menos "berrante"); demais accents mantêm o stroke 8px atual.
+          WebkitTextStroke: term ? '6px #000' : '8px #000',
           paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
           // Sombra tight só p/ definir a borda da letra; o CONTRASTE agora vem da PLACA
           // (plateStyle abaixo), não mais de um halo gigante que muddava em b-roll claro/ocupado.
@@ -109,11 +122,18 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
     if (frame < entryFrame) return null; // pop-in progressivo
 
     const s = spring({ frame: frame - entryFrame, fps, config: { damping: 14, mass: 0.6 } });
-    const scale = interpolate(s, [0, 1], [1.15, 1.0]);
+    // Terminal-Noir: micro-pop sutil (1.08→1.0) em vez do pop maior (1.15→1.0) — leitura
+    // mais "premium/contida"; demais accents mantêm o pop atual.
+    const scale = interpolate(s, [0, 1], [term ? 1.08 : 1.15, 1.0]);
     const opacity = interpolate(s, [0, 1], [0, 1]);
     const reallyActive = globalIdx === active;
     // MODO LIMPA (essay): tudo branco, sem destaque de cor (legenda elegante, não karaokê).
     const color = variant === 'limpa' ? '#FFFFFF' : (reallyActive || isKaraoke ? accent : '#FFFFFF');
+    // glow do accent SÓ na palavra ativa em terminal-noir (sutil, reforça o "terminal").
+    const accentGlow: React.CSSProperties =
+      term && variant === 'solta' && (reallyActive || isKaraoke)
+        ? { textShadow: `0 0 8px rgba(0,0,0,0.95), 0 4px 12px rgba(0,0,0,0.9), 0 0 18px ${accent}66` }
+        : {};
 
     let display = fmt(w.word);
     if (numberPop && reallyActive) {
@@ -138,6 +158,7 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
           color,
           ...plateStyle,
           ...strokeStyle,
+          ...accentGlow,
         }}
       >
         {display}
@@ -162,7 +183,8 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
         textAlign: 'center',
         zIndex: 40,
         fontFamily: FONT,
-        fontWeight: variant === 'limpa' ? 600 : 900,
+        // Terminal-Noir: peso MÉDIO (700) na karaokê — premium, não "berrante" (900).
+        fontWeight: variant === 'limpa' ? 600 : term ? 700 : 900,
         fontSize,
         lineHeight: 1.05,
         ...(variant === 'pilula'

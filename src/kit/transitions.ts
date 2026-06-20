@@ -30,6 +30,9 @@ export type TransitionOpts = {
   accent?: string;
   /** dimensão do canvas no eixo da transição (px). Default 1080 (largura vertical). */
   size?: number;
+  /** glitchCut: liga o FLASH de accent no auge do corte. Default true (retrocompat).
+   *  Setar false reserva o flash só pro "money-shot" (1 por peça). */
+  flash?: boolean;
 };
 
 const p = (v: number) => clamp(v, 0, 1);
@@ -120,7 +123,8 @@ export const glitchCut = (progress: number, opts: TransitionOpts = {}): Transiti
   const jitterX = Math.round(Math.sin(t * 90) * 14 * intensity);
   const jitterY = Math.round(Math.cos(t * 70) * 8 * intensity);
   const rgbSplit = 6 * intensity;
-  const flash = intensity > 0.85 ? 0.35 : 0;
+  // flash de accent SÓ quando opts.flash !== false (money-shot). Default true (retrocompat).
+  const flash = opts.flash !== false && intensity > 0.85 ? 0.35 : 0;
   const sharedFilter = `drop-shadow(${rgbSplit}px 0 0 ${accent}) drop-shadow(${-rgbSplit}px 0 0 #ff2d6f)`;
   return {
     outgoing: {

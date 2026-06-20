@@ -2,6 +2,7 @@ import React from 'react';
 import { interpolate, spring, type SpringConfig, useCurrentFrame, useVideoConfig } from 'remotion';
 import {
   DISPLAY_FONT,
+  MONO_FONT,
   SPRINGS,
   clamp,
   glowPulse,
@@ -105,8 +106,10 @@ export const StatCard: React.FC<StatCardProps> = ({ valor, texto, accent, durSec
       >
         <div
           style={{
-            fontFamily: DISPLAY_FONT,
-            fontWeight: 900,
+            // Terminal-Noir: o NUMERAL do count-up em MONOSPACE real (JetBrains Mono).
+            // Mono dá a assinatura "terminal/dado" e evita pulo de largura no count-up.
+            fontFamily: MONO_FONT,
+            fontWeight: 700,
             fontSize: 210,
             lineHeight: 1,
             color: accent,
@@ -388,8 +391,9 @@ export const ChapterCard: React.FC<ChapterCardProps> = ({ texto, valor, accent, 
         {valor ? (
           <div
             style={{
-              fontFamily: DISPLAY_FONT,
-              fontWeight: 900,
+              // Terminal-Noir: numeração do capítulo ("01") em MONOSPACE (assinatura terminal).
+              fontFamily: MONO_FONT,
+              fontWeight: 700,
               fontSize: 120,
               lineHeight: 1,
               color: accent,
