@@ -37,15 +37,22 @@ export type TerminalBeatProps = {
   accent?: string; // cor do verde-terminal (default #3DF07A)
   prompt?: string; // prompt antes de cada linha 'cmd' (default 'guyfolkz:~$')
   fps?: number; // override opcional; senão usa useVideoConfig
+  topSafe?: number; // px reservados no topo (safe-area do título) — corpo começa abaixo
+  bottomSafe?: number; // px reservados embaixo (safe-area da legenda karaokê)
 };
 
 const TERM_BG = '#0a0e0a'; // near-black levemente esverdeado (pedido)
 const ERR_COLOR = '#ff5c5c'; // vermelho suave (erros)
 const OUT_COLOR = '#b8c2bb'; // saída neutra (cinza-esverdeado, menos brilho que cmd)
-const HEADER_H = 110;
+const HEADER_H = 96; // barra de janela (3 dots) — SEM prompt repetido aqui
 const SIDE_PAD = 64;
-const LINE_FS = 42; // tamanho da fonte do corpo do terminal
-const LINE_LH = 1.5;
+// Safe-areas default: título no topo (~290px até o fim de 2 linhas) e legenda
+// karaokê embaixo (ancorada ~1440 + altura da palavra). O corpo do terminal vive
+// ENTRE elas e é centralizado verticalmente nesse vão, pra não colidir com nenhum.
+const TOP_SAFE_DEFAULT = 300;
+const BOTTOM_SAFE_DEFAULT = 560;
+const LINE_FS = 56; // tamanho da fonte do corpo do terminal (maior = preenche a tela 9:16)
+const LINE_LH = 1.55;
 
 const normType = (t?: string): TerminalLineType =>
   t === 'out' ? 'out' : t === 'err' ? 'err' : 'cmd';
@@ -60,6 +67,8 @@ export const TerminalBeat: React.FC<TerminalBeatProps> = ({
   accent = GUYFOLKZ_ACCENT,
   prompt = 'guyfolkz:~$',
   fps: fpsProp,
+  topSafe = TOP_SAFE_DEFAULT,
+  bottomSafe = BOTTOM_SAFE_DEFAULT,
 }) => {
   const frame = useCurrentFrame();
   const cfg = useVideoConfig();
@@ -130,16 +139,16 @@ export const TerminalBeat: React.FC<TerminalBeatProps> = ({
       // cursor: enquanto digita (sempre on) ou piscando no fim se é a linha ativa
       const showCursor = stillTyping ? 1 : isActive ? cursorOn : 0;
       return (
-        <div key={i} style={{ marginBottom: 14, lineHeight: LINE_LH }}>
+        <div key={i} style={{ marginBottom: 18, lineHeight: LINE_LH }}>
           <span style={{ color: accent, opacity: 0.7 }}>{prompt} </span>
           <span style={{ color: accent }}>{shown}</span>
           <span
             style={{
               display: 'inline-block',
-              width: 20,
+              width: 24,
               height: LINE_FS * 0.92,
-              marginLeft: 2,
-              transform: 'translateY(5px)',
+              marginLeft: 4,
+              transform: 'translateY(6px)',
               background: accent,
               opacity: showCursor,
               boxShadow: `0 0 10px ${accent}88`,
@@ -160,7 +169,7 @@ export const TerminalBeat: React.FC<TerminalBeatProps> = ({
       <div
         key={i}
         style={{
-          marginBottom: 14,
+          marginBottom: 18,
           lineHeight: LINE_LH,
           color,
           opacity: op,
@@ -191,7 +200,10 @@ export const TerminalBeat: React.FC<TerminalBeatProps> = ({
           boxShadow: `inset 0 0 200px rgba(0,0,0,0.55), inset 0 0 0 1px ${accent}22`,
         }}
       >
-        {/* ── HEADER: 3 dots (semáforo) + título do terminal em mono verde ── */}
+        {/* ── HEADER: SÓ os 3 dots (semáforo) da janela. O prompt `guyfolkz:~$`
+            NÃO se repete aqui — ele vive DENTRO da linha de comando ($ comando) e
+            a assinatura da marca é o BrandLowerThird (badge com avatar). Uma fonte
+            só do prompt → acaba o header-fantasma duplicado no topo. ── */}
         <div
           style={{
             height: HEADER_H,
@@ -200,40 +212,31 @@ export const TerminalBeat: React.FC<TerminalBeatProps> = ({
             borderBottom: `1px solid ${accent}33`,
             display: 'flex',
             alignItems: 'center',
-            gap: 22,
+            gap: 16,
             padding: `0 ${SIDE_PAD - 24}px`,
           }}
         >
-          <div style={{ display: 'flex', gap: 16, flex: '0 0 auto' }}>
-            <TrafficDot color="#ff5f56" />
-            <TrafficDot color="#ffbd2e" />
-            <TrafficDot color="#27c93f" />
-          </div>
-          <div
-            style={{
-              flex: 1,
-              textAlign: 'center',
-              fontFamily: MONO_FONT,
-              fontWeight: 500,
-              fontSize: 34,
-              color: accent,
-              opacity: 0.85,
-              letterSpacing: '0.02em',
-              marginRight: 90, // compensa os dots à esquerda pra centralizar o título
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-            }}
-          >
-            {prompt}
-          </div>
+          <TrafficDot color="#ff5f56" />
+          <TrafficDot color="#ffbd2e" />
+          <TrafficDot color="#27c93f" />
         </div>
 
-        {/* ── CORPO: as linhas do terminal, mono verde, digitando/aparecendo ── */}
+        {/* ── CORPO: as linhas do terminal, mono verde, digitando/aparecendo.
+            Vive ENTRE a safe-area do título (topSafe) e a da legenda (bottomSafe),
+            e é CENTRALIZADO verticalmente nesse vão (justify-center) — preenche a
+            tela 9:16 de forma agradável sem colidir com título nem legenda. ── */}
         <div
           style={{
             flex: 1,
             position: 'relative',
-            padding: `${Math.round(HEADER_H * 0.45)}px ${SIDE_PAD}px ${SIDE_PAD}px`,
+            // reserva do título acima e da legenda abaixo (descontando o header já gasto)
+            paddingTop: Math.max(0, topSafe - HEADER_H),
+            paddingBottom: bottomSafe,
+            paddingLeft: SIDE_PAD,
+            paddingRight: SIDE_PAD,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center', // centraliza o bloco no vão entre as safe-areas
             fontFamily: MONO_FONT,
             fontWeight: 500,
             fontSize: LINE_FS,
@@ -242,7 +245,7 @@ export const TerminalBeat: React.FC<TerminalBeatProps> = ({
             overflow: 'hidden',
           }}
         >
-          {safeLines.map((l, i) => renderLine(l, i))}
+          <div>{safeLines.map((l, i) => renderLine(l, i))}</div>
           {/* scanline CRT local por cima do corpo (sutil) */}
           <div style={{ position: 'absolute', inset: 0, background: scanline, pointerEvents: 'none' }} />
           {/* glow ambiente verde no rodapé (cara de monitor CRT) */}
