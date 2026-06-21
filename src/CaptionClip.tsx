@@ -33,6 +33,7 @@ import {
 import { GUYFOLKZ_ACCENT, GUYFOLKZ_ACCENT2, MONO_FONT } from './kit/animationPresets';
 import { FilmGrainScanline } from './components/FilmGrainScanline';
 import { BrowserFrame } from './BrowserFrame';
+import { TerminalBeat, type TerminalLine } from './TerminalBeat';
 
 // CaptionClip — formato A (monolayer). MULTI-PLANO: o b-roll troca no ritmo da fala
 // (cada chunk = 1 plano cortado), enquanto a narração é ÚNICA e a legenda karaokê é
@@ -60,6 +61,7 @@ const isVideoUrlStr = (u?: string): boolean => !!u && /\.(mp4|mov|webm|m4v)(\?|$
 export type PlanoTipo =
   | 'imagem' | 'video'
   | 'screen' // SCREEN-OP: screencast de site real DENTRO da moldura Terminal-Noir (BrowserFrame)
+  | 'terminal' // TERMINAL ANIMADO: tela técnica on-brand (comando/saída/erro) desenhada — sem b-roll
   | 'stat' | 'keyword' | 'banner' | 'quote' | 'capitulo'
   | 'fluxo' | 'compara' | 'grafico' | 'timeline';
 
@@ -79,6 +81,11 @@ export type Plano = {
   screencast_url?: string; // url do screencast (mp4/webm) ou screenshot (img)
   url_label?: string; // texto da barra de endereço do browser (default 'guyfolkz:~$')
   cursor?: boolean; // cursor verde extra animado por cima (default false; o footage já traz)
+  // ── TERMINAL ANIMADO (tipo 'terminal' OU terminal_lines presente) ──
+  // tela técnica DESENHADA (não b-roll): linhas 'cmd' digitam char-a-char, 'out'
+  // aparece após um beat, 'err' em vermelho. Renderiza NO LUGAR do b-roll/Img;
+  // legenda karaokê compõe por cima. Kenburns/punch desligados (a tela já anima).
+  terminal_lines?: Array<TerminalLine | { type?: string; text?: string }>;
   // ── campos dos cards editoriais (tipo != imagem/vídeo) ──
   texto?: string; // banner/quote/capitulo: texto principal; keyword: a(s) palavra(s); stat: label
   valor?: string; // stat: número ("700", "R$40M", "100M", "3x"); capitulo: numeração ("01")
@@ -194,8 +201,13 @@ export const captionClipParaFrames = (p: { duracao_s?: number }) =>
 // SCREEN-OP: plano de screencast (site real na moldura). tipo 'screen' OU screencast_url.
 const isScreenPlano = (p: Plano): boolean => p.tipo === 'screen' || !!p.screencast_url;
 
+// TERMINAL: plano de tela técnica DESENHADA. tipo 'terminal' OU terminal_lines presente.
+const isTerminalPlano = (p: Plano): boolean =>
+  p.tipo === 'terminal' || (Array.isArray(p.terminal_lines) && p.terminal_lines.length > 0);
+
 const isMediaPlano = (p: Plano): boolean =>
   isScreenPlano(p) ||
+  isTerminalPlano(p) ||
   !p.tipo || p.tipo === 'imagem' || p.tipo === 'video' ||
   (!isEditorialCardTipo(p.tipo) && !isExplainerTipo(p.tipo) && (!!p.video_url || !!p.imagem_url));
 
@@ -205,6 +217,18 @@ const SEG_S = 3.5; // duração-alvo de cada sub-plano quando há b-roll alterna
 
 const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: boolean; punch?: boolean }> = ({ plano, dur, idx, darken, punch }) => {
   const frame = useCurrentFrame();
+  // ── TERMINAL ANIMADO: tela técnica DESENHADA (comando/saída/erro), on-brand.
+  // Substitui o b-roll/Ken Burns por TerminalBeat. SEM kenburns/punch (a tela já
+  // anima a digitação). É self-dark, então serve também como backdrop (darken) sob
+  // um card sem precisar de fallback. Legenda karaokê compõe por cima.
+  if (isTerminalPlano(plano)) {
+    const lines = (plano.terminal_lines || []) as TerminalLine[];
+    return (
+      <div style={{ position: 'absolute', inset: 0, filter: darken ? 'brightness(0.5)' : undefined }}>
+        <TerminalBeat lines={lines} durationInFrames={dur} prompt={plano.url_label || 'guyfolkz:~$'} />
+      </div>
+    );
+  }
   // ── SCREEN-OP: screencast de site real DENTRO da moldura de navegador Terminal-Noir.
   // Substitui o Ken Burns por BrowserFrame (chrome + URL mono + viewport com o footage).
   // Em backdrop escurecido (darken) cai pro caminho normal abaixo (sem moldura).
