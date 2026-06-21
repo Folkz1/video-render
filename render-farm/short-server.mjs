@@ -87,6 +87,19 @@ let bundling = null;
 const nowIso = () => new Date().toISOString();
 const log = (...a) => console.log(`[short-server ${nowIso()}]`, ...a);
 
+// GUARDAS DE PROCESSO: jobs pesados (Playwright/Chromium em recordPage/screencast,
+// ffmpeg, render) podem emitir rejeições NÃO encadeadas no await (ex: erro no
+// processo do browser, EventEmitter 'error' solto). Sem isto o Node default
+// (--unhandled-rejections=throw) DERRUBA o servidor inteiro -> o proxy devolve
+// 502 HTML em ~0.5s (sintoma do screencast/record-page) e o container reinicia.
+// Logamos e seguimos vivos; o handler da rota ainda devolve 502 JSON ao cliente.
+process.on('unhandledRejection', (reason) => {
+  try { log('unhandledRejection (ignorado, server segue vivo):', reason?.message || reason); } catch {}
+});
+process.on('uncaughtException', (err) => {
+  try { log('uncaughtException (ignorado, server segue vivo):', err?.message || err); } catch {}
+});
+
 async function ensureDirs() {
   await mkdir(SHORTS_DIR, { recursive: true });
   await mkdir(CLIPS_DIR, { recursive: true });

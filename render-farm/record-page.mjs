@@ -25,31 +25,55 @@ const execFileP = promisify(execFile);
 const VW = 1080;
 const VH = 1920;
 
-// Binário do Chromium no container: o Dockerfile.short-server instala `chromium`
-// via APT em /usr/bin/chromium e NÃO roda `npx playwright install` — então não
-// existe o browser baixado pelo Playwright. Usamos o do APT.
-//   - CHROMIUM_PATH (env) vence, se setado.
-//   - senão /usr/bin/chromium (path do APT no Debian slim, confirmado no Dockerfile).
-//   - se nenhum existir (ex: dev local), cai pro channel 'chromium' do Playwright.
+// Binário do Chromium pro Playwright.
+//
+// IMPORTANTE (recordVideo): a gravação de vídeo do Playwright usa o screencast do
+// browser + um ffmpeg que vem DENTRO do pacote de browser do Playwright. Por isso
+// o caminho MAIS CONFIÁVEL pra recordVideo é o chromium GERENCIADO pelo Playwright
+// (instalado via `npx playwright install chromium` no build) — e NÃO um chromium
+// arbitrário do APT via executablePath (combinação que pode crashar o launch).
+//
+// Precedência:
+//   1. CHROMIUM_PATH (env) — override explícito, se setado e existir.
+//   2. Chromium GERENCIADO do Playwright (sem executablePath: Playwright resolve
+//      sozinho a build baixada em ~/.cache/ms-playwright). É o default desejado.
+//   3. Fallback: /usr/bin/chromium do APT (executablePath) se a build do Playwright
+//      não estiver disponível — mantém o comportamento antigo como último recurso.
+const COMMON_LAUNCH_ARGS = ['--no-sandbox', '--disable-dev-shm-usage'];
+
+function playwrightBrowserInstalled() {
+  // a build gerenciada vive em ~/.cache/ms-playwright/chromium-*/ (ou PLAYWRIGHT_BROWSERS_PATH).
+  const base = process.env.PLAYWRIGHT_BROWSERS_PATH
+    || path.join(process.env.HOME || '/root', '.cache', 'ms-playwright');
+  try {
+    return fs.existsSync(base)
+      && fs.readdirSync(base).some((d) => d.startsWith('chromium'));
+  } catch { return false; }
+}
+
 function resolveLaunchOptions() {
-  const candidates = [
-    process.env.CHROMIUM_PATH,
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-  ].filter(Boolean);
-  for (const p of candidates) {
+  // 1. override explícito por env
+  if (process.env.CHROMIUM_PATH) {
     try {
-      if (fs.existsSync(p)) {
-        return {
-          headless: true,
-          executablePath: p,
-          args: ['--no-sandbox', '--disable-dev-shm-usage'],
-        };
+      if (fs.existsSync(process.env.CHROMIUM_PATH)) {
+        return { headless: true, executablePath: process.env.CHROMIUM_PATH, args: COMMON_LAUNCH_ARGS };
       }
     } catch {}
   }
-  // Fallback (dev local com `npx playwright install` feito): usa o channel.
-  return { headless: true, channel: 'chromium', args: ['--no-sandbox', '--disable-dev-shm-usage'] };
+  // 2. chromium GERENCIADO do Playwright (default p/ recordVideo funcionar)
+  if (playwrightBrowserInstalled()) {
+    return { headless: true, args: COMMON_LAUNCH_ARGS };
+  }
+  // 3. fallback APT chromium (dev sem playwright install, ou build antigo)
+  for (const p of ['/usr/bin/chromium', '/usr/bin/chromium-browser']) {
+    try {
+      if (fs.existsSync(p)) {
+        return { headless: true, executablePath: p, args: COMMON_LAUNCH_ARGS };
+      }
+    } catch {}
+  }
+  // último recurso: channel chromium (dev local)
+  return { headless: true, channel: 'chromium', args: COMMON_LAUNCH_ARGS };
 }
 
 // Fecha banners de cookie/consent (mesmos selectors do POC v2, com folga).
