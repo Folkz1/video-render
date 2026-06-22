@@ -565,7 +565,11 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
       {props.caption_style === 'limpa' ? (
         <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={captionAnchor} accent="#FFFFFF" fontSize={60} maxWordsPerGroup={5} variant="limpa" numberPop={false} />
       ) : (
-        <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={captionAnchor} accent={paleta_hex} fontSize={86} maxWordsPerGroup={1} variant="solta" numberPop />
+        // plate FORÇADO ON: a karaokê do CaptionClip compõe SEMPRE sobre b-roll/terminal/card
+        // (fundo não-garantido-escuro). Sem isto, beats de gancho/Pexels claro ficavam só com
+        // stroke (legenda fraca) enquanto terminal/card pegavam a placa via luminância. Agora
+        // TODAS as palavras de TODOS os beats levam a pílula opaca + stroke forte.
+        <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={captionAnchor} accent={paleta_hex} fontSize={86} maxWordsPerGroup={1} variant="solta" numberPop plate />
       )}
 
       {/* painel do criador no topo (split universal) */}

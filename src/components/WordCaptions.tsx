@@ -20,6 +20,15 @@ export type WordCaptionsProps = {
   variant?: 'solta' | 'pilula' | 'limpa';
   numberPop?: boolean; // count-up quando a palavra ativa tem número
   allCaps?: boolean;
+  // PLACA escura por palavra (fix-legibilidade): override EXPLÍCITO de quando ligar a pílula.
+  //  • plate=true  → liga a placa em TODAS as palavras de TODOS os beats (legenda sobre b-roll:
+  //    o fundo NÃO é garantido escuro — gancho/Pexels claro/terminal/card precisam todos da
+  //    placa). É o que o CaptionClip passa: a legenda dele compõe SEMPRE por cima de mídia.
+  //  • plate=false → desliga (texto escuro em faixa SÓLIDA clara, ex.: CaptionBold — a placa
+  //    escura tamparia o texto; o contraste vem da faixa do próprio formato).
+  //  • undefined   → fallback de retrocompat: liga só quando o accent é CLARO (isLightAccent),
+  //    o gate antigo (mantém o comportamento de quem ainda não passa o prop).
+  plate?: boolean;
 };
 
 const FONT = 'Montserrat, Poppins, Inter, Segoe UI, sans-serif';
@@ -77,6 +86,7 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   variant = 'solta',
   numberPop = true,
   allCaps = false,
+  plate,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -134,7 +144,14 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   // forte (strokeStyle), NENHUMA palavra fica invisível, em fundo claro ou escuro.
   // Quando o accent é ESCURO (CaptionBold #05060a em faixa clara), a placa escura é desligada
   // (senão tamparia o texto) — o contraste vem da faixa sólida do próprio formato.
-  const plateOn = variant === 'solta' && isLightAccent(accent);
+  // FIX QA (legenda fraca em b-roll claro no GANCHO): o gate por luminância do accent era um
+  // PROXY frágil de "tem fundo sólido atrás?". Em CaptionClip a legenda compõe SEMPRE sobre
+  // b-roll/terminal/card (fundo NÃO garantido escuro) → a placa tem que estar ON em TODAS as
+  // palavras de TODOS os beats (gancho incluso), independente da luminância do accent — senão
+  // 'meu' verde sobre Pexels claro ficava só com stroke (legenda fraca). Agora a placa respeita
+  // um override EXPLÍCITO: plate=true força ON (CaptionClip), plate=false força OFF (CaptionBold,
+  // faixa sólida clara). Sem o prop, mantém o gate antigo por luminância (retrocompat).
+  const plateOn = variant === 'solta' && (plate === undefined ? isLightAccent(accent) : plate);
   const plateStyle: React.CSSProperties = plateOn
     ? {
         background: 'rgba(8,10,16,0.82)',
