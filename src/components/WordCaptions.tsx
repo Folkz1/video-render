@@ -33,6 +33,23 @@ const norm = (hex?: string) => (hex || '').trim().toLowerCase().replace(/^#/, ''
 const TERMINAL_GREEN = '3df07a';
 const isTerminalAccent = (hex?: string) => norm(hex) === TERMINAL_GREEN;
 
+// luminância relativa (0=preto, 1=branco) do accent. A PLACA escura (fix-legibilidade) só
+// faz sentido quando o texto da legenda é CLARO (caso karaokê-sobre-b-roll: palavra ativa
+// num accent vivo + não-ativas brancas). Quando o accent é ESCURO (ex.: CaptionBold usa
+// #05060a em cima de uma faixa SÓLIDA clara), uma placa escura tamparia o texto → nesses
+// casos NÃO aplicamos a placa escura (deixa a faixa clara do próprio formato fazer o
+// contraste). Evita regressão no CaptionBold mantendo o fix nos formatos sobre b-roll.
+const luminance = (hex?: string): number => {
+  const h = norm(hex);
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  if (full.length < 6) return 1; // desconhecido => trata como claro (placa escura ON)
+  const r = parseInt(full.slice(0, 2), 16) / 255;
+  const g = parseInt(full.slice(2, 4), 16) / 255;
+  const b = parseInt(full.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const isLightAccent = (hex?: string) => luminance(hex) >= 0.35;
+
 function buildWords(words?: WordTiming[], text?: string, durSec?: number): WordTiming[] {
   if (words && words.length) return words;
   if (text && durSec && durSec > 0) {
@@ -110,22 +127,24 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   // PLACA (estilo Hragment/Hormozi): pílula escura que huga CADA palavra (ativa E não-ativa).
   // Garante contraste sobre QUALQUER b-roll (teclado claro, logo no clipe, foto brilhante) —
   // mata o defeito "legenda ilegível em fundo claro" do QA. Só no modo karaokê/solta
-  // (limpa/pílula têm seu próprio fundo).
+  // (limpa/pílula têm seu próprio fundo) E só quando o texto é CLARO (accent vivo/branco).
   // FIX QA: a placa subia translúcida demais (0.66) → em b-roll CLARO as palavras não-ativas
-  // (brancas) sumiam. Agora a placa é quase opaca (0.82) com borda sutil do accent, e é
-  // aplicada IGUALMENTE a todas as palavras do grupo — não só a ativa. Combinado com o stroke
-  // preto forte (strokeStyle), NENHUMA palavra fica invisível, em fundo claro ou escuro.
-  const plateStyle: React.CSSProperties =
-    variant === 'solta'
-      ? {
-          background: 'rgba(8,10,16,0.82)',
-          borderRadius: 18,
-          padding: '6px 26px',
-          border: '2px solid rgba(0,0,0,0.55)',
-          boxShadow: '0 6px 22px rgba(0,0,0,0.6)',
-          boxDecorationBreak: 'clone' as React.CSSProperties['boxDecorationBreak'],
-        }
-      : {};
+  // (brancas) sumiam. Agora a placa é quase opaca (0.82) com borda sutil, e é aplicada
+  // IGUALMENTE a todas as palavras do grupo — não só a ativa. Combinado com o stroke preto
+  // forte (strokeStyle), NENHUMA palavra fica invisível, em fundo claro ou escuro.
+  // Quando o accent é ESCURO (CaptionBold #05060a em faixa clara), a placa escura é desligada
+  // (senão tamparia o texto) — o contraste vem da faixa sólida do próprio formato.
+  const plateOn = variant === 'solta' && isLightAccent(accent);
+  const plateStyle: React.CSSProperties = plateOn
+    ? {
+        background: 'rgba(8,10,16,0.82)',
+        borderRadius: 18,
+        padding: '6px 26px',
+        border: '2px solid rgba(0,0,0,0.55)',
+        boxShadow: '0 6px 22px rgba(0,0,0,0.6)',
+        boxDecorationBreak: 'clone' as React.CSSProperties['boxDecorationBreak'],
+      }
+    : {};
 
   const renderWord = (w: WordTiming, idxInGroup: number) => {
     const globalIdx = groupStart + idxInGroup;
