@@ -174,7 +174,10 @@ const BannerCard: React.FC<{ seg: SegBanner; pal: typeof DEF_PAL }> = ({ seg, pa
   return (
     <AbsoluteFill style={{ alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 360, opacity }}>
       <div style={{ width: '84%', transform: `translateX(${(1 - appear) * -40}px)` }}>
-        <div style={{ background: pal.tensao, color: '#fff', fontFamily: SANS, fontWeight: 900, fontSize: 38, padding: '16px 24px', borderRadius: 12, textAlign: 'center', boxShadow: `0 0 34px ${pal.tensao}66` }}>{seg.texto}</div>
+        {/* TENSAO: card ESCURO com TEXTO ambar + borda ambar (ambar SO sobre fundo escuro).
+            Antes era fundo ambar solido + texto branco (amarelo+branco = clash que o Diego
+            apontou). Agora o ambar vira destaque legivel sobre o noir, on-brand. */}
+        <div style={{ background: 'rgba(5,6,10,0.86)', color: pal.tensao, border: `2px solid ${pal.tensao}`, borderLeft: `8px solid ${pal.tensao}`, fontFamily: SANS, fontWeight: 900, fontSize: 38, padding: '16px 24px', borderRadius: 12, textAlign: 'center', boxShadow: `0 0 34px ${pal.tensao}55, 0 12px 36px rgba(0,0,0,0.5)`, textShadow: '0 2px 10px rgba(0,0,0,0.7)' }}>{seg.texto}</div>
         {seg.sub ? <div style={{ fontFamily: SANS, fontSize: 27, color: 'rgba(255,255,255,0.78)', marginTop: 14, textAlign: 'center', lineHeight: 1.35 }}>{seg.sub}</div> : null}
       </div>
     </AbsoluteFill>
@@ -264,7 +267,9 @@ export const Dossie: React.FC<DossieProps> = (props) => {
 
       {/* branding watermark */}
       <div style={{ position: 'absolute', left: 28, bottom: 26, display: 'flex', alignItems: 'center', gap: 10, zIndex: 50 }}>
-        <span style={{ background: pal.tensao, color: '#fff', fontFamily: SANS, fontWeight: 900, fontSize: 18, padding: '3px 8px', borderRadius: 5 }}>DIEGO</span>
+        {/* badge de marca usa o VERDE (heroi) com texto ESCURO — verde+escuro legivel e on-brand.
+            (Antes ambar+branco, o clash que o Diego apontou; ambar fica RESERVADO pra tensao.) */}
+        <span style={{ background: pal.heroi, color: '#05060a', fontFamily: SANS, fontWeight: 900, fontSize: 18, padding: '3px 8px', borderRadius: 5 }}>DIEGO</span>
         <span style={{ color: 'rgba(255,255,255,0.6)', fontFamily: SANS, fontSize: 18, fontWeight: 600 }}>{handle}</span>
       </div>
 
