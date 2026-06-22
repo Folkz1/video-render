@@ -205,15 +205,22 @@ export const Dossie: React.FC<DossieProps> = (props) => {
   const durSec = total / FPS;
 
   // spans de retrato: cada segmento com retrato_url vale do seu inicio ate o proximo retrato.
+  // FIX 2 — VARIACAO VISUAL: o backend injeta 3-4 visuais DISTINTOS (retratos de entidade +
+  // b-roll on-beat) ao longo dos segmentos. Cada visual roda numa <Sequence> propria a partir do
+  // SEU inicio, entao o Ken Burns RESETA por visual (cada troca recomeca o zoom+pan do zero) — o
+  // 1o tambem (antes ficava fora de Sequence e seu Ken Burns nunca reiniciava). Mais visuais
+  // distintos + Ken Burns por visual = doc menos "repetido" (o que o juiz de visao apontava).
   const retSegs = segmentos.filter((s) => s.retrato_url);
-  const retSpans = retSegs.map((s, i) => ({ url: s.retrato_url as string, from: Math.round(s.inicio_s * FPS), to: i + 1 < retSegs.length ? Math.round(retSegs[i + 1].inicio_s * FPS) : total }));
-  const firstRetrato = retSegs[0]?.retrato_url || '';
+  const retSpans = retSegs.map((s, i) => ({
+    url: s.retrato_url as string,
+    from: i === 0 ? 0 : Math.round(s.inicio_s * FPS),
+    to: i + 1 < retSegs.length ? Math.round(retSegs[i + 1].inicio_s * FPS) : total,
+  }));
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
-      {/* fundo: retrato do 1o personagem desde o frame 0; troca nos spans seguintes */}
-      <RetratoBg src={firstRetrato} />
-      {retSpans.slice(1).map((sp, i) => (
+      {/* fundo: cada retrato/b-roll na SUA janela (Ken Burns reseta por visual) */}
+      {retSpans.map((sp, i) => (
         <Sequence key={`ret${i}`} from={sp.from} durationInFrames={Math.max(1, sp.to - sp.from)}>
           <RetratoBg src={sp.url} />
         </Sequence>
