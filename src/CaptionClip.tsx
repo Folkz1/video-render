@@ -12,6 +12,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
+import { CtaCard } from './CtaCard';
 import { CreatorTop } from './components/CreatorTop';
 import {
   StatCard,
@@ -178,6 +179,11 @@ export type CaptionClipProps = {
   creator_avatar?: string; // fallback imagem do criador (topo)
   creator_live_audio?: boolean; // gravação real: topo toca o áudio; não tocar a narração única
   split_ratio?: number; // fração da altura do painel topo (0.42-0.62)
+  // CARD DE CTA VISUAL no FECHO — só aparece quando o backend passa `cta` (i.e.
+  // positioning.cta_oferta.enabled). Renderiza SÓ na janela do ÚLTIMO plano (fecho),
+  // quando a fala do CTA toca. Sem `cta` → nenhum card (retrocompat total). {text,handle}
+  // derivados do cta_oferta no backend; texto curto/legível ('📩 Me chama no inbox').
+  cta?: { text?: string; handle?: string } | null;
 };
 
 export const captionClipDefaultProps: CaptionClipProps = {
@@ -206,6 +212,9 @@ export const captionClipDefaultProps: CaptionClipProps = {
   handle: '@guyfolkz',
   duracao_s: 30,
   mute_video: true,
+  // demo do CARD DE CTA no fecho (Studio): no render real vem do backend só quando
+  // cta_oferta.enabled. Sem `cta` nas props (ex: Dentaly/Eduardo) → nenhum card.
+  cta: { text: '📩 Me chama no inbox', handle: '@guyfolkz' },
 };
 
 export const captionClipParaFrames = (p: { duracao_s?: number }) =>
@@ -455,7 +464,7 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
 export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
   const { audio_url, words, texto, paleta_hex, accent2, logo_url, handle, duracao_s, mute_video = true, music_url, sfx, tema_linhas, tema_y = 1080, titulo_topo, keyword_hero, circulo_em,
     show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
-    voice_windows, silence_windows, sfx_plan, riser_url, sting_url } = props;
+    voice_windows, silence_windows, sfx_plan, riser_url, sting_url, cta } = props;
   const total = captionClipParaFrames(props);
   // accent2 (âmbar de RISCO) — DEFENSIVO: ausente => cai no accent principal (sem âmbar).
   const accent2Resolved = accent2 || GUYFOLKZ_ACCENT2 || paleta_hex;
@@ -501,6 +510,14 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
   const heroOffset = show_creator_panel ? Math.max(0, splitY - 360) : 0; // 560/640 → dentro da metade de baixo
   const captionAnchor = show_creator_panel ? Math.round((splitY + 1920) / 2) + 40 : 1440;
   const liveAudio = Boolean(show_creator_panel && creator_live_audio);
+
+  // CARD DE CTA VISUAL no FECHO: janela do ÚLTIMO plano (onde a fala do CTA toca).
+  // Só renderiza se o backend passou `cta` (cta_oferta.enabled). anchorY ACIMA da
+  // legenda karaokê (captionAnchor) pra não colidir, e abaixo do título/hero.
+  const ctaFromF = planos.length ? Math.round(planos[planos.length - 1].inicio_s * FPS) : 0;
+  const ctaDurF = planos.length ? Math.max(1, total - ctaFromF) : 0;
+  // ~270px acima do bloco da karaokê (card centrado de 2 linhas cabe nesse vão).
+  const ctaAnchorY = Math.max(900, captionAnchor - 270);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
@@ -619,6 +636,15 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
             </Sequence>
           ))
         : null}
+
+      {/* CARD DE CTA VISUAL no FECHO — só quando o backend manda `cta` (cta_oferta.enabled).
+          Janela = último plano (fecho); entrada sutil (fade+slide-up), fixo até o fim.
+          anchorY ACIMA da legenda karaokê (não colide) e abaixo do hero/título. */}
+      {cta && planos.length ? (
+        <Sequence from={ctaFromF} durationInFrames={ctaDurF} layout="none">
+          <CtaCard ctaText={cta.text} handle={cta.handle || handle} accent={paleta_hex} anchorY={ctaAnchorY} fontSize={54} />
+        </Sequence>
+      ) : null}
 
       {/* branding — assinatura Terminal-Noir (prompt mono + cursor block piscando) */}
       <BrandLowerThird handle={handle} logo_url={logo_url} accent={paleta_hex} />

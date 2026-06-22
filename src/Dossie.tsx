@@ -11,6 +11,7 @@ import {
   useVideoConfig,
 } from 'remotion';
 import { WordCaptions, WordTiming } from './components/WordCaptions';
+import { CtaCard } from './CtaCard';
 import { GUYFOLKZ_ACCENT, GUYFOLKZ_ACCENT2 } from './kit/animationPresets';
 
 // Dossie — formato "DOCUMENTARIO ANIMADO" (faceless + voz real do criador).
@@ -51,6 +52,11 @@ export type DossieProps = {
   handle?: string;
   tagline?: string;
   music_url?: string;
+  // CARD DE CTA VISUAL no FECHO — só aparece quando o backend passa `cta` (i.e.
+  // positioning.cta_oferta.enabled). Sem `cta` → nenhum card (retrocompat total:
+  // Dentaly/Eduardo não levam). Renderiza SÓ na janela do último segmento (fecho),
+  // quando a fala do CTA toca. {text, handle}: derivados do cta_oferta no backend.
+  cta?: { text?: string; handle?: string } | null;
 };
 
 // IDENTIDADE Terminal-Noir: entidade/heroi usam o VERDE-terminal aprovado (#3DF07A);
@@ -68,6 +74,9 @@ export const dossieDefaultProps: DossieProps = {
   tagline: 'Automação B2B | IA na Prática',
   paleta: DEF_PAL,
   durTotalSec: 14,
+  // demo do CARD DE CTA no fecho (Studio): no render real vem do backend só quando
+  // cta_oferta.enabled. Sem `cta` nas props (ex: Dentaly/Eduardo) → nenhum card.
+  cta: { text: '📩 Me chama no inbox', handle: '@guyfolkz' },
   // legenda karaoke de DEMO (preview do Studio): no render real, words[] vem da narracao.
   words: [
     { word: 'Em', start: 0.4, end: 0.7 }, { word: '2017', start: 0.7, end: 1.4 },
@@ -201,7 +210,7 @@ const FechoCard: React.FC<{ seg: SegFecho; pal: typeof DEF_PAL; handle?: string;
 };
 
 export const Dossie: React.FC<DossieProps> = (props) => {
-  const { segmentos = [], narration_url, paleta, handle = '@GuyFolkz', tagline, music_url, words } = props;
+  const { segmentos = [], narration_url, paleta, handle = '@GuyFolkz', tagline, music_url, words, cta } = props;
   const pal = { ...DEF_PAL, ...(paleta || {}) };
   const total = dossieParaFrames(props);
   // duracao em segundos (fallback uniforme da legenda quando words[] vier vazio).
@@ -219,6 +228,16 @@ export const Dossie: React.FC<DossieProps> = (props) => {
     from: i === 0 ? 0 : Math.round(s.inicio_s * FPS),
     to: i + 1 < retSegs.length ? Math.round(retSegs[i + 1].inicio_s * FPS) : total,
   }));
+
+  // CARD DE CTA VISUAL no FECHO: janela do último segmento 'fecho' (senão o último
+  // segmento qualquer). Só renderiza se o backend passou `cta` (cta_oferta.enabled).
+  // O FechoCard é tela preta com handle centrado; o card de CTA entra ABAIXO dele
+  // (terço final), não colide com a legenda karaokê (anchorY 1640) nem o lower-third.
+  const fechoSeg =
+    [...segmentos].reverse().find((s) => s.tipo === 'fecho') ||
+    (segmentos.length ? segmentos[segmentos.length - 1] : undefined);
+  const ctaFrom = fechoSeg ? Math.round(fechoSeg.inicio_s * FPS) : 0;
+  const ctaDur = fechoSeg ? Math.max(1, total - ctaFrom) : 0;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
@@ -264,6 +283,17 @@ export const Dossie: React.FC<DossieProps> = (props) => {
         numberPop
         plate
       />
+
+      {/* CARD DE CTA VISUAL no FECHO — só quando o backend manda `cta` (cta_oferta.enabled).
+          Janela = último segmento (fecho); entrada sutil (fade+slide-up) e fixo até o fim.
+          anchorY 1540: terço final, ABAIXO do bloco centrado do FechoCard e ACIMA do
+          lower-third (bottom 26 ~ y1894); não colide com a legenda karaoke (1640) porque
+          no fecho o FechoCard cobre tudo com tela preta (a karaoke quase não aparece). */}
+      {cta && fechoSeg ? (
+        <Sequence from={ctaFrom} durationInFrames={ctaDur} layout="none">
+          <CtaCard ctaText={cta.text} handle={cta.handle || handle} accent={pal.heroi} anchorY={1540} fontSize={56} />
+        </Sequence>
+      ) : null}
 
       {/* branding watermark */}
       <div style={{ position: 'absolute', left: 28, bottom: 26, display: 'flex', alignItems: 'center', gap: 10, zIndex: 50 }}>
