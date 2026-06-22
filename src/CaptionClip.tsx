@@ -182,7 +182,8 @@ export type CaptionClipProps = {
   // CARD DE CTA VISUAL no FECHO — só aparece quando o backend passa `cta` (i.e.
   // positioning.cta_oferta.enabled). Renderiza SÓ na janela do ÚLTIMO plano (fecho),
   // quando a fala do CTA toca. Sem `cta` → nenhum card (retrocompat total). {text,handle}
-  // derivados do cta_oferta no backend; texto curto/legível ('📩 Me chama no inbox').
+  // derivados do cta_oferta no backend; texto curto/legível ('Me chama no inbox' +
+  // envelope verde DESENHADO em CSS — sem emoji, que viraria tofu no render headless).
   cta?: { text?: string; handle?: string } | null;
 };
 
@@ -214,7 +215,7 @@ export const captionClipDefaultProps: CaptionClipProps = {
   mute_video: true,
   // demo do CARD DE CTA no fecho (Studio): no render real vem do backend só quando
   // cta_oferta.enabled. Sem `cta` nas props (ex: Dentaly/Eduardo) → nenhum card.
-  cta: { text: '📩 Me chama no inbox', handle: '@guyfolkz' },
+  cta: { text: 'Me chama no inbox', handle: '@guyfolkz' },
 };
 
 export const captionClipParaFrames = (p: { duracao_s?: number }) =>

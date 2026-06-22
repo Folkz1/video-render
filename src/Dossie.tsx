@@ -76,7 +76,7 @@ export const dossieDefaultProps: DossieProps = {
   durTotalSec: 14,
   // demo do CARD DE CTA no fecho (Studio): no render real vem do backend só quando
   // cta_oferta.enabled. Sem `cta` nas props (ex: Dentaly/Eduardo) → nenhum card.
-  cta: { text: '📩 Me chama no inbox', handle: '@guyfolkz' },
+  cta: { text: 'Me chama no inbox', handle: '@guyfolkz' },
   // legenda karaoke de DEMO (preview do Studio): no render real, words[] vem da narracao.
   words: [
     { word: 'Em', start: 0.4, end: 0.7 }, { word: '2017', start: 0.7, end: 1.4 },

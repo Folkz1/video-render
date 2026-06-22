@@ -34,12 +34,52 @@ export type CtaCardProps = {
   fontSize?: number;
 };
 
-const DEF_TEXT = '📩 Me chama no inbox';
+const DEF_TEXT = 'Me chama no inbox';
 
 const handleSlug = (handle?: string): string => {
   const s = (handle || '').trim();
   if (!s) return '@guyfolkz';
   return s.startsWith('@') ? s : '@' + s.replace(/^@+/, '');
+};
+
+// remove emojis do texto vindo do backend: o render headless (cap-render) NÃO tem
+// fonte de emoji colorida (só noto-cjk/freefont/liberation) → '📩' viraria tofu (□).
+// O ícone de envelope é DESENHADO em CSS abaixo (sempre legível, on-brand).
+const stripEmoji = (s: string): string =>
+  s.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}️]/gu, '').trim();
+
+// ENVELOPE desenhado em CSS (verde accent) — substitui o emoji 📩 (sem dependência de
+// fonte de emoji no render). Retângulo + a "aba" triangular via clip-path.
+const EnvelopeIcon: React.FC<{ accent: string; size?: number }> = ({ accent, size = 44 }) => {
+  const w = size;
+  const h = Math.round(size * 0.72);
+  return (
+    <div style={{ position: 'relative', width: w, height: h, flex: '0 0 auto' }}>
+      {/* corpo do envelope */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          border: `3px solid ${accent}`,
+          borderRadius: 6,
+          background: 'rgba(0,0,0,0.25)',
+          boxShadow: `0 0 12px ${accent}55`,
+        }}
+      />
+      {/* aba (V) do envelope */}
+      <div
+        style={{
+          position: 'absolute',
+          left: 3,
+          right: 3,
+          top: 3,
+          height: h * 0.56,
+          borderBottom: `3px solid ${accent}`,
+          clipPath: 'polygon(0 0, 50% 100%, 100% 0)',
+        }}
+      />
+    </div>
+  );
 };
 
 export const CtaCard: React.FC<CtaCardProps> = ({
@@ -64,7 +104,7 @@ export const CtaCard: React.FC<CtaCardProps> = ({
     [0.5, 1.0],
   );
 
-  const text = (ctaText || '').trim() || DEF_TEXT;
+  const text = stripEmoji((ctaText || '').trim()) || DEF_TEXT;
   const slug = handleSlug(handle);
 
   return (
@@ -99,23 +139,26 @@ export const CtaCard: React.FC<CtaCardProps> = ({
           )}px ${accent}44, 0 12px 36px rgba(0,0,0,0.6)`,
         }}
       >
-        {/* linha principal — GRANDE, branca, stroke leve pra legibilidade total */}
-        <span
-          style={{
-            color: '#fff',
-            fontFamily: 'Montserrat, Poppins, Inter, Segoe UI, sans-serif',
-            fontWeight: 900,
-            fontSize,
-            lineHeight: 1.05,
-            textAlign: 'center',
-            letterSpacing: '-0.01em',
-            WebkitTextStroke: '2px #000',
-            paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
-            textShadow: '0 3px 12px rgba(0,0,0,0.7)',
-          }}
-        >
-          {text}
-        </span>
+        {/* linha principal — envelope DESENHADO (verde) + texto GRANDE branco com stroke */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, justifyContent: 'center' }}>
+          <EnvelopeIcon accent={accent} size={Math.round(fontSize * 0.86)} />
+          <span
+            style={{
+              color: '#fff',
+              fontFamily: 'Montserrat, Poppins, Inter, Segoe UI, sans-serif',
+              fontWeight: 900,
+              fontSize,
+              lineHeight: 1.05,
+              textAlign: 'center',
+              letterSpacing: '-0.01em',
+              WebkitTextStroke: '2px #000',
+              paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
+              textShadow: '0 3px 12px rgba(0,0,0,0.7)',
+            }}
+          >
+            {text}
+          </span>
+        </div>
         {/* handle — prompt mono verde (assinatura terminal, ecoa o lower-third) */}
         <span
           style={{
