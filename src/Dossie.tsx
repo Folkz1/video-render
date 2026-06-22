@@ -10,12 +10,16 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
+import { WordCaptions, WordTiming } from './components/WordCaptions';
+import { GUYFOLKZ_ACCENT, GUYFOLKZ_ACCENT2 } from './kit/animationPresets';
 
 // Dossie — formato "DOCUMENTARIO ANIMADO" (faceless + voz real do criador).
 // Narracao por cima de um RETRATO escurecido do personagem da vez + cards de
 // motion-graphics que constroem a narrativa: ano/quote, timeline, stat gigante,
-// banner de tensao, e fecho editorial. Codigo de cor: entidade(azul) / heroi(teal)
-// / tensao(coral). 9:16 (vertical) — escala p/ long-form so com mais segmentos.
+// banner de tensao, e fecho editorial. IDENTIDADE Terminal-Noir: accent VERDE-terminal
+// (#3DF07A) em entidade/heroi + AMBAR (#FFB000) so na tensao. Legenda karaoke word-level
+// CONTINUA no terco inferior (Reel/Short visto sem som).
+// 9:16 (vertical) — escala p/ long-form so com mais segmentos.
 // Comprovado no canal GuyFolkz (ref Short "O Google tinha o ChatGPT em 2017").
 
 const FPS = 30;
@@ -38,6 +42,10 @@ export type Segmento = SegAno | SegTimeline | SegStat | SegBanner | SegFecho;
 export type DossieProps = {
   segmentos: Segmento[];
   narration_url?: string; // voz real do criador (ou TTS) — data-uri/url
+  // LEGENDA karaoke word-level (timestamps absolutos da narracao, cobrem o video inteiro).
+  // Mesmo contrato do CaptionClip/WordCaptions: [{word,start,end}] em segundos. Render no
+  // terco inferior, CONTINUO, por cima de todos os cards (Reel/Short visto sem som).
+  words?: WordTiming[];
   durTotalSec?: number; // duracao total (override; senao usa o ultimo fim_s)
   paleta?: { entidade?: string; heroi?: string; tensao?: string };
   handle?: string;
@@ -45,7 +53,9 @@ export type DossieProps = {
   music_url?: string;
 };
 
-const DEF_PAL = { entidade: '#3B82F6', heroi: '#2FD4C4', tensao: '#FF5A5F' };
+// IDENTIDADE Terminal-Noir: entidade/heroi usam o VERDE-terminal aprovado (#3DF07A);
+// a tensao usa o AMBAR de risco (#FFB000). (Antes era azul/teal/coral — fora do brand.)
+const DEF_PAL = { entidade: GUYFOLKZ_ACCENT, heroi: GUYFOLKZ_ACCENT, tensao: GUYFOLKZ_ACCENT2 };
 
 export const dossieParaFrames = (props: DossieProps): number => {
   const last = (props.segmentos ?? []).reduce((m, s) => Math.max(m, s.fim_s ?? 0), 0);
@@ -58,6 +68,13 @@ export const dossieDefaultProps: DossieProps = {
   tagline: 'Automação B2B | IA na Prática',
   paleta: DEF_PAL,
   durTotalSec: 14,
+  // legenda karaoke de DEMO (preview do Studio): no render real, words[] vem da narracao.
+  words: [
+    { word: 'Em', start: 0.4, end: 0.7 }, { word: '2017', start: 0.7, end: 1.4 },
+    { word: 'oito', start: 1.4, end: 1.8 }, { word: 'cientistas', start: 1.8, end: 2.6 },
+    { word: 'publicaram', start: 2.6, end: 3.4 }, { word: 'o', start: 3.4, end: 3.5 },
+    { word: 'paper', start: 3.5, end: 4.2 },
+  ],
   segmentos: [
     { tipo: 'ano', inicio_s: 0.4, fim_s: 4.5, ano: '2017', quote: 'Attention Is All You Need', entidade: 'Google Brain', entidade_sub: '8 cientistas publicaram o paper' },
     { tipo: 'timeline', inicio_s: 4.5, fim_s: 8, itens: [{ ano: '2017', label: 'Paper' }, { ano: '2018', label: 'GPT-1' }, { ano: '2022', label: 'ChatGPT', destaque: true }] },
@@ -79,18 +96,25 @@ const useSegAnim = (durSec: number) => {
   return { opacity, appear };
 };
 
-// ── RETRATO de fundo (escurecido, Ken Burns lento, vinheta + textura) ──
+// ── RETRATO de fundo (clima noir mas ROSTO VISIVEL + Ken Burns lento zoom+pan) ──
+// Antes: brightness(0.34) + vinheta opaca (0.96 nas bordas) deixava o retrato quase preto
+// (rosto ilegivel — defeito do juiz de visao). Agora: brilho legivel (0.62), vinheta mais
+// suave (texto ainda respira no centro/topo/base) + Ken Burns com zoom E pan (movimento de
+// documentario, nao mais um still parado).
 const RetratoBg: React.FC<{ src: string }> = ({ src }) => {
   const frame = useCurrentFrame();
-  const scale = interpolate(frame, [0, 240], [1.06, 1.16], { extrapolateRight: 'extend' });
+  const scale = interpolate(frame, [0, 300], [1.08, 1.22], { extrapolateRight: 'extend' });
+  const panX = interpolate(frame, [0, 300], [-22, 22], { extrapolateRight: 'extend' });
+  const panY = interpolate(frame, [0, 300], [-14, 10], { extrapolateRight: 'extend' });
   return (
     <AbsoluteFill style={{ backgroundColor: '#05060a' }}>
       {src ? (
-        <Img src={resolveSrc(src)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})`, filter: 'brightness(0.34) saturate(0.85) contrast(1.05)' }} />
+        <Img src={resolveSrc(src)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale}) translate(${panX}px, ${panY}px)`, filter: 'brightness(0.62) saturate(0.92) contrast(1.06)' }} />
       ) : null}
-      {/* vinheta + escurecimento pesado pro texto respirar */}
-      <AbsoluteFill style={{ background: 'radial-gradient(120% 80% at 50% 30%, rgba(5,6,10,0.15) 0%, rgba(5,6,10,0.72) 60%, rgba(5,6,10,0.96) 100%)' }} />
-      <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(5,6,10,0.5) 0%, rgba(5,6,10,0) 30%, rgba(5,6,10,0) 64%, rgba(5,6,10,0.85) 100%)' }} />
+      {/* vinheta SUAVE: escurece bordas pro texto respirar, mas mantem o rosto visivel no centro */}
+      <AbsoluteFill style={{ background: 'radial-gradient(125% 85% at 50% 34%, rgba(5,6,10,0) 0%, rgba(5,6,10,0.32) 58%, rgba(5,6,10,0.78) 100%)' }} />
+      {/* gradiente vertical: topo (lower-third) e base (legenda karaoke) ganham contraste */}
+      <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(5,6,10,0.45) 0%, rgba(5,6,10,0) 26%, rgba(5,6,10,0) 60%, rgba(5,6,10,0.88) 100%)' }} />
     </AbsoluteFill>
   );
 };
@@ -108,7 +132,8 @@ const AnoCard: React.FC<{ seg: SegAno; pal: typeof DEF_PAL }> = ({ seg, pal }) =
       <div style={{ textAlign: 'center', transform: `translateY(${(1 - appear) * 24}px)`, padding: '0 60px' }}>
         <div style={{ fontFamily: SANS, fontWeight: 900, fontSize: 150, lineHeight: 1, color: pal.entidade, textShadow: `0 0 40px ${pal.entidade}66`, letterSpacing: '-0.02em' }}>{seg.ano}</div>
         {seg.quote ? <div style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: 44, color: '#fff', marginTop: 18, lineHeight: 1.25 }}>{`"${seg.quote}"`}</div> : null}
-        {seg.entidade ? <div style={{ marginTop: 26 }}><Chip accent={pal.entidade}><span style={{ display: 'inline-flex', gap: 5 }}><i style={dot('#4285F4')} /><i style={dot('#EA4335')} /><i style={dot('#FBBC05')} /><i style={dot('#34A853')} /></span>{seg.entidade}</Chip></div> : null}
+        {/* dot on-brand (accent verde) — antes eram as 4 cores do Google (leak de marca alheia). */}
+        {seg.entidade ? <div style={{ marginTop: 26 }}><Chip accent={pal.entidade}><i style={{ ...dot(pal.entidade), boxShadow: `0 0 8px ${pal.entidade}` }} />{seg.entidade}</Chip></div> : null}
         {seg.entidade_sub ? <div style={{ fontFamily: SANS, fontSize: 27, color: 'rgba(255,255,255,0.66)', marginTop: 18 }}>{seg.entidade_sub}</div> : null}
       </div>
     </AbsoluteFill>
@@ -173,9 +198,11 @@ const FechoCard: React.FC<{ seg: SegFecho; pal: typeof DEF_PAL; handle?: string;
 };
 
 export const Dossie: React.FC<DossieProps> = (props) => {
-  const { segmentos = [], narration_url, paleta, handle = '@GuyFolkz', tagline, music_url } = props;
+  const { segmentos = [], narration_url, paleta, handle = '@GuyFolkz', tagline, music_url, words } = props;
   const pal = { ...DEF_PAL, ...(paleta || {}) };
   const total = dossieParaFrames(props);
+  // duracao em segundos (fallback uniforme da legenda quando words[] vier vazio).
+  const durSec = total / FPS;
 
   // spans de retrato: cada segmento com retrato_url vale do seu inicio ate o proximo retrato.
   const retSegs = segmentos.filter((s) => s.retrato_url);
@@ -206,6 +233,27 @@ export const Dossie: React.FC<DossieProps> = (props) => {
           </Sequence>
         );
       })}
+
+      {/* LEGENDA KARAOKE word-level CONTINUA — terco inferior, por cima de TODOS os cards.
+          Essencial pro Reel/Short visto SEM som (o juiz de visao crava a edicao sem legenda).
+          Mesmo motor/visual do CaptionClip: accent verde-terminal (dispara o tratamento
+          premium do WordCaptions), placa de contraste ON (plate) p/ legibilidade sobre o
+          retrato/cards, 1 palavra por vez (karaoke). anchorY=1640 (canvas 1920) fica ABAIXO
+          dos cards centrados e do banner (paddingBottom 360) e ACIMA do lower-third 'guyfolkz'
+          (bottom 26 ~ y1894). Sem words[] cai no fallback uniforme — a legenda NUNCA some. */}
+      <WordCaptions
+        words={words}
+        accent={pal.heroi}
+        fromSec={0}
+        durSec={durSec}
+        anchorY={1640}
+        maxWordsPerGroup={1}
+        variant="solta"
+        fontSize={72}
+        maxWidth={920}
+        numberPop
+        plate
+      />
 
       {/* branding watermark */}
       <div style={{ position: 'absolute', left: 28, bottom: 26, display: 'flex', alignItems: 'center', gap: 10, zIndex: 50 }}>
