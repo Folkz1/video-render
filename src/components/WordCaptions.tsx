@@ -89,11 +89,15 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
       ? {
           // Terminal-Noir usa stroke um pouco mais fino (6px) pra casar com o peso 700
           // (menos "berrante"); demais accents mantêm o stroke 8px atual.
-          WebkitTextStroke: term ? '6px #000' : '8px #000',
+          // LEGIBILIDADE EM FUNDO CLARO (fix QA): stroke preto FORTE em TODA palavra (ativa OU
+          // não-ativa) + halo de sombra denso, garantindo contorno legível mesmo se a placa
+          // ficar translúcida sobre b-roll brilhante. NENHUMA palavra fica invisível.
+          WebkitTextStroke: term ? '7px #000' : '9px #000',
           paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
-          // Sombra tight só p/ definir a borda da letra; o CONTRASTE agora vem da PLACA
-          // (plateStyle abaixo), não mais de um halo gigante que muddava em b-roll claro/ocupado.
-          textShadow: '0 0 8px rgba(0,0,0,0.95), 0 4px 12px rgba(0,0,0,0.9)',
+          // Halo escuro multicamada: contorno tight + sombra de leitura que destaca o texto
+          // de qualquer fundo (claro ou escuro), reforçando a placa.
+          textShadow:
+            '0 0 4px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.98), 0 4px 14px rgba(0,0,0,0.95)',
         }
       : variant === 'limpa'
         ? {
@@ -103,15 +107,22 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
           }
         : {};
 
-  // PLACA (estilo Hragment/Hormozi): pílula escura translúcida que huga cada palavra. Garante
-  // contraste sobre QUALQUER b-roll (teclado claro, logo no clipe, foto brilhante) — mata o
-  // problema "legenda" do QA. Só no modo karaokê/solta (limpa/pílula têm seu próprio fundo).
+  // PLACA (estilo Hragment/Hormozi): pílula escura que huga CADA palavra (ativa E não-ativa).
+  // Garante contraste sobre QUALQUER b-roll (teclado claro, logo no clipe, foto brilhante) —
+  // mata o defeito "legenda ilegível em fundo claro" do QA. Só no modo karaokê/solta
+  // (limpa/pílula têm seu próprio fundo).
+  // FIX QA: a placa subia translúcida demais (0.66) → em b-roll CLARO as palavras não-ativas
+  // (brancas) sumiam. Agora a placa é quase opaca (0.82) com borda sutil do accent, e é
+  // aplicada IGUALMENTE a todas as palavras do grupo — não só a ativa. Combinado com o stroke
+  // preto forte (strokeStyle), NENHUMA palavra fica invisível, em fundo claro ou escuro.
   const plateStyle: React.CSSProperties =
     variant === 'solta'
       ? {
-          background: 'rgba(8,10,16,0.66)',
+          background: 'rgba(8,10,16,0.82)',
           borderRadius: 18,
           padding: '6px 26px',
+          border: '2px solid rgba(0,0,0,0.55)',
+          boxShadow: '0 6px 22px rgba(0,0,0,0.6)',
           boxDecorationBreak: 'clone' as React.CSSProperties['boxDecorationBreak'],
         }
       : {};
@@ -130,9 +141,12 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
     // MODO LIMPA (essay): tudo branco, sem destaque de cor (legenda elegante, não karaokê).
     const color = variant === 'limpa' ? '#FFFFFF' : (reallyActive || isKaraoke ? accent : '#FFFFFF');
     // glow do accent SÓ na palavra ativa em terminal-noir (sutil, reforça o "terminal").
+    // Mantém o halo escuro FORTE (igual ao strokeStyle) e SOMA o glow verde — não troca o
+    // contorno de leitura por um glow fraco (senão a palavra ativa perderia contraste em
+    // fundo claro). Assim ativa = legível + acende verde.
     const accentGlow: React.CSSProperties =
       term && variant === 'solta' && (reallyActive || isKaraoke)
-        ? { textShadow: `0 0 8px rgba(0,0,0,0.95), 0 4px 12px rgba(0,0,0,0.9), 0 0 18px ${accent}66` }
+        ? { textShadow: `0 0 4px rgba(0,0,0,1), 0 0 10px rgba(0,0,0,0.98), 0 4px 14px rgba(0,0,0,0.95), 0 0 18px ${accent}66` }
         : {};
 
     let display = fmt(w.word);
