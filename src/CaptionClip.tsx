@@ -47,6 +47,19 @@ const FPS = 30;
 const XF = 8; // frames de crossfade entre planos
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
+// ── SAFE-AREAS VERTICAIS 9:16 (1920px) — três faixas que NUNCA se cruzam ──
+// Título/HOOK e palavra-herói vivem no TERÇO SUPERIOR; b-roll/terminal/screen no MEIO;
+// legenda karaokê no TERÇO INFERIOR. Constantes compartilhadas entre o hero (KeywordHero/
+// NumeralBig), o TerminalBeat (topSafe/bottomSafe) e a âncora da karaokê, pra todos
+// concordarem nas mesmas fronteiras. Mexer aqui = mover as 3 faixas de forma consistente.
+const HERO_TOP_BAND = 470; // y do hero quando há tela técnica embaixo (terço superior, sob o título)
+const HERO_CENTER = 640; // y do hero clássico (planos-mídia b-roll: herói grande no centro)
+const NUMERAL_CENTER = 560;
+// quando o plano é terminal/screen, o corpo da tela técnica precisa começar ABAIXO do
+// hero do terço superior e terminar ACIMA da karaokê do terço inferior:
+const TERMINAL_TOP_SAFE = 660; // px reservados no topo (título + palavra-herói não colidem)
+const TERMINAL_BOTTOM_SAFE = 620; // px reservados embaixo (faixa da karaokê)
+
 const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
 
@@ -225,7 +238,15 @@ const PlanoMedia: React.FC<{ plano: Plano; dur: number; idx: number; darken?: bo
     const lines = (plano.terminal_lines || []) as TerminalLine[];
     return (
       <div style={{ position: 'absolute', inset: 0, filter: darken ? 'brightness(0.5)' : undefined }}>
-        <TerminalBeat lines={lines} durationInFrames={dur} prompt={plano.url_label || 'guyfolkz:~$'} />
+        {/* safe-areas explícitas: o corpo da tela técnica fica ENTRE o terço superior
+            (título + palavra-herói) e o terço inferior (legenda karaokê) — nunca cruza. */}
+        <TerminalBeat
+          lines={lines}
+          durationInFrames={dur}
+          prompt={plano.url_label || 'guyfolkz:~$'}
+          topSafe={TERMINAL_TOP_SAFE}
+          bottomSafe={TERMINAL_BOTTOM_SAFE}
+        />
       </div>
     );
   }
@@ -387,19 +408,19 @@ const EditorialCardForPlano: React.FC<{ plano: Plano; dur: number; accent: strin
   }
 };
 
-const KeywordHero: React.FC<{ text: string; accent: string; offsetY?: number }> = ({ text, accent, offsetY = 0 }) => {
+const KeywordHero: React.FC<{ text: string; accent: string; offsetY?: number; topPx?: number }> = ({ text, accent, offsetY = 0, topPx = HERO_CENTER }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 13, mass: 0.7 } });
   const scale = interpolate(s, [0, 1], [0.55, 1.0]);
   return (
-    <div style={{ position: 'absolute', top: 640 + offsetY, left: 0, width: 1080, textAlign: 'center', zIndex: 35, transform: `scale(${scale})`, transformOrigin: 'center' }}>
+    <div style={{ position: 'absolute', top: topPx + offsetY, left: 0, width: 1080, textAlign: 'center', zIndex: 35, transform: `scale(${scale})`, transformOrigin: 'center' }}>
       <span style={{ color: accent, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 150, WebkitTextStroke: '10px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textTransform: 'uppercase', letterSpacing: '-0.02em' }}>{text}</span>
     </div>
   );
 };
 
-const NumeralBig: React.FC<{ numero: string; accent: string; offsetY?: number }> = ({ numero, accent, offsetY = 0 }) => {
+const NumeralBig: React.FC<{ numero: string; accent: string; offsetY?: number; topPx?: number }> = ({ numero, accent, offsetY = 0, topPx = NUMERAL_CENTER }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const s = spring({ frame, fps, config: { damping: 12, mass: 0.6 } });
@@ -414,7 +435,7 @@ const NumeralBig: React.FC<{ numero: string; accent: string; offsetY?: number }>
   }
   const scale = interpolate(s, [0, 1], [0.5, 1.0]);
   return (
-    <div style={{ position: 'absolute', top: 560 + offsetY, left: 0, width: 1080, textAlign: 'center', zIndex: 36, transform: `scale(${scale})`, transformOrigin: 'center' }}>
+    <div style={{ position: 'absolute', top: topPx + offsetY, left: 0, width: 1080, textAlign: 'center', zIndex: 36, transform: `scale(${scale})`, transformOrigin: 'center' }}>
       {/* Terminal-Noir: numeral gigante em MONOSPACE real (assinatura "dado/terminal"). */}
       <span style={{ color: accent, fontFamily: MONO_FONT, fontWeight: 700, fontSize: 180, WebkitTextStroke: '12px #000', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], letterSpacing: '-0.03em' }}>{display}</span>
     </div>
@@ -509,11 +530,19 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
         const fromF = Math.round(p.inicio_s * FPS);
         const durF = Math.max(1, Math.round((p.fim_s - p.inicio_s) * FPS));
         const noHook = Boolean(tema_linhas && tema_linhas.length) && p.inicio_s < temaOut - 0.3;
+        // ── ANTI-COLISÃO DE SAFE-AREA: quando o plano é tela TÉCNICA (terminal/screen), o
+        // corpo da tela vive no TERÇO DO MEIO. O herói gigante (palavra/numeral) NÃO pode
+        // cair no centro (sobreporia o texto do terminal/screen — bug do frame_terminal):
+        // ele sobe pro TERÇO SUPERIOR (logo abaixo do título). Em planos-mídia (b-roll), o
+        // herói continua no centro como antes (sem terminal embaixo pra colidir).
+        const techScreen = isTerminalPlano(p) || isScreenPlano(p);
+        const heroTopNum = techScreen ? HERO_TOP_BAND : NUMERAL_CENTER;
+        const heroTopKw = techScreen ? HERO_TOP_BAND : HERO_CENTER;
         if (p.numero && !noHook) {
-          return <Sequence key={`n${i}`} from={fromF} durationInFrames={durF} layout="none"><NumeralBig numero={p.numero} accent={planoAccent(p)} offsetY={heroOffset} /></Sequence>;
+          return <Sequence key={`n${i}`} from={fromF} durationInFrames={durF} layout="none"><NumeralBig numero={p.numero} accent={planoAccent(p)} offsetY={heroOffset} topPx={heroTopNum} /></Sequence>;
         }
         if (p.keyword && !noHook) {
-          return <Sequence key={`k${i}`} from={fromF} durationInFrames={durF} layout="none"><KeywordHero text={p.keyword} accent={planoAccent(p)} offsetY={heroOffset} /></Sequence>;
+          return <Sequence key={`k${i}`} from={fromF} durationInFrames={durF} layout="none"><KeywordHero text={p.keyword} accent={planoAccent(p)} offsetY={heroOffset} topPx={heroTopKw} /></Sequence>;
         }
         return null;
       })}
