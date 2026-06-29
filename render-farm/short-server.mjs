@@ -45,7 +45,7 @@ const PUBLIC_DIR = process.env.SHORT_PUBLIC_DIR
   ? path.resolve(ROOT, process.env.SHORT_PUBLIC_DIR)
   : path.join(ROOT, 'public-dentaly');
 const MAX_BODY = 12 * 1024 * 1024; // 12MB de props (data-uri pequenos cabem)
-const MAX_UPLOAD = 220 * 1024 * 1024; // 220MB p/ gravações (webcam); folga sobre o limite de 200MB do backend
+const MAX_UPLOAD = 650 * 1024 * 1024; // cobre gravações longas/exportadas (~306MB no fluxo real)
 // Teto subido de 4 -> 8 (Contabo tem 8 cores). Math.max(1, cores-1) deixa 1 core livre
 // pro SO/encode-paralelo; clamp em 8 evita estourar o limite do Remotion (--concurrency
 // não pode passar o nº de cores) em servidores menores.
