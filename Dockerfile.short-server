@@ -24,7 +24,7 @@ RUN npm install --production=false
 COPY render-farm/ ./render-farm/
 COPY src/ ./src/
 COPY public-dentaly/ ./public-dentaly/
-COPY tsconfig.json* remotion.config.* ./
+COPY tsconfig.json* ./
 
 # Pre-baixa o chrome-headless-shell na build (evita baixar no 1o render)
 RUN npx remotion browser ensure || echo "browser ensure falhou (vai baixar no 1o job)"
