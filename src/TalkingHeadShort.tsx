@@ -136,11 +136,11 @@ const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent 
 // estático. Como o vídeo é 9:16 em 9:16, scale=1 mostra o corpo todo (cabeça inteira) e os
 // closes dão zoom no rosto (transformOrigin no terço superior = headroom preservado). ──
 const FRAMING: { scale: number; ox: number; oy: number }[] = [
-  { scale: 1.0, ox: 50, oy: 30 }, // wide — corpo inteiro (estabelece)
-  { scale: 1.34, ox: 50, oy: 22 }, // close no rosto
-  { scale: 1.14, ox: 45, oy: 26 }, // médio, leve lado
-  { scale: 1.44, ox: 54, oy: 20 }, // close apertado (outro lado)
-  { scale: 1.22, ox: 50, oy: 25 }, // médio-close
+  { scale: 1.0, ox: 50, oy: 34 }, // wide — preserva headroom e microfone
+  { scale: 1.1, ox: 50, oy: 32 }, // close leve no rosto
+  { scale: 1.04, ox: 47, oy: 34 }, // médio, leve lado
+  { scale: 1.14, ox: 53, oy: 31 }, // close moderado (outro lado)
+  { scale: 1.07, ox: 50, oy: 33 }, // médio-close
 ];
 const BEAT_SEC = 3.0; // troca de enquadramento (corte seco) a cada 3s
 
@@ -150,8 +150,8 @@ const CreatorDynamic: React.FC<{ src: string; live: boolean; baseFocusY: number;
   const idx = Math.floor(frame / beatLen);
   const f = FRAMING[idx % FRAMING.length];
   const local = frame - idx * beatLen;
-  // punch-in interno do beat: zoom lento +4% → "respira" e sinaliza vida
-  const punch = interpolate(local, [0, beatLen], [1, 1.04], { extrapolateRight: 'clamp' });
+  // punch-in interno do beat: zoom lento e sutil para não cortar testa/queixo em gravações já fechadas.
+  const punch = interpolate(local, [0, beatLen], [1, 1.018], { extrapolateRight: 'clamp' });
   const scale = f.scale * punch;
   return (
     <OffthreadVideo
@@ -219,6 +219,7 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
 
   const [bg, accent, textColor] = [paleta?.[0] ?? DEFAULT_PALETA[0], paleta?.[1] ?? DEFAULT_PALETA[1], paleta?.[2] ?? DEFAULT_PALETA[2]];
   const total = talkingHeadShortParaFrames(props);
+  const showEnfases = words.length === 0;
 
   return (
     <AbsoluteFill style={{ backgroundColor: bg }}>
@@ -251,7 +252,7 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
       ) : null}
 
       {/* ÊNFASES pontuais */}
-      {(enfases ?? []).map((enf, i) => {
+      {showEnfases ? (enfases ?? []).map((enf, i) => {
         const from = Math.max(0, Math.round((enf.startSec ?? 0) * FPS));
         const durFrames = Math.max(1, Math.round((enf.durSec ?? 1.6) * FPS));
         return (
@@ -259,7 +260,7 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
             <EnfasePop texto={enf.texto} accent={accent} />
           </Sequence>
         );
-      })}
+      }) : null}
 
       {/* LEGENDA karaokê word-by-word (lower-third, amarelo, estilo Reel) */}
       {(words.length > 0 || texto) ? (
