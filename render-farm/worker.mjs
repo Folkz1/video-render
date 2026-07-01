@@ -180,6 +180,7 @@ const getBundleCompositions = async (bundleId) => {
 
   const compositions = await getCompositions(getBundleDir(bundleId), {
     logLevel: 'error',
+    timeoutInMilliseconds: 120000,
   });
   state.compositionCache.set(bundleId, compositions);
   return compositions;
@@ -533,6 +534,7 @@ const runJob = async (job) => {
       frameRange: job.frameRange,
       ...(job.inputProps ? { inputProps: job.inputProps } : {}),
       logLevel: 'error',
+      timeoutInMilliseconds: 120000,
       onProgress: (progress) => {
         job.progress = summarizeProgress(progress);
         job.updatedAt = nowIso();

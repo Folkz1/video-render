@@ -437,6 +437,7 @@ const main = async () => {
 
   compositions = await getCompositions(bundleDir, {
     logLevel: 'error',
+    timeoutInMilliseconds: 120000,
   });
   const composition = compositions.find((item) => item.id === options.composition);
   if (!composition) {

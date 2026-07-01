@@ -325,6 +325,7 @@ async function processQueue() {
           serveUrl: url,
           id: job.compositionId,
           inputProps: overlayProps,
+          timeoutInMilliseconds: 120000,
         });
         job.durationInFrames = composition.durationInFrames;
         log(`compose ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency} (overlay prores4444)`);
@@ -337,6 +338,7 @@ async function processQueue() {
           outputLocation: overlayPath,
           concurrency: job.concurrency,
           scale: job.scale,
+          timeoutInMilliseconds: 120000,
           // NÃO mexer em imageFormat/x264 aqui: overlay é ProRes 4444 com ALPHA
           // (jpeg mataria o canal alpha e não há encode x264 neste passo). Só o cache
           // off-thread se aplica (ajuda decode de qualquer vídeo embarcado no overlay).
@@ -380,6 +382,7 @@ async function processQueue() {
         serveUrl: url,
         id: job.compositionId,
         inputProps: job.props,
+        timeoutInMilliseconds: 120000,
       });
       job.durationInFrames = composition.durationInFrames;
       log(`render ${id} comp=${job.compositionId} frames=${composition.durationInFrames} conc=${job.concurrency}`);
@@ -435,6 +438,7 @@ async function processQueue() {
         outputLocation: job.file,
         concurrency: job.concurrency,
         scale: job.scale,
+        timeoutInMilliseconds: 120000,
         // PASSO 1 velocidade (encode H264 final): jpeg nos frames (menos I/O),
         // x264 superfast + crf:23 (encode rápido, arquivo menor; default CRF18 era enorme/lento),
         // cache off-thread maior (menos re-decode de b-roll). NÃO aplicado no overlay ProRes.

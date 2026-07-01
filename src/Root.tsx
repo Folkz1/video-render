@@ -33,6 +33,7 @@ import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } fro
 import { VerticalLong, verticalLongDefaultProps, verticalLongParaFrames } from './VerticalLong';
 import { Dossie, dossieDefaultProps, dossieParaFrames } from './Dossie';
 import { TalkingHeadShort, talkingHeadShortDefaultProps, talkingHeadShortParaFrames } from './TalkingHeadShort';
+import { WeatherMap, weatherMapDefaultProps, weatherMapParaFrames } from './WeatherMap';
 
 const FPS = 30;
 
@@ -228,6 +229,23 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={talkingHeadShortDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, talkingHeadShortParaFrames(props)),
+        })}
+      />
+
+      {/* WeatherMap — previsão do tempo com MAPA do RS: contorno do estado (SVG estático,
+          gerado offline de GeoJSON do IBGE) + cidades pinadas por lat/lon (ícone de
+          clima WMO + temperatura), destaque animado por narração (city_highlights) ou
+          ciclo automático. Formato do canal "Pulso do Tempo RS". */}
+      <Composition
+        id="WeatherMap"
+        component={WeatherMap}
+        fps={30}
+        width={1080}
+        height={1920}
+        durationInFrames={660}
+        defaultProps={weatherMapDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: weatherMapParaFrames(props),
         })}
       />
 
