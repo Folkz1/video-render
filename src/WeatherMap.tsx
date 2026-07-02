@@ -202,8 +202,12 @@ export const weatherMapDefaultProps: WeatherMapProps = {
 const HEADER_H = 216;
 const MAP_TOP = 216;
 const MAP_W = FRAME_W;              // sangra nas laterais (imersivo)
-const MAP_H = Math.round(MAP_W / 1.0282); // = 1050 (mantém a proporção do basemap)
-const SPOT_TOP = MAP_TOP + MAP_H + 22;    // ~1288
+// mapa cede 130px pra FAIXA DE LEGENDA dedicada (karaokê sobre o satélite colidia com
+// os labels das cidades e reprovava em edicao — a câmera regional compensa o crop)
+const MAP_H = 920;
+const CAPTION_TOP = MAP_TOP + MAP_H;      // 1136 — banda própria da legenda (fundo sólido)
+const CAPTION_H = 130;
+const SPOT_TOP = CAPTION_TOP + CAPTION_H + 22;  // ~1288 (resto do layout inalterado)
 const TICKER_TOP = SPOT_TOP + 208;        // ~1496
 
 // pulso senoidal p/ cidade em foco
@@ -565,7 +569,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
           contidos pela safe-area do WordCaptions; placa p/ ler sobre o satélite ── */}
       {words && words.length ? (
         <AbsoluteFill style={{ zIndex: 75, pointerEvents: 'none' }}>
-          <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={MAP_TOP + MAP_H - 84} accent={accent} fontSize={44} maxWordsPerGroup={4} variant="solta" numberPop plate />
+          <div style={{ position: 'absolute', left: 0, right: 0, top: CAPTION_TOP, height: CAPTION_H, background: '#081428', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
+          <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={CAPTION_TOP + CAPTION_H / 2} accent={accent} fontSize={42} maxWordsPerGroup={4} variant="solta" numberPop />
         </AbsoluteFill>
       ) : null}
 
