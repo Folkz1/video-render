@@ -492,10 +492,17 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
           {cidades.map((c, i) => {
             const active = i === focus.idx;
             const pt = screenPts[i];
-            return active || modes[i] === 'card' ? (
-              <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />
-            ) : (
-              <CityDotMini key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} showLabel={modes[i] === 'label'} />
+            if (active || modes[i] === 'card') {
+              return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />;
+            }
+            // label some enquanto o card da cidade ATIVA (overlay temporário) está por
+            // cima dele — evita texto atrás do card (ex.: "Gramado" sob o card do NH)
+            const ap = screenPts[focus.idx];
+            const nearActive = !!ap
+              && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W + LABEL_HALF_W
+              && pt.y > ap.y - CARD_H - LABEL_H && pt.y < ap.y + LABEL_H + 14;
+            return (
+              <CityDotMini key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} showLabel={modes[i] === 'label' && !nearActive} />
             );
           })}
         </div>
