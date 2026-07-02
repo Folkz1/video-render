@@ -32,6 +32,9 @@ import { DISPLAY_FONT, SPRINGS, popIn } from './kit/animationPresets';
 
 const FPS = 30;
 const FRAME_W = 1080;
+// duração da transição do DAY-SWITCH (boletim de fim de semana): banner fullwidth +
+// crossfade dos cards quando cidades_dia2 assume o vídeo.
+const DAY_TRANSITION_S = 0.8;
 
 const resolveSrc = (src?: string): string =>
   !src ? '' : src.startsWith('http') || src.startsWith('data:') ? src : staticFile(src);
@@ -170,6 +173,15 @@ export type WeatherMapProps = {
   basemap_url?: string;             // default: staticFile do satélite Esri do RS
   city_highlights?: CityHighlight[];
   broll?: BrollItem[];
+  veredito?: string;                // payoff do fecho (VereditoCard)
+  updated_label?: string;           // badge "Atualizado {label}" no header
+  // ── DAY-SWITCH (boletim de fim de semana): 2º conjunto de cidades que assume o
+  // vídeo na metade — pattern-interrupt (banner fullwidth + crossfade dos cards).
+  // Ausente/vazio -> comportamento 100% idêntico ao single-day de sempre. ──
+  cidades_dia2?: CidadeClima[];
+  dia2_switch_s?: number;           // segundo da troca; default: duracao_s / 2
+  dia1_label?: string;              // default: "SÁBADO"
+  dia2_label?: string;              // default: "DOMINGO"
 };
 
 export const weatherMapParaFrames = (p: { duracao_s?: number }) =>
@@ -438,9 +450,13 @@ const BrollCutaway: React.FC<{ item: BrollItem; c?: CidadeClima; accent: string;
   );
 };
 
-// foco: city_highlights manda; senão ciclo uniforme
+// foco: city_highlights manda; senão ciclo uniforme. `windowStartFrame` (default 0)
+// localiza o ciclo uniforme numa JANELA do timeline global — usado pelo dia 2 do
+// DAY-SWITCH pra girar as cidades de forma uniforme só no trecho pós-switch, em vez
+// de herdar um ciclo calculado pro vídeo inteiro (windowStartFrame=0 reproduz
+// exatamente a fórmula original; comportamento single-day inalterado).
 type Focus = { idx: number; enteredFrame: number };
-const resolveFocus = (cidades: CidadeClima[], hl: CityHighlight[] | undefined, t: number, fps: number, total: number): Focus => {
+const resolveFocus = (cidades: CidadeClima[], hl: CityHighlight[] | undefined, t: number, fps: number, total: number, windowStartFrame = 0): Focus => {
   const n = cidades.length || 1;
   if (hl && hl.length) {
     for (const h of hl) if (t >= h.inicio_s && t < h.fim_s) {
@@ -450,8 +466,11 @@ const resolveFocus = (cidades: CidadeClima[], hl: CityHighlight[] | undefined, t
     if (past.length) { const l = past[past.length - 1]; const i = cidades.findIndex((c) => c.nome === l.cidade); if (i >= 0) return { idx: i, enteredFrame: Math.round(l.inicio_s * fps) }; }
     const f = cidades.findIndex((c) => c.nome === hl[0].cidade); return { idx: f >= 0 ? f : 0, enteredFrame: 0 };
   }
-  const wf = Math.max(1, Math.floor(total / n)); const fr = Math.round(t * fps);
-  const i = Math.min(n - 1, Math.floor(fr / wf)); return { idx: i, enteredFrame: i * wf };
+  const localTotal = Math.max(1, total - windowStartFrame);
+  const wf = Math.max(1, Math.floor(localTotal / n));
+  const fr = Math.max(0, Math.round(t * fps) - windowStartFrame);
+  const i = Math.min(n - 1, Math.floor(fr / wf));
+  return { idx: i, enteredFrame: windowStartFrame + i * wf };
 };
 
 // ── CARD DE VEREDITO (payoff do fecho: a resposta da pergunta do título) ──
@@ -468,30 +487,85 @@ const VereditoCard: React.FC<{ texto: string; accent: string }> = ({ texto, acce
   );
 };
 
+// ── CHIP compacto do dia ativo (ex.: "SÁBADO" -> "SÁB") ──
+const dayChipLabel = (label: string): string => label.trim().slice(0, 3).toUpperCase();
+
+// ── BANNER DE TROCA DE DIA (pattern-interrupt do boletim de fim de semana): varre a
+// tela fullwidth anunciando o dia entrante enquanto os cards fazem crossfade por baixo. ──
+const DaySwitchBanner: React.FC<{ label: string; accent: string; progress: number }> = ({ label, accent, progress }) => {
+  const sweep = interpolate(progress, [0, 0.32, 0.68, 1], [-100, 0, 0, 100], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) });
+  const opacity = interpolate(progress, [0, 0.06, 0.94, 1], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  return (
+    <AbsoluteFill style={{ zIndex: 95, pointerEvents: 'none', alignItems: 'center', justifyContent: 'center', opacity, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', transform: `translate(${sweep}%, -50%)`, background: `linear-gradient(90deg, ${accent}00 0%, ${accent}f2 12%, ${accent}f2 88%, ${accent}00 100%)`, padding: '32px 0', boxShadow: `0 0 60px ${accent}88` }}>
+        <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 72, color: '#fff', textAlign: 'center', letterSpacing: '-0.01em', textShadow: '0 4px 18px rgba(0,0,0,0.5)' }}>{label} →</div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 // ── COMPONENTE PRINCIPAL ──
 export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
-  const { cidades = [], words, texto, duracao_s, audio_url, paleta_hex, logo_url, handle = '@pulsodotemporrs', titulo_topo, data_label, basemap_url, city_highlights, broll, veredito, updated_label } = props;
+  const { cidades = [], words, texto, duracao_s, audio_url, paleta_hex, logo_url, handle = '@pulsodotemporrs', titulo_topo, data_label, basemap_url, city_highlights, broll, veredito, updated_label, cidades_dia2, dia2_switch_s, dia1_label = 'SÁBADO', dia2_label = 'DOMINGO' } = props;
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const t = frame / fps;
   const accent = paleta_hex || '#0EA5E9';
   const basemap = basemap_url && basemap_url.trim() ? basemap_url : staticFile('pulso/rs-basemap.jpg');
 
-  const focus = resolveFocus(cidades, city_highlights, t, fps, durationInFrames);
-  const focusCidade = cidades[focus.idx];
+  // ── DAY-SWITCH (boletim de fim de semana). Sem cidades_dia2 -> dia2Enabled=false e
+  // day1Opacity/day2Opacity/dia2Active colapsam pro comportamento single-day de sempre. ──
+  const dia2Enabled = !!(cidades_dia2 && cidades_dia2.length);
+  const switchFrame = dia2Enabled ? Math.round((dia2_switch_s ?? duracao_s / 2) * fps) : Infinity;
+  const transFrames = Math.max(1, Math.round(DAY_TRANSITION_S * fps));
+  const day1Opacity = dia2Enabled ? interpolate(frame, [switchFrame, switchFrame + transFrames], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) }) : 1;
+  const day2Opacity = dia2Enabled ? interpolate(frame, [switchFrame, switchFrame + transFrames], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.inOut(Easing.cubic) }) : 0;
+  const dia2Active = dia2Enabled && frame >= switchFrame;
+  const inTransition = dia2Enabled && frame >= switchFrame && frame < switchFrame + transFrames;
+
+  const focus1 = resolveFocus(cidades, city_highlights, t, fps, durationInFrames);
+  // janela local pro dia 2: ciclo uniforme (sem highlight) gira só no trecho pós-switch
+  const focus2 = dia2Enabled ? resolveFocus(cidades_dia2 as CidadeClima[], city_highlights, t, fps, durationInFrames, switchFrame) : undefined;
+  const activeCidades = dia2Active && cidades_dia2 ? cidades_dia2 : cidades;
+  const focus = dia2Active && focus2 ? focus2 : focus1;
+  const focusCidade = activeCidades[focus.idx];
 
   // Ken Burns lento no MAPA INTEIRO (satélite + cards juntos, alinhados): cinema +
   // garante pixel diferente todo frame (derrota frame-repetido). ~5% num ciclo longo.
   const kb = 1 + (Math.sin((frame / (fps * 7)) * Math.PI * 2) * 0.5 + 0.5) * 0.05;
   const panX = Math.sin((frame / (fps * 9)) * Math.PI * 2) * 10;
 
-  const projected = useMemo(() => cidades.map((c) => projRS(c.lat, c.lon, MAP_W, MAP_H)), [JSON.stringify(cidades.map((c) => [c.lat, c.lon]))]);
-  // câmera regional: zoom no bbox das cidades (metrô concentrado -> zoom; espalhado -> estado)
-  const cam = useMemo(() => computeCam(projected), [projected]);
-  const screenPts = useMemo(() => projected.map((p) => toScreen(p, cam)), [projected, cam]);
+  const projected1 = useMemo(() => cidades.map((c) => projRS(c.lat, c.lon, MAP_W, MAP_H)), [JSON.stringify(cidades.map((c) => [c.lat, c.lon]))]);
+  const projected2 = useMemo(() => (cidades_dia2 ?? []).map((c) => projRS(c.lat, c.lon, MAP_W, MAP_H)), [JSON.stringify((cidades_dia2 ?? []).map((c) => [c.lat, c.lon]))]);
+  // câmera regional: zoom no bbox das cidades (metrô concentrado -> zoom; espalhado -> estado).
+  // Com day-switch, a câmera enquadra a UNIÃO dos dois conjuntos (fixa; não pula no switch).
+  const cam = useMemo(() => computeCam(dia2Enabled ? [...projected1, ...projected2] : projected1), [projected1, projected2, dia2Enabled]);
+  const screenPts1 = useMemo(() => projected1.map((p) => toScreen(p, cam)), [projected1, cam]);
+  const screenPts2 = useMemo(() => projected2.map((p) => toScreen(p, cam)), [projected2, cam]);
   // declutter 3 níveis em coordenadas de TELA: card > label > pin; a cidade ATIVA sempre
-  // ganha card cheio por cima, seja qual for o modo base.
-  const modes = useMemo(() => computeModes(screenPts, cidades), [screenPts, cidades]);
+  // ganha card cheio por cima, seja qual for o modo base. Recalculado por conjunto ativo.
+  const modes1 = useMemo(() => computeModes(screenPts1, cidades), [screenPts1, cidades]);
+  const modes2 = useMemo(() => computeModes(screenPts2, cidades_dia2 ?? []), [screenPts2, cidades_dia2]);
+
+  // pinos de uma cidade (card cheio / label / pin) — reusado pro dia 1 e pro dia 2
+  const renderCityPins = (list: CidadeClima[], pts: { x: number; y: number }[], modes: ('card' | 'label' | 'pin')[], focusIdx: number) =>
+    list.map((c, i) => {
+      const active = i === focusIdx;
+      const pt = pts[i];
+      if (!pt) return null;
+      if (active || modes[i] === 'card') {
+        return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />;
+      }
+      // label some enquanto o card da cidade ATIVA (overlay temporário) está por
+      // cima dele — evita texto atrás do card (ex.: "Gramado" sob o card do NH)
+      const ap = pts[focusIdx];
+      const nearActive = !!ap
+        && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W + LABEL_HALF_W
+        && pt.y > ap.y - CARD_H - LABEL_H && pt.y < ap.y + LABEL_H + 14;
+      return (
+        <CityDotMini key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} showLabel={modes[i] === 'label' && !nearActive} />
+      );
+    });
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#06101f' }}>
@@ -511,28 +585,27 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
           />
           {/* leve escurecida pras bordas pro card ler melhor */}
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 45%, rgba(4,10,22,0.4) 100%)' }} />
-          {cidades.map((c, i) => {
-            const active = i === focus.idx;
-            const pt = screenPts[i];
-            if (active || modes[i] === 'card') {
-              return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />;
-            }
-            // label some enquanto o card da cidade ATIVA (overlay temporário) está por
-            // cima dele — evita texto atrás do card (ex.: "Gramado" sob o card do NH)
-            const ap = screenPts[focus.idx];
-            const nearActive = !!ap
-              && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W + LABEL_HALF_W
-              && pt.y > ap.y - CARD_H - LABEL_H && pt.y < ap.y + LABEL_H + 14;
-            return (
-              <CityDotMini key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} showLabel={modes[i] === 'label' && !nearActive} />
-            );
-          })}
+          {/* cards do dia 1 — full opacity no single-day; crossfade pro dia 2 no switch */}
+          <div style={{ position: 'absolute', inset: 0, opacity: day1Opacity }}>
+            {renderCityPins(cidades, screenPts1, modes1, focus1.idx)}
+          </div>
+          {/* cards do dia 2 (boletim de fim de semana) — só existe quando cidades_dia2 vem */}
+          {dia2Enabled ? (
+            <div style={{ position: 'absolute', inset: 0, opacity: day2Opacity }}>
+              {renderCityPins(cidades_dia2 as CidadeClima[], screenPts2, modes2, focus2 ? focus2.idx : -1)}
+            </div>
+          ) : null}
         </div>
       </div>
 
+      {/* ── DAY-SWITCH: banner fullwidth varrendo a tela no instante da troca ── */}
+      {dia2Enabled && inTransition ? (
+        <DaySwitchBanner label={dia2_label} accent={accent} progress={(frame - switchFrame) / transFrames} />
+      ) : null}
+
       {/* ── HEADER (faixa com título + data) ── */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: HEADER_H, background: `linear-gradient(180deg, ${accent}f0 0%, ${accent}cc 55%, ${accent}00 100%)`, zIndex: 80 }} />
-      <div style={{ position: 'absolute', top: 42, left: 44, right: 44, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ position: 'absolute', top: 42, left: 44, right: 250, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
         {logo_url ? (
           <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.4)', flexShrink: 0 }}>
             <Img src={resolveSrc(logo_url)} style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
@@ -540,7 +613,15 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
         ) : null}
         <div>
           <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 47, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.0, textShadow: '0 3px 12px rgba(0,0,0,0.55)' }}>{titulo_topo}</div>
-          {data_label ? <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 24, color: 'rgba(255,255,255,0.95)', letterSpacing: '0.04em', marginTop: 2 }}>{data_label}</div> : null}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            {data_label ? <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 24, color: 'rgba(255,255,255,0.95)', letterSpacing: '0.04em' }}>{data_label}</div> : null}
+            {/* chip persistente do dia ativo (só no modo 2-dias) */}
+            {dia2Enabled ? (
+              <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 15, letterSpacing: '0.08em', color: accent, background: '#fff', borderRadius: 999, padding: '3px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.35)' }}>
+                {dayChipLabel(dia2Active ? dia2_label : dia1_label)}
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -554,8 +635,9 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       {/* ── SPOTLIGHT da cidade em foco ── */}
       {focusCidade ? <SpotlightBar c={focusCidade} enteredFrame={focus.enteredFrame} accent={accent} /> : null}
 
-      {/* ── TICKER: todas as cidades + temperaturas (preenche o rodapé, TV-crawl) ── */}
-      <CityTicker cidades={cidades} accent={accent} />
+      {/* ── TICKER: todas as cidades + temperaturas (preenche o rodapé, TV-crawl);
+          usa o conjunto ATIVO (dia 1 ou dia 2 pós-switch) ── */}
+      <CityTicker cidades={activeCidades} accent={accent} />
 
       {/* ── CUTAWAYS DE FOOTAGE (híbrido; vazio -> mapa puro) ── */}
       {(broll || []).map((b, i) => {
@@ -570,7 +652,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       {words && words.length ? (
         <AbsoluteFill style={{ zIndex: 75, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', left: 0, right: 0, top: CAPTION_TOP, height: CAPTION_H, background: '#081428', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
-          <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={CAPTION_TOP + CAPTION_H / 2} accent={accent} fontSize={40} maxWordsPerGroup={3} variant="solta" numberPop />
+          <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={CAPTION_TOP + CAPTION_H / 2} accent={accent} fontSize={38} maxWordsPerGroup={3} variant="solta" numberPop />
         </AbsoluteFill>
       ) : null}
 
