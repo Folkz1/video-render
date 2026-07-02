@@ -197,11 +197,14 @@ export const weatherMapDefaultProps: WeatherMapProps = {
   broll: undefined,
 };
 
-// ── LAYOUT ──
-const HEADER_H = 300;
-const MAP_TOP = 300;
+// ── LAYOUT (aproveitamento total do 9:16: header compacto, mapa hero, spotlight,
+// ticker de todas as cidades, rodapé — sem espaço morto) ──
+const HEADER_H = 216;
+const MAP_TOP = 216;
 const MAP_W = FRAME_W;              // sangra nas laterais (imersivo)
 const MAP_H = Math.round(MAP_W / 1.0282); // = 1050 (mantém a proporção do basemap)
+const SPOT_TOP = MAP_TOP + MAP_H + 22;    // ~1288
+const TICKER_TOP = SPOT_TOP + 208;        // ~1496
 
 // pulso senoidal p/ cidade em foco
 const pulseAt = (frame: number): number => 1 + (Math.sin((frame / 16) * Math.PI * 2) * 0.5 + 0.5) * 0.12;
@@ -248,14 +251,14 @@ const CityCard: React.FC<{
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: active ? 'rgba(8,16,32,0.94)' : 'rgba(8,16,32,0.82)', border: `2px solid ${active ? accent : alert ? '#FFB000' : 'rgba(255,255,255,0.35)'}`, borderRadius: 13, padding: '5px 9px', boxShadow: active ? `0 0 22px ${accent}cc, 0 6px 16px rgba(0,0,0,0.6)` : '0 4px 12px rgba(0,0,0,0.55)' }}>
           <WeatherIconView kind={kind} size={active ? 40 : 30} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-            <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: active ? 26 : 22, color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
-            {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 18 : 15, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
+            <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: active ? 28 : 25, color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
+            {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 19 : 17, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
           </div>
         </div>
-        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 20 : 16, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{c.nome}</div>
+        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 21 : 18, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{alert ? '⚠ ' : ''}{c.nome}</div>
       </div>
       {/* pino no ponto exato (não desloca com o clamp) */}
-      <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `10px solid ${active ? accent : '#fff'}`, marginTop: -1, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
+      <div style={{ width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `13px solid ${active ? accent : alert ? '#FFB000' : '#fff'}`, marginTop: -1, filter: 'drop-shadow(0 0 3px rgba(4,10,22,0.95)) drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
     </div>
   );
 };
@@ -282,7 +285,7 @@ const SpotlightBar: React.FC<{ c: CidadeClima; enteredFrame: number; accent: str
   const enter = interpolate(local, [0, 10], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
   const kind = weatherCodeToIcon(c.weather_code);
   return (
-    <div style={{ position: 'absolute', left: 40, right: 40, top: MAP_TOP + MAP_H + 24, transform: `translateY(${interpolate(enter, [0, 1], [40, 0])}px)`, opacity: enter, zIndex: 55 }}>
+    <div style={{ position: 'absolute', left: 40, right: 40, top: SPOT_TOP, transform: `translateY(${interpolate(enter, [0, 1], [40, 0])}px)`, opacity: enter, zIndex: 55 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, background: 'linear-gradient(180deg, rgba(10,20,40,0.95), rgba(6,12,26,0.97))', border: `2px solid ${accent}`, borderRadius: 24, padding: '18px 24px', boxShadow: `0 0 34px ${accent}55, 0 14px 36px rgba(0,0,0,0.6)` }}>
         <WeatherIconView kind={kind} size={84} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -297,6 +300,51 @@ const SpotlightBar: React.FC<{ c: CidadeClima; enteredFrame: number; accent: str
             {c.chuva_pct != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 24, color: '#5AC8FA' }}>💧{Math.round(c.chuva_pct)}%</span> : null}
           </div>
           {c.aviso ? <div style={{ marginTop: 8, display: 'inline-block', fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 20, color: '#1a1205', background: '#FFB000', borderRadius: 10, padding: '4px 12px' }}>⚠ {c.aviso}</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── TICKER DE CIDADES (faixa TV-crawl com TODAS as cidades + temp, preenche o
+// rodapé do frame e devolve o "mapa cheio de números" que o declutter tira do
+// cluster metro; rolagem lenta contínua = movimento constante anti-frame-repetido) ──
+const CityTicker: React.FC<{ cidades: CidadeClima[]; accent: string }> = ({ cidades, accent }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  if (!cidades.length) return null;
+  const CHIP_W = 300; // largura aproximada por chip (ícone + nome + temps)
+  const rowW = cidades.length * CHIP_W;
+  const speed = 55; // px/s — rolagem de TV, lenta
+  const x = -((frame / fps) * speed) % rowW;
+  const chips = (off: number, key: string) => (
+    <div key={key} style={{ position: 'absolute', left: off, top: 0, display: 'flex', gap: 0 }}>
+      {cidades.map((c, i) => {
+        const kind = weatherCodeToIcon(c.weather_code);
+        return (
+          <div key={`${c.nome}-${i}`} style={{ width: CHIP_W, display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 26 }}>
+            <WeatherIconView kind={kind} size={44} />
+            <div style={{ lineHeight: 1.05 }}>
+              <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 22, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap' }}>{c.aviso ? '⚠ ' : ''}{c.nome}</div>
+              <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 26, whiteSpace: 'nowrap' }}>
+                <span style={{ color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
+                {c.temp_min != null ? <span style={{ color: '#5AB6FF', fontWeight: 800, fontSize: 21 }}> {Math.round(c.temp_min)}°</span> : null}
+                {c.chuva_pct != null && c.chuva_pct >= 40 ? <span style={{ color: '#5AC8FA', fontWeight: 800, fontSize: 19 }}> 💧{Math.round(c.chuva_pct)}%</span> : null}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+  return (
+    <div style={{ position: 'absolute', left: 40, right: 40, top: TICKER_TOP, height: 108, zIndex: 55 }}>
+      <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 17, letterSpacing: '0.14em', color: accent, marginBottom: 6 }}>TEMPERATURAS PELO ESTADO</div>
+      <div style={{ position: 'relative', height: 76, overflow: 'hidden', background: 'rgba(8,16,32,0.72)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 18 }}>
+        <div style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 56 }}>
+          {chips(x, 'a')}
+          {chips(x + rowW, 'b')}
+          {rowW < 1000 ? chips(x + rowW * 2, 'c') : null}
         </div>
       </div>
     </div>
@@ -392,20 +440,23 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
 
       {/* ── HEADER (faixa com título + data) ── */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: HEADER_H, background: `linear-gradient(180deg, ${accent}f0 0%, ${accent}cc 55%, ${accent}00 100%)`, zIndex: 80 }} />
-      <div style={{ position: 'absolute', top: 56, left: 44, right: 44, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div style={{ position: 'absolute', top: 42, left: 44, right: 44, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
         {logo_url ? (
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.4)', flexShrink: 0 }}>
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.4)', flexShrink: 0 }}>
             <Img src={resolveSrc(logo_url)} style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
           </div>
         ) : null}
         <div>
-          <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 50, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.02, textShadow: '0 3px 12px rgba(0,0,0,0.55)' }}>{titulo_topo}</div>
-          {data_label ? <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 26, color: 'rgba(255,255,255,0.95)', letterSpacing: '0.04em', marginTop: 2 }}>{data_label}</div> : null}
+          <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 47, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.0, textShadow: '0 3px 12px rgba(0,0,0,0.55)' }}>{titulo_topo}</div>
+          {data_label ? <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 24, color: 'rgba(255,255,255,0.95)', letterSpacing: '0.04em', marginTop: 2 }}>{data_label}</div> : null}
         </div>
       </div>
 
       {/* ── SPOTLIGHT da cidade em foco ── */}
       {focusCidade ? <SpotlightBar c={focusCidade} enteredFrame={focus.enteredFrame} accent={accent} /> : null}
+
+      {/* ── TICKER: todas as cidades + temperaturas (preenche o rodapé, TV-crawl) ── */}
+      <CityTicker cidades={cidades} accent={accent} />
 
       {/* ── CUTAWAYS DE FOOTAGE (híbrido; vazio -> mapa puro) ── */}
       {(broll || []).map((b, i) => {
