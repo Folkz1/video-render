@@ -78,12 +78,25 @@ const CenaView: React.FC<{ cena: Cena; accent: string; durationFrames: number }>
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#06181b' }}>
+      {/* fundo: a própria arte desfocada preenchendo o 9:16 (arte 1:1/4:5 com TEXTO
+          não pode ser cortada por 'cover' — o reel-par da imagem única usa contain) */}
       <Img
         src={resolveSrc(cena.imagem_url)}
         style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          objectFit: 'cover',
+          filter: 'blur(42px) brightness(0.55)',
+          transform: `scale(${scale * 1.12})`,
+        }}
+      />
+      <Img
+        src={resolveSrc(cena.imagem_url)}
+        style={{
+          position: 'absolute', inset: 0,
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: 'contain',
           transform: `scale(${scale}) translateY(${translateY}px)`,
         }}
       />
