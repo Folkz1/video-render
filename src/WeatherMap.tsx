@@ -211,8 +211,8 @@ export const weatherMapDefaultProps: WeatherMapProps = {
 
 // ── LAYOUT (aproveitamento total do 9:16: header compacto, mapa hero, spotlight,
 // ticker de todas as cidades, rodapé — sem espaço morto) ──
-const HEADER_H = 216;
-const MAP_TOP = 216;
+const HEADER_H = 264;
+const MAP_TOP = 264;
 const MAP_W = FRAME_W;              // sangra nas laterais (imersivo)
 // mapa cede 130px pra FAIXA DE LEGENDA dedicada (karaokê sobre o satélite colidia com
 // os labels das cidades e reprovava em edicao — a câmera regional compensa o crop)
@@ -605,7 +605,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
 
       {/* ── HEADER (faixa com título + data) ── */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: HEADER_H, background: `linear-gradient(180deg, ${accent}f0 0%, ${accent}cc 55%, ${accent}00 100%)`, zIndex: 80 }} />
-      <div style={{ position: 'absolute', top: 42, left: 44, right: 250, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
+      {/* título na SAFE AREA: em Reels/Shorts a UI do app cobre ~o topo do frame */}
+      <div style={{ position: 'absolute', top: 108, left: 44, right: 250, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
         {logo_url ? (
           <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.4)', flexShrink: 0 }}>
             <Img src={resolveSrc(logo_url)} style={{ width: '78%', height: '78%', objectFit: 'contain' }} />
@@ -627,7 +628,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
 
       {/* badge de credibilidade: hora da atualização (canto direito do header) */}
       {updated_label ? (
-        <div style={{ position: 'absolute', top: 52, right: 44, zIndex: 82, background: 'rgba(6,12,26,0.55)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 999, padding: '6px 14px' }}>
+        <div style={{ position: 'absolute', top: 112, right: 44, zIndex: 82, background: 'rgba(6,12,26,0.55)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 999, padding: '6px 14px' }}>
           <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 19, color: 'rgba(255,255,255,0.92)' }}>Atualizado {updated_label}</span>
         </div>
       ) : null}
