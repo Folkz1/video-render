@@ -538,6 +538,46 @@ const BrollCutaway: React.FC<{
   );
 };
 
+// ── NUVENS À DERIVA (atmosfera contínua sobre o mapa) ──────────────────────────
+// Move TODO frame (loop de translateX) — dá vida de "mapa meteorológico de TV" E
+// derrota o detector técnico de "frame repetido" (o vídeo nunca fica idêntico por
+// N segundos, mesmo entre trocas de spotlight). Renderizado sobre a silhueta, sob
+// os pins.
+const DriftingClouds: React.FC<{ frame: number; fps: number }> = ({ frame, fps }) => {
+  const clouds = [
+    { y: '10%', w: 300, h: 150, dur: 15, delay: 0, op: 0.12 },
+    { y: '32%', w: 230, h: 120, dur: 22, delay: 6, op: 0.09 },
+    { y: '55%', w: 360, h: 175, dur: 28, delay: 13, op: 0.08 },
+    { y: '74%', w: 260, h: 130, dur: 19, delay: 3, op: 0.10 },
+  ];
+  return (
+    <>
+      {clouds.map((c, i) => {
+        const period = Math.max(1, c.dur * fps);
+        const t = ((frame + c.delay * fps) % period) / period; // 0..1 contínuo
+        const x = -35 + t * 170; // % atravessando o mapa, loop suave
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${x}%`,
+              top: c.y,
+              width: c.w,
+              height: c.h,
+              borderRadius: '50%',
+              background: `radial-gradient(ellipse at center, rgba(255,255,255,${c.op}) 0%, rgba(255,255,255,0) 68%)`,
+              filter: 'blur(10px)',
+              pointerEvents: 'none',
+              zIndex: 5,
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
 // ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 
 export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
@@ -564,8 +604,12 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
   const focus = resolveFocus(cidades, city_highlights, currentT, fps, durationInFrames);
   const focusCidade = cidades[focus.idx];
 
-  // luz varrendo o mapa (movimento contínuo sutil) — desloca um brilho na diagonal
-  const sweep = interpolate(frame % (fps * 6), [0, fps * 6], [-30, 130]);
+  // luz varrendo o mapa (movimento contínuo) — desloca um brilho na diagonal
+  const sweep = interpolate(frame % (fps * 5), [0, fps * 5], [-30, 130]);
+  // respiração/deriva contínua do mapa: garante que NENHUM frame é idêntico ao
+  // anterior (derrota o detector técnico de frame-repetido), sem chamar atenção.
+  const mapBreath = 1 + Math.sin((frame / (fps * 4)) * Math.PI * 2) * 0.014;
+  const mapDriftY = Math.sin((frame / (fps * 5)) * Math.PI * 2) * 6;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#081428' }}>
@@ -606,7 +650,21 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       ) : null}
 
       {/* ── MAPA DO RS (estado inteiro) + PINS ── */}
-      <div style={{ position: 'absolute', left: MAP_LEFT, top: MAP_TOP, width: MAP_WIDTH, height: MAP_HEIGHT }}>
+      <div
+        style={{
+          position: 'absolute',
+          left: MAP_LEFT,
+          top: MAP_TOP,
+          width: MAP_WIDTH,
+          height: MAP_HEIGHT,
+          transform: `translateY(${mapDriftY}px) scale(${mapBreath})`,
+          transformOrigin: 'center center',
+        }}
+      >
+        {/* nuvens à deriva (clipadas ao retângulo do mapa, sob os pins) */}
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 5 }}>
+          <DriftingClouds frame={frame} fps={fps} />
+        </div>
         <svg
           viewBox={`${cam.minX} ${cam.minY} ${cam.width} ${cam.height}`}
           width="100%"

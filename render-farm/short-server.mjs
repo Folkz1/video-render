@@ -551,6 +551,7 @@ const server = http.createServer(async (req, res) => {
       return jsonResponse(res, 200, {
         ok: true,
         service: 'short-server',
+        version: process.env.BUILD_VERSION || 'dev',
         bundleReady: Boolean(serveUrl),
         working,
         queued: queue.length,
