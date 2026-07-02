@@ -395,6 +395,10 @@ const CityTicker: React.FC<{ cidades: CidadeClima[]; accent: string }> = ({ cida
           {chips(x + rowW, 'b')}
           {rowW < 1000 ? chips(x + rowW * 2, 'c') : null}
         </div>
+        {/* fade nas bordas: o chip que entra/sai esmaece em vez de aparecer CORTADO
+            (o juiz de visão lia o corte cru do marquee como bug de layout) */}
+        <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 56, background: 'linear-gradient(90deg, rgba(8,16,32,1) 0%, rgba(8,16,32,0) 100%)', borderRadius: '18px 0 0 18px' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 56, background: 'linear-gradient(270deg, rgba(8,16,32,1) 0%, rgba(8,16,32,0) 100%)', borderRadius: '0 18px 18px 0' }} />
       </div>
     </div>
   );

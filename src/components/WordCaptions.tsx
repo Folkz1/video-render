@@ -206,6 +206,12 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
           transform: `scale(${scale})`,
           opacity,
           color,
+          // LEGIBILIDADE: palavra/grupo NUNCA maior que o container — sem isto, um item
+          // flex mais largo que maxWidth estoura SIMETRICAMENTE pros dois lados do frame
+          // (headline aparecia cortada nas duas bordas, campanha 874dd3a8).
+          maxWidth: Math.max(120, maxWidth - 64),
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word',
           ...plateStyle,
           ...strokeStyle,
           ...accentGlow,
@@ -223,8 +229,9 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
         left: '50%',
         top: anchorY,
         transform: 'translate(-50%, -50%)',
-        width: variant === 'pilula' ? 'auto' : maxWidth,
-        maxWidth,
+        // clamp defensivo: nunca mais largo que o frame - 64px de safe-area por lado
+        width: variant === 'pilula' ? 'auto' : Math.min(maxWidth, 1080 - 128),
+        maxWidth: Math.min(maxWidth, 1080 - 128),
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'center',
