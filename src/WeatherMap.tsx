@@ -206,6 +206,29 @@ const MAP_H = Math.round(MAP_W / 1.0282); // = 1050 (mantém a proporção do ba
 // pulso senoidal p/ cidade em foco
 const pulseAt = (frame: number): number => 1 + (Math.sin((frame / 16) * Math.PI * 2) * 0.5 + 0.5) * 0.12;
 
+// half-width aproximado do card (ícone+temp) — usado pro clamp de borda e pro declutter
+const CARD_HALF_W = 105;
+const CARD_H = 132; // bubble + rótulo + pino
+
+/** Clamp de borda: quanto deslocar o BALÃO pra dentro do mapa (o pino fica no ponto). */
+const edgeShift = (x: number): number => Math.min(Math.max(x, CARD_HALF_W + 8), MAP_W - CARD_HALF_W - 8) - x;
+
+/** DECLUTTER (metrô POA): decide card cheio vs ponto+nome por colisão. Determinístico e
+ * independente do foco (modos estáveis o vídeo todo; a cidade ATIVA sempre vira card por
+ * cima). Prioridade: alertas primeiro, depois ordem de entrada. */
+const computeModes = (pts: { x: number; y: number }[], cidades: CidadeClima[]): ('card' | 'dot')[] => {
+  const modes: ('card' | 'dot')[] = new Array(pts.length).fill('dot');
+  const placed: { x: number; y: number }[] = [];
+  const order = pts.map((_, i) => i).sort((a, b) => Number(!!cidades[b]?.aviso) - Number(!!cidades[a]?.aviso) || a - b);
+  for (const i of order) {
+    const cx = pts[i].x + edgeShift(pts[i].x);
+    const cy = pts[i].y;
+    const hit = placed.some((p) => Math.abs(p.x - cx) < CARD_HALF_W * 2 && Math.abs(p.y - cy) < CARD_H);
+    if (!hit) { modes[i] = 'card'; placed.push({ x: cx, y: cy }); }
+  }
+  return modes;
+};
+
 // ── CARD DE CIDADE (BaroClima: ícone + temp máx/mín + nome, com pino no ponto) ──
 const CityCard: React.FC<{
   c: CidadeClima; x: number; y: number; index: number; active: boolean; accent: string;
@@ -217,19 +240,37 @@ const CityCard: React.FC<{
   const kind = weatherCodeToIcon(c.weather_code);
   const alert = !!c.aviso;
   const s = (active ? 1.16 : 1) * rs * pulse;
+  const shift = edgeShift(x); // borda: balão desliza pra dentro, pino fica no lugar exato
 
   return (
     <div style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -100%) scale(${s})`, transformOrigin: 'bottom center', opacity, zIndex: active ? 60 : alert ? 40 : 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: active ? 'rgba(8,16,32,0.94)' : 'rgba(8,16,32,0.82)', border: `2px solid ${active ? accent : alert ? '#FFB000' : 'rgba(255,255,255,0.35)'}`, borderRadius: 13, padding: '5px 9px', boxShadow: active ? `0 0 22px ${accent}cc, 0 6px 16px rgba(0,0,0,0.6)` : '0 4px 12px rgba(0,0,0,0.55)' }}>
-        <WeatherIconView kind={kind} size={active ? 40 : 30} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-          <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: active ? 26 : 22, color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
-          {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 18 : 15, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
+      <div style={{ transform: `translateX(${shift}px)`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: active ? 'rgba(8,16,32,0.94)' : 'rgba(8,16,32,0.82)', border: `2px solid ${active ? accent : alert ? '#FFB000' : 'rgba(255,255,255,0.35)'}`, borderRadius: 13, padding: '5px 9px', boxShadow: active ? `0 0 22px ${accent}cc, 0 6px 16px rgba(0,0,0,0.6)` : '0 4px 12px rgba(0,0,0,0.55)' }}>
+          <WeatherIconView kind={kind} size={active ? 40 : 30} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
+            <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: active ? 26 : 22, color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
+            {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 18 : 15, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
+          </div>
         </div>
+        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 20 : 16, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{c.nome}</div>
       </div>
-      <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 20 : 16, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{c.nome}</div>
-      {/* pino no ponto exato */}
+      {/* pino no ponto exato (não desloca com o clamp) */}
       <div style={{ width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `10px solid ${active ? accent : '#fff'}`, marginTop: -1, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
+    </div>
+  );
+};
+
+// ── PONTO COMPACTO (declutter: cidades coladas no metrô viram ponto + nome + temp) ──
+const CityDotMini: React.FC<{ c: CidadeClima; x: number; y: number; index: number }> = ({ c, x, y, index }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const { scale: rs, opacity } = popIn(frame, fps, index * 3, 0.3, SPRINGS.soft);
+  return (
+    <div style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) scale(${rs})`, opacity, zIndex: 15, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#fff', border: '3px solid rgba(4,10,22,0.9)', boxShadow: '0 1px 4px rgba(0,0,0,0.6)' }} />
+      <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 15, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
+        {c.nome} <span style={{ color: '#FFD9A0' }}>{Math.round(c.temp_max)}°</span>
+      </div>
     </div>
   );
 };
@@ -310,7 +351,7 @@ const resolveFocus = (cidades: CidadeClima[], hl: CityHighlight[] | undefined, t
 
 // ── COMPONENTE PRINCIPAL ──
 export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
-  const { cidades = [], audio_url, duracao_s, paleta_hex, logo_url, handle = '@pulsodotemporrs', titulo_topo, data_label, basemap_url, city_highlights, broll } = props;
+  const { cidades = [], audio_url, paleta_hex, logo_url, handle = '@pulsodotemporrs', titulo_topo, data_label, basemap_url, city_highlights, broll } = props;
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const t = frame / fps;
@@ -326,6 +367,9 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
   const panX = Math.sin((frame / (fps * 9)) * Math.PI * 2) * 10;
 
   const projected = useMemo(() => cidades.map((c) => projRS(c.lat, c.lon, MAP_W, MAP_H)), [JSON.stringify(cidades.map((c) => [c.lat, c.lon]))]);
+  // declutter estável (independente do foco): cidades coladas (metrô POA) viram ponto+nome;
+  // a cidade ATIVA sempre ganha card cheio por cima, mesmo se o modo base for 'dot'.
+  const modes = useMemo(() => computeModes(projected, cidades), [projected, cidades]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#06101f' }}>
@@ -335,9 +379,14 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
           <Img src={basemap} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
           {/* leve escurecida pras bordas pro card ler melhor */}
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 45%, rgba(4,10,22,0.4) 100%)' }} />
-          {cidades.map((c, i) => (
-            <CityCard key={`${c.nome}-${i}`} c={c} x={projected[i].x} y={projected[i].y} index={i} active={i === focus.idx} accent={accent} />
-          ))}
+          {cidades.map((c, i) => {
+            const active = i === focus.idx;
+            return active || modes[i] === 'card' ? (
+              <CityCard key={`${c.nome}-${i}`} c={c} x={projected[i].x} y={projected[i].y} index={i} active={active} accent={accent} />
+            ) : (
+              <CityDotMini key={`${c.nome}-${i}`} c={c} x={projected[i].x} y={projected[i].y} index={i} />
+            );
+          })}
         </div>
       </div>
 
