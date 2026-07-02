@@ -216,18 +216,64 @@ const CARD_H = 132; // bubble + rótulo + pino
 /** Clamp de borda: quanto deslocar o BALÃO pra dentro do mapa (o pino fica no ponto). */
 const edgeShift = (x: number): number => Math.min(Math.max(x, CARD_HALF_W + 8), MAP_W - CARD_HALF_W - 8) - x;
 
-/** DECLUTTER (metrô POA): decide card cheio vs ponto+nome por colisão. Determinístico e
- * independente do foco (modos estáveis o vídeo todo; a cidade ATIVA sempre vira card por
- * cima). Prioridade: alertas primeiro, depois ordem de entrada. */
-const computeModes = (pts: { x: number; y: number }[], cidades: CidadeClima[]): ('card' | 'dot')[] => {
-  const modes: ('card' | 'dot')[] = new Array(pts.length).fill('dot');
-  const placed: { x: number; y: number }[] = [];
+// ── CÂMERA REGIONAL (TV de verdade): enquadra o bbox das cidades no painel do mapa.
+// Cidades espalhadas -> estado inteiro (s=1). Cidades concentradas (eixo metro) -> zoom
+// no eixo (s até ~2.1; o satélite 2048px segura o crop sem pixelar). Pins/cards ficam em
+// coordenadas de TELA (tamanho constante); só o basemap é recortado/ampliado.
+type Cam = { ox: number; oy: number; s: number };
+const computeCam = (pts: { x: number; y: number }[]): Cam => {
+  if (!pts.length) return { ox: 0, oy: 0, s: 1 };
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of pts) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  const PAD = 150;
+  minX -= PAD; maxX += PAD; minY -= PAD + 70; maxY += PAD; // +70 no topo (cards ficam acima do ponto)
+  const bw = Math.max(1, maxX - minX);
+  const bh = Math.max(1, maxY - minY);
+  const s = Math.min(2.1, Math.max(1, Math.min(MAP_W / bw, MAP_H / bh)));
+  const cw = MAP_W / s, ch = MAP_H / s;
+  let ox = (minX + maxX) / 2 - cw / 2;
+  let oy = (minY + maxY) / 2 - ch / 2;
+  ox = Math.min(Math.max(ox, 0), Math.max(0, MAP_W - cw));
+  oy = Math.min(Math.max(oy, 0), Math.max(0, MAP_H - ch));
+  return { ox, oy, s };
+};
+const toScreen = (p: { x: number; y: number }, cam: Cam): { x: number; y: number } => ({
+  x: (p.x - cam.ox) * cam.s,
+  y: (p.y - cam.oy) * cam.s,
+});
+
+/** DECLUTTER 3 níveis (metrô POA): 'card' (cheio) > 'label' (ponto+nome+temp) > 'pin'
+ * (só ponto). Determinístico e independente do foco (modos estáveis o vídeo todo; a
+ * cidade ATIVA sempre vira card por cima). Prioridade: alertas primeiro. */
+const LABEL_HALF_W = 88;
+const LABEL_H = 42;
+const computeModes = (pts: { x: number; y: number }[], cidades: CidadeClima[]): ('card' | 'label' | 'pin')[] => {
+  const modes: ('card' | 'label' | 'pin')[] = new Array(pts.length).fill('pin');
+  const rects: { x: number; y: number; hw: number; hh: number }[] = [];
+  const collides = (x: number, y: number, hw: number, hh: number) =>
+    rects.some((r) => Math.abs(r.x - x) < r.hw + hw && Math.abs(r.y - y) < r.hh + hh);
   const order = pts.map((_, i) => i).sort((a, b) => Number(!!cidades[b]?.aviso) - Number(!!cidades[a]?.aviso) || a - b);
+  // passada 1: cards cheios onde couber
   for (const i of order) {
     const cx = pts[i].x + edgeShift(pts[i].x);
-    const cy = pts[i].y;
-    const hit = placed.some((p) => Math.abs(p.x - cx) < CARD_HALF_W * 2 && Math.abs(p.y - cy) < CARD_H);
-    if (!hit) { modes[i] = 'card'; placed.push({ x: cx, y: cy }); }
+    const cy = pts[i].y - CARD_H / 2;
+    if (!collides(cx, cy, CARD_HALF_W, CARD_H / 2)) {
+      modes[i] = 'card';
+      rects.push({ x: cx, y: cy, hw: CARD_HALF_W, hh: CARD_H / 2 });
+    }
+  }
+  // passada 2: label compacto onde ainda couber
+  for (const i of order) {
+    if (modes[i] !== 'pin') continue;
+    const cx = pts[i].x;
+    const cy = pts[i].y + LABEL_H / 2 + 6; // label fica abaixo do ponto
+    if (!collides(cx, cy, LABEL_HALF_W, LABEL_H / 2)) {
+      modes[i] = 'label';
+      rects.push({ x: cx, y: cy, hw: LABEL_HALF_W, hh: LABEL_H / 2 });
+    }
   }
   return modes;
 };
@@ -263,17 +309,20 @@ const CityCard: React.FC<{
   );
 };
 
-// ── PONTO COMPACTO (declutter: cidades coladas no metrô viram ponto + nome + temp) ──
-const CityDotMini: React.FC<{ c: CidadeClima; x: number; y: number; index: number }> = ({ c, x, y, index }) => {
+// ── PONTO COMPACTO (declutter: 'label' = ponto+nome+temp; 'pin' = só o ponto —
+// a cidade continua marcada no mapa e os números dela vivem no TICKER) ──
+const CityDotMini: React.FC<{ c: CidadeClima; x: number; y: number; index: number; showLabel: boolean }> = ({ c, x, y, index, showLabel }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { scale: rs, opacity } = popIn(frame, fps, index * 3, 0.3, SPRINGS.soft);
   return (
     <div style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) scale(${rs})`, opacity, zIndex: 15, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ width: 11, height: 11, borderRadius: '50%', background: '#fff', border: '3px solid rgba(4,10,22,0.9)', boxShadow: '0 1px 4px rgba(0,0,0,0.6)' }} />
-      <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 15, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
-        {c.nome} <span style={{ color: '#FFD9A0' }}>{Math.round(c.temp_max)}°</span>
-      </div>
+      <div style={{ width: 11, height: 11, borderRadius: '50%', background: c.aviso ? '#FFB000' : '#fff', border: '3px solid rgba(4,10,22,0.9)', boxShadow: '0 1px 4px rgba(0,0,0,0.6)' }} />
+      {showLabel ? (
+        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 16, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
+          {c.aviso ? '⚠ ' : ''}{c.nome} <span style={{ color: '#FFD9A0' }}>{Math.round(c.temp_max)}°</span>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -415,24 +464,38 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
   const panX = Math.sin((frame / (fps * 9)) * Math.PI * 2) * 10;
 
   const projected = useMemo(() => cidades.map((c) => projRS(c.lat, c.lon, MAP_W, MAP_H)), [JSON.stringify(cidades.map((c) => [c.lat, c.lon]))]);
-  // declutter estável (independente do foco): cidades coladas (metrô POA) viram ponto+nome;
-  // a cidade ATIVA sempre ganha card cheio por cima, mesmo se o modo base for 'dot'.
-  const modes = useMemo(() => computeModes(projected, cidades), [projected, cidades]);
+  // câmera regional: zoom no bbox das cidades (metrô concentrado -> zoom; espalhado -> estado)
+  const cam = useMemo(() => computeCam(projected), [projected]);
+  const screenPts = useMemo(() => projected.map((p) => toScreen(p, cam)), [projected, cam]);
+  // declutter 3 níveis em coordenadas de TELA: card > label > pin; a cidade ATIVA sempre
+  // ganha card cheio por cima, seja qual for o modo base.
+  const modes = useMemo(() => computeModes(screenPts, cidades), [screenPts, cidades]);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#06101f' }}>
-      {/* ── MAPA (satélite + cards) com Ken Burns ── */}
+      {/* ── MAPA (satélite com câmera regional + cards em coords de tela) com Ken Burns ── */}
       <div style={{ position: 'absolute', left: 0, top: MAP_TOP, width: MAP_W, height: MAP_H, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, transform: `scale(${kb}) translateX(${panX}px)`, transformOrigin: 'center center' }}>
-          <Img src={basemap} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+          {/* basemap recortado pela câmera (crop/zoom no eixo das cidades) */}
+          <Img
+            src={basemap}
+            style={{
+              position: 'absolute',
+              left: -cam.ox * cam.s,
+              top: -cam.oy * cam.s,
+              width: MAP_W * cam.s,
+              height: MAP_H * cam.s,
+            }}
+          />
           {/* leve escurecida pras bordas pro card ler melhor */}
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 45%, rgba(4,10,22,0.4) 100%)' }} />
           {cidades.map((c, i) => {
             const active = i === focus.idx;
+            const pt = screenPts[i];
             return active || modes[i] === 'card' ? (
-              <CityCard key={`${c.nome}-${i}`} c={c} x={projected[i].x} y={projected[i].y} index={i} active={active} accent={accent} />
+              <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />
             ) : (
-              <CityDotMini key={`${c.nome}-${i}`} c={c} x={projected[i].x} y={projected[i].y} index={i} />
+              <CityDotMini key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} showLabel={modes[i] === 'label'} />
             );
           })}
         </div>
