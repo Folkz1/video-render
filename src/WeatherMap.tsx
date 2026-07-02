@@ -11,7 +11,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
-import { WordTiming } from './components/WordCaptions';
+import { WordCaptions, WordTiming } from './components/WordCaptions';
 import { DISPLAY_FONT, SPRINGS, popIn } from './kit/animationPresets';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -450,9 +450,23 @@ const resolveFocus = (cidades: CidadeClima[], hl: CityHighlight[] | undefined, t
   const i = Math.min(n - 1, Math.floor(fr / wf)); return { idx: i, enteredFrame: i * wf };
 };
 
+// ── CARD DE VEREDITO (payoff do fecho: a resposta da pergunta do título) ──
+const VereditoCard: React.FC<{ texto: string; accent: string }> = ({ texto, accent }) => {
+  const frame = useCurrentFrame();
+  const enter = interpolate(frame, [0, 10], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.out(Easing.cubic) });
+  return (
+    <AbsoluteFill style={{ zIndex: 85, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+      <div style={{ transform: `translateY(${interpolate(enter, [0, 1], [46, 0])}px) scale(${0.94 + enter * 0.06})`, opacity: enter, background: 'linear-gradient(180deg, rgba(10,20,40,0.97), rgba(6,12,26,0.98))', border: `3px solid ${accent}`, borderRadius: 26, padding: '26px 34px', maxWidth: 920, boxShadow: `0 0 44px ${accent}66, 0 18px 48px rgba(0,0,0,0.65)` }}>
+        <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 20, letterSpacing: '0.16em', color: accent, marginBottom: 8, textAlign: 'center' }}>O VEREDITO</div>
+        <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 46, color: '#fff', lineHeight: 1.14, textAlign: 'center', letterSpacing: '-0.01em' }}>{texto}</div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 // ── COMPONENTE PRINCIPAL ──
 export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
-  const { cidades = [], audio_url, paleta_hex, logo_url, handle = '@pulsodotemporrs', titulo_topo, data_label, basemap_url, city_highlights, broll } = props;
+  const { cidades = [], words, texto, duracao_s, audio_url, paleta_hex, logo_url, handle = '@pulsodotemporrs', titulo_topo, data_label, basemap_url, city_highlights, broll, veredito, updated_label } = props;
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
   const t = frame / fps;
@@ -526,6 +540,13 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
         </div>
       </div>
 
+      {/* badge de credibilidade: hora da atualização (canto direito do header) */}
+      {updated_label ? (
+        <div style={{ position: 'absolute', top: 52, right: 44, zIndex: 82, background: 'rgba(6,12,26,0.55)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 999, padding: '6px 14px' }}>
+          <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 19, color: 'rgba(255,255,255,0.92)' }}>Atualizado {updated_label}</span>
+        </div>
+      ) : null}
+
       {/* ── SPOTLIGHT da cidade em foco ── */}
       {focusCidade ? <SpotlightBar c={focusCidade} enteredFrame={focus.enteredFrame} accent={accent} /> : null}
 
@@ -539,6 +560,21 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
         const c = cidades.find((x) => x.nome === b.cidade);
         return <Sequence key={`broll-${i}`} from={from} durationInFrames={dur}><BrollCutaway item={b} c={c} accent={accent} durationInFrames={dur} /></Sequence>;
       })}
+
+      {/* ── LEGENDA (karaokê de TV na base do mapa): os escritos acompanham a fala,
+          contidos pela safe-area do WordCaptions; placa p/ ler sobre o satélite ── */}
+      {words && words.length ? (
+        <AbsoluteFill style={{ zIndex: 75, pointerEvents: 'none' }}>
+          <WordCaptions words={words} text={texto} durSec={duracao_s} fromSec={0} anchorY={MAP_TOP + MAP_H - 84} accent={accent} fontSize={44} maxWordsPerGroup={4} variant="solta" numberPop plate />
+        </AbsoluteFill>
+      ) : null}
+
+      {/* ── VEREDITO (payoff do título nos últimos ~3.5s — fecha a promessa) ── */}
+      {veredito ? (
+        <Sequence from={Math.max(0, durationInFrames - Math.round(3.5 * fps))} durationInFrames={Math.round(3.5 * fps)}>
+          <VereditoCard texto={veredito} accent={accent} />
+        </Sequence>
+      ) : null}
 
       {/* ── RODAPÉ: fonte + atribuição Esri (obrigatória) + handle ── */}
       <div style={{ position: 'absolute', bottom: 70, left: 0, right: 0, textAlign: 'center', zIndex: 80 }}>
