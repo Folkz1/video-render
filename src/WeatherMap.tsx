@@ -299,8 +299,8 @@ const computeModes = (pts: { x: number; y: number }[], cidades: CidadeClima[]): 
 
 // ── CARD DE CIDADE (BaroClima: ícone + temp máx/mín + nome, com pino no ponto) ──
 const CityCard: React.FC<{
-  c: CidadeClima; x: number; y: number; index: number; active: boolean; accent: string;
-}> = ({ c, x, y, index, active, accent }) => {
+  c: CidadeClima; x: number; y: number; index: number; active: boolean; accent: string; hideName?: boolean;
+}> = ({ c, x, y, index, active, accent, hideName }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { scale: rs, opacity } = popIn(frame, fps, index * 3, 0.3, SPRINGS.soft);
@@ -324,7 +324,7 @@ const CityCard: React.FC<{
             {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 23 : 20, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
           </div>
         </div>
-        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 28 : 24, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{alert ? '⚠ ' : ''}{c.nome}</div>
+        {hideName ? null : <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 28 : 24, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{alert ? '⚠ ' : ''}{c.nome}</div>}
       </div>
       {/* pino no ponto exato (não desloca com o clamp) */}
       <div style={{ width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `13px solid ${active ? accent : alert ? '#FFB000' : '#fff'}`, marginTop: -1, filter: 'drop-shadow(0 0 3px rgba(4,10,22,0.95)) drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
@@ -342,7 +342,7 @@ const CityDotMini: React.FC<{ c: CidadeClima; x: number; y: number; index: numbe
     <div style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) scale(${rs})`, opacity, zIndex: 15, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: 11, height: 11, borderRadius: '50%', background: c.aviso ? '#FFB000' : '#fff', border: '3px solid rgba(4,10,22,0.9)', boxShadow: '0 1px 4px rgba(0,0,0,0.6)' }} />
       {showLabel ? (
-        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 22, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
+        <div style={{ marginTop: 2, transform: `translateX(${Math.min(Math.max(x, LABEL_HALF_W + 6), MAP_W - LABEL_HALF_W - 6) - x}px)`, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 22, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
           {c.aviso ? '⚠ ' : ''}{c.nome} <span style={{ color: '#FFD9A0' }}>{Math.round(c.temp_max)}°</span>
         </div>
       ) : null}
@@ -560,12 +560,18 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       const active = i === focusIdx;
       const pt = pts[i];
       if (!pt) return null;
+      const ap = pts[focusIdx];
+      // cidade com card (ex.: aviso ⚠, sempre card cheio) VIZINHA da ativa: quando a ativa
+      // (overlay temporário) passa por cima, os NOMES colidem (ex.: Caxias ↔ Porto Alegre/Torres).
+      // Esconde o NOME da não-ativa (o número/card permanece) pra a ativa ficar legível.
+      const cardCollidesActive = !active && !!ap
+        && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W * 1.7
+        && Math.abs(pt.y - ap.y) < CARD_H * 1.15;
       if (active || modes[i] === 'card') {
-        return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />;
+        return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} hideName={cardCollidesActive} />;
       }
       // label some enquanto o card da cidade ATIVA (overlay temporário) está por
       // cima dele — evita texto atrás do card (ex.: "Gramado" sob o card do NH)
-      const ap = pts[focusIdx];
       const nearActive = !!ap
         && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W + LABEL_HALF_W
         && pt.y > ap.y - CARD_H - LABEL_H && pt.y < ap.y + LABEL_H + 14;
