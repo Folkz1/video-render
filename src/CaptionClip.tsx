@@ -675,6 +675,11 @@ const BrandLowerThird: React.FC<{ handle: string; logo_url?: string; accent: str
   // cursor block: ON ~0.55s, OFF ~0.45s (ciclo ~1s = 30 frames), borda dura (step-end).
   const cyc = frame % 30;
   const cursorOn = cyc < 17 ? 1 : 0;
+  // TERMINAL-NOIR é a IDENTIDADE do GuyFolkz — o accent verde-terminal (GUYFOLKZ_ACCENT) É a marca.
+  // Pra clientes com PALETA PRÓPRIA (Dentaly teal, Fiel, etc) o prompt `<slug>:~$` não faz sentido
+  // (feedback Diego 2026-07-06): o topo fica LIMPO, só com o logo da marca. Sem logo E não-terminal,
+  // cai num @handle discreto (evita canto vazio). GuyFolkz (verde) segue com logo + prompt como hoje.
+  const isTerminalBrand = (accent || '').trim().toLowerCase() === GUYFOLKZ_ACCENT.toLowerCase();
   return (
     <div style={{ position: 'absolute', top: 70, left: 56, zIndex: 50, display: 'flex', alignItems: 'center', gap: 14 }}>
       {logo_url ? (
@@ -682,39 +687,58 @@ const BrandLowerThird: React.FC<{ handle: string; logo_url?: string; accent: str
           <Img src={resolveSrc(logo_url)} style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
         </div>
       ) : null}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 2,
-          background: 'rgba(8,10,16,0.62)',
-          border: `1px solid ${accent}55`,
-          borderRadius: 8,
-          padding: '7px 14px',
-          fontFamily: MONO_FONT,
-          fontWeight: 500,
-          fontSize: 30,
-          letterSpacing: '0.01em',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
-        }}
-      >
-        <span style={{ color: accent }}>{slug}</span>
-        <span style={{ color: 'rgba(255,255,255,0.65)' }}>{':~'}</span>
-        <span style={{ color: accent }}>{'$'}</span>
-        {/* cursor block piscando */}
-        <span
+      {isTerminalBrand ? (
+        <div
           style={{
-            display: 'inline-block',
-            width: 16,
-            height: 30,
-            marginLeft: 8,
-            transform: 'translateY(4px)',
-            background: accent,
-            opacity: cursorOn,
-            boxShadow: `0 0 10px ${accent}88`,
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 2,
+            background: 'rgba(8,10,16,0.62)',
+            border: `1px solid ${accent}55`,
+            borderRadius: 8,
+            padding: '7px 14px',
+            fontFamily: MONO_FONT,
+            fontWeight: 500,
+            fontSize: 30,
+            letterSpacing: '0.01em',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
           }}
-        />
-      </div>
+        >
+          <span style={{ color: accent }}>{slug}</span>
+          <span style={{ color: 'rgba(255,255,255,0.65)' }}>{':~'}</span>
+          <span style={{ color: accent }}>{'$'}</span>
+          {/* cursor block piscando */}
+          <span
+            style={{
+              display: 'inline-block',
+              width: 16,
+              height: 30,
+              marginLeft: 8,
+              transform: 'translateY(4px)',
+              background: accent,
+              opacity: cursorOn,
+              boxShadow: `0 0 10px ${accent}88`,
+            }}
+          />
+        </div>
+      ) : !logo_url ? (
+        <div
+          style={{
+            background: 'rgba(8,10,16,0.55)',
+            border: `1px solid ${accent}44`,
+            borderRadius: 8,
+            padding: '7px 14px',
+            fontFamily: MONO_FONT,
+            fontWeight: 600,
+            fontSize: 28,
+            letterSpacing: '0.01em',
+            color: accent,
+            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+          }}
+        >
+          {'@' + slug}
+        </div>
+      ) : null}
     </div>
   );
 };
