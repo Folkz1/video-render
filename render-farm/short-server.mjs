@@ -165,7 +165,7 @@ async function makeClip(youtubeUrl, start, end, search) {
   await execFileP('ffmpeg', [
     '-y', '-i', raw,
     '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
-    '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-movflags', '+faststart', out,
+    '-c:v', 'libx264', '-preset', 'veryfast', '-c:a', 'aac', '-movflags', '+faststart', '-shortest', out,
   ], { timeout: 180000, maxBuffer: 1024 * 1024 * 16 });
   try { fs.unlinkSync(raw); } catch {}
   const st = fs.statSync(out);
@@ -222,10 +222,10 @@ async function composeOverlay(creatorFile, overlayFile, outFile) {
   await execFileP('ffmpeg', [
     '-y', '-i', creatorFile, '-i', overlayFile,
     '-filter_complex',
-    '[0:v]scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1[bg];[bg][1:v]overlay=shortest=1[v]',
-    '-map', '[v]', '-map', '0:a?',
+    '[0:v]fps=30,scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1[bg];[bg][1:v]overlay=shortest=1[v]',
+    '-map', '[v]', '-map', '0:a?', '-r', '30',
     '-c:v', 'libx264', '-preset', 'veryfast', '-pix_fmt', 'yuv420p',
-    '-c:a', 'aac', '-movflags', '+faststart',
+    '-c:a', 'aac', '-movflags', '+faststart', '-shortest',
     outFile,
   ], { timeout: 60 * 60 * 1000, maxBuffer: 1024 * 1024 * 16 });
 }

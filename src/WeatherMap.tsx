@@ -225,9 +225,10 @@ const TICKER_TOP = SPOT_TOP + 208;        // ~1496
 // pulso senoidal p/ cidade em foco
 const pulseAt = (frame: number): number => 1 + (Math.sin((frame / 16) * Math.PI * 2) * 0.5 + 0.5) * 0.12;
 
-// half-width aproximado do card (ícone+temp) — usado pro clamp de borda e pro declutter
-const CARD_HALF_W = 105;
-const CARD_H = 132; // bubble + rótulo + pino
+// half-width aproximado do card (ícone+temp) — usado pro clamp de borda e pro declutter.
+// Fontes maiores (legibilidade 50+) → caixas maiores → declutter mostra menos labels, sem sobrepor.
+const CARD_HALF_W = 120;
+const CARD_H = 150; // bubble + rótulo + pino
 
 /** Clamp de borda: quanto deslocar o BALÃO pra dentro do mapa (o pino fica no ponto). */
 const edgeShift = (x: number): number => Math.min(Math.max(x, CARD_HALF_W + 8), MAP_W - CARD_HALF_W - 8) - x;
@@ -245,7 +246,9 @@ const computeCam = (pts: { x: number; y: number }[]): Cam => {
     minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
   }
   const PAD = 150;
-  minX -= PAD; maxX += PAD; minY -= PAD + 70; maxY += PAD; // +70 no topo (cards ficam acima do ponto)
+  // topo: reserva a ALTURA do card (que cresce pra cima do ponto) + folga — senão cidades do
+  // norte (ex.: Caxias, lat baixa → y pequeno) têm o card estourando a borda e sendo clipado.
+  minX -= PAD; maxX += PAD; minY -= PAD + (CARD_H + 40); maxY += PAD;
   const bw = Math.max(1, maxX - minX);
   const bh = Math.max(1, maxY - minY);
   const s = Math.min(2.1, Math.max(1, Math.min(MAP_W / bw, MAP_H / bh)));
@@ -264,8 +267,8 @@ const toScreen = (p: { x: number; y: number }, cam: Cam): { x: number; y: number
 /** DECLUTTER 3 níveis (metrô POA): 'card' (cheio) > 'label' (ponto+nome+temp) > 'pin'
  * (só ponto). Determinístico e independente do foco (modos estáveis o vídeo todo; a
  * cidade ATIVA sempre vira card por cima). Prioridade: alertas primeiro. */
-const LABEL_HALF_W = 88;
-const LABEL_H = 42;
+const LABEL_HALF_W = 100;
+const LABEL_H = 48;
 const computeModes = (pts: { x: number; y: number }[], cidades: CidadeClima[]): ('card' | 'label' | 'pin')[] => {
   const modes: ('card' | 'label' | 'pin')[] = new Array(pts.length).fill('pin');
   const rects: { x: number; y: number; hw: number; hh: number }[] = [];
@@ -296,8 +299,8 @@ const computeModes = (pts: { x: number; y: number }[], cidades: CidadeClima[]): 
 
 // ── CARD DE CIDADE (BaroClima: ícone + temp máx/mín + nome, com pino no ponto) ──
 const CityCard: React.FC<{
-  c: CidadeClima; x: number; y: number; index: number; active: boolean; accent: string;
-}> = ({ c, x, y, index, active, accent }) => {
+  c: CidadeClima; x: number; y: number; index: number; active: boolean; accent: string; hideName?: boolean;
+}> = ({ c, x, y, index, active, accent, hideName }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const { scale: rs, opacity } = popIn(frame, fps, index * 3, 0.3, SPRINGS.soft);
@@ -306,18 +309,22 @@ const CityCard: React.FC<{
   const alert = !!c.aviso;
   const s = (active ? 1.16 : 1) * rs * pulse;
   const shift = edgeShift(x); // borda: balão desliza pra dentro, pino fica no lugar exato
+  // clamp VERTICAL: o card cresce pra cima do ponto (translate -100%). Cidade perto do topo do
+  // mapa (y pequeno) estouraria a borda (container é overflow:hidden) e o card seria cortado.
+  // Empurra o conjunto pra baixo só o necessário pra caber (aceita leve deslocamento do pino).
+  const dyClamp = Math.max(0, CARD_H * s - y + 6);
 
   return (
-    <div style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -100%) scale(${s})`, transformOrigin: 'bottom center', opacity, zIndex: active ? 60 : alert ? 40 : 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ position: 'absolute', left: x, top: y + dyClamp, transform: `translate(-50%, -100%) scale(${s})`, transformOrigin: 'bottom center', opacity, zIndex: active ? 60 : alert ? 40 : 20, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ transform: `translateX(${shift}px)`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: active ? 'rgba(8,16,32,0.94)' : 'rgba(8,16,32,0.82)', border: `2px solid ${active ? accent : alert ? '#FFB000' : 'rgba(255,255,255,0.35)'}`, borderRadius: 13, padding: '5px 9px', boxShadow: active ? `0 0 22px ${accent}cc, 0 6px 16px rgba(0,0,0,0.6)` : '0 4px 12px rgba(0,0,0,0.55)' }}>
           <WeatherIconView kind={kind} size={active ? 40 : 30} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-            <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: active ? 28 : 25, color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
-            {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 19 : 17, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
+            <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: active ? 34 : 30, color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
+            {c.temp_min != null ? <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: active ? 23 : 20, color: '#5AB6FF' }}>{Math.round(c.temp_min)}°</span> : null}
           </div>
         </div>
-        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 21 : 18, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{alert ? '⚠ ' : ''}{c.nome}</div>
+        {hideName ? null : <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: active ? 900 : 800, fontSize: active ? 28 : 24, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '3px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{alert ? '⚠ ' : ''}{c.nome}</div>}
       </div>
       {/* pino no ponto exato (não desloca com o clamp) */}
       <div style={{ width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `13px solid ${active ? accent : alert ? '#FFB000' : '#fff'}`, marginTop: -1, filter: 'drop-shadow(0 0 3px rgba(4,10,22,0.95)) drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }} />
@@ -335,7 +342,7 @@ const CityDotMini: React.FC<{ c: CidadeClima; x: number; y: number; index: numbe
     <div style={{ position: 'absolute', left: x, top: y, transform: `translate(-50%, -50%) scale(${rs})`, opacity, zIndex: 15, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{ width: 11, height: 11, borderRadius: '50%', background: c.aviso ? '#FFB000' : '#fff', border: '3px solid rgba(4,10,22,0.9)', boxShadow: '0 1px 4px rgba(0,0,0,0.6)' }} />
       {showLabel ? (
-        <div style={{ marginTop: 2, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 16, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
+        <div style={{ marginTop: 2, transform: `translateX(${Math.min(Math.max(x, LABEL_HALF_W + 6), MAP_W - LABEL_HALF_W - 6) - x}px)`, fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 22, color: '#fff', whiteSpace: 'nowrap', WebkitTextStroke: '2.5px rgba(4,10,22,0.92)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'] }}>
           {c.aviso ? '⚠ ' : ''}{c.nome} <span style={{ color: '#FFD9A0' }}>{Math.round(c.temp_max)}°</span>
         </div>
       ) : null}
@@ -378,7 +385,7 @@ const CityTicker: React.FC<{ cidades: CidadeClima[]; accent: string }> = ({ cida
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   if (!cidades.length) return null;
-  const CHIP_W = 300; // largura aproximada por chip (ícone + nome + temps)
+  const CHIP_W = 335; // largura aproximada por chip (ícone + nome + temps) — folga p/ fontes 50+
   const rowW = cidades.length * CHIP_W;
   const speed = 55; // px/s — rolagem de TV, lenta
   const x = -((frame / fps) * speed) % rowW;
@@ -390,11 +397,11 @@ const CityTicker: React.FC<{ cidades: CidadeClima[]; accent: string }> = ({ cida
           <div key={`${c.nome}-${i}`} style={{ width: CHIP_W, display: 'flex', alignItems: 'center', gap: 12, paddingLeft: 26 }}>
             <WeatherIconView kind={kind} size={44} />
             <div style={{ lineHeight: 1.05 }}>
-              <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 22, color: 'rgba(255,255,255,0.92)', whiteSpace: 'nowrap' }}>{c.aviso ? '⚠ ' : ''}{c.nome}</div>
-              <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 26, whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 26, color: 'rgba(255,255,255,0.95)', whiteSpace: 'nowrap' }}>{c.aviso ? '⚠ ' : ''}{c.nome}</div>
+              <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 31, whiteSpace: 'nowrap' }}>
                 <span style={{ color: '#FF6A3D' }}>{Math.round(c.temp_max)}°</span>
-                {c.temp_min != null ? <span style={{ color: '#5AB6FF', fontWeight: 800, fontSize: 21 }}> {Math.round(c.temp_min)}°</span> : null}
-                {c.chuva_pct != null && c.chuva_pct >= 40 ? <span style={{ color: '#5AC8FA', fontWeight: 800, fontSize: 19 }}> 💧{Math.round(c.chuva_pct)}%</span> : null}
+                {c.temp_min != null ? <span style={{ color: '#5AB6FF', fontWeight: 800, fontSize: 24 }}> {Math.round(c.temp_min)}°</span> : null}
+                {c.chuva_pct != null && c.chuva_pct >= 40 ? <span style={{ color: '#5AC8FA', fontWeight: 800, fontSize: 21 }}> 💧{Math.round(c.chuva_pct)}%</span> : null}
               </div>
             </div>
           </div>
@@ -404,7 +411,7 @@ const CityTicker: React.FC<{ cidades: CidadeClima[]; accent: string }> = ({ cida
   );
   return (
     <div style={{ position: 'absolute', left: 40, right: 40, top: TICKER_TOP, height: 108, zIndex: 55 }}>
-      <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 17, letterSpacing: '0.14em', color: accent, marginBottom: 6 }}>TEMPERATURAS PELO ESTADO</div>
+      <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 21, letterSpacing: '0.12em', color: accent, marginBottom: 6 }}>TEMPERATURAS PELO ESTADO</div>
       <div style={{ position: 'relative', height: 76, overflow: 'hidden', background: 'rgba(8,16,32,0.72)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 18 }}>
         <div style={{ position: 'absolute', top: 12, left: 0, right: 0, height: 56 }}>
           {chips(x, 'a')}
@@ -412,9 +419,11 @@ const CityTicker: React.FC<{ cidades: CidadeClima[]; accent: string }> = ({ cida
           {rowW < 1000 ? chips(x + rowW * 2, 'c') : null}
         </div>
         {/* fade nas bordas: o chip que entra/sai esmaece em vez de aparecer CORTADO
-            (o juiz de visão lia o corte cru do marquee como bug de layout) */}
-        <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 56, background: 'linear-gradient(90deg, rgba(8,16,32,1) 0%, rgba(8,16,32,0) 100%)', borderRadius: '18px 0 0 18px' }} />
-        <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 56, background: 'linear-gradient(270deg, rgba(8,16,32,1) 0%, rgba(8,16,32,0) 100%)', borderRadius: '0 18px 18px 0' }} />
+            (o juiz de visão lia o corte cru do marquee como bug de layout). Largo (140px,
+            ~1 nome de cidade) e opaco até 45% pra ENGOLIR o nome parcial de verdade — 56px
+            deixavam "noas"/"burgo" nítidos fora da zona de fade. */}
+        <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 140, background: 'linear-gradient(90deg, rgba(8,16,32,1) 0%, rgba(8,16,32,1) 45%, rgba(8,16,32,0) 100%)', borderRadius: '18px 0 0 18px' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 140, background: 'linear-gradient(270deg, rgba(8,16,32,1) 0%, rgba(8,16,32,1) 45%, rgba(8,16,32,0) 100%)', borderRadius: '0 18px 18px 0' }} />
       </div>
     </div>
   );
@@ -553,12 +562,18 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       const active = i === focusIdx;
       const pt = pts[i];
       if (!pt) return null;
+      const ap = pts[focusIdx];
+      // cidade com card (ex.: aviso ⚠, sempre card cheio) VIZINHA da ativa: quando a ativa
+      // (overlay temporário) passa por cima, os NOMES colidem (ex.: Caxias ↔ Porto Alegre/Torres).
+      // Esconde o NOME da não-ativa (o número/card permanece) pra a ativa ficar legível.
+      const cardCollidesActive = !active && !!ap
+        && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W * 1.7
+        && Math.abs(pt.y - ap.y) < CARD_H * 1.15;
       if (active || modes[i] === 'card') {
-        return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} />;
+        return <CityCard key={`${c.nome}-${i}`} c={c} x={pt.x} y={pt.y} index={i} active={active} accent={accent} hideName={cardCollidesActive} />;
       }
       // label some enquanto o card da cidade ATIVA (overlay temporário) está por
       // cima dele — evita texto atrás do card (ex.: "Gramado" sob o card do NH)
-      const ap = pts[focusIdx];
       const nearActive = !!ap
         && Math.abs(pt.x - (ap.x + edgeShift(ap.x))) < CARD_HALF_W + LABEL_HALF_W
         && pt.y > ap.y - CARD_H - LABEL_H && pt.y < ap.y + LABEL_H + 14;
@@ -604,7 +619,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
       ) : null}
 
       {/* ── HEADER (faixa com título + data) ── */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: HEADER_H, background: `linear-gradient(180deg, ${accent}f0 0%, ${accent}cc 55%, ${accent}00 100%)`, zIndex: 80 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: HEADER_H, background: `linear-gradient(180deg, ${accent}f5 0%, ${accent}e6 62%, ${accent}99 84%, ${accent}00 100%)`, zIndex: 80 }} />
       {/* título na SAFE AREA: em Reels/Shorts a UI do app cobre ~o topo do frame */}
       <div style={{ position: 'absolute', top: 108, left: 44, right: 250, zIndex: 82, display: 'flex', alignItems: 'center', gap: 16 }}>
         {logo_url ? (
@@ -613,7 +628,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
           </div>
         ) : null}
         <div>
-          <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: 47, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.0, textShadow: '0 3px 12px rgba(0,0,0,0.55)' }}>{titulo_topo}</div>
+          <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 900, fontSize: (titulo_topo || '').length > 30 ? 36 : (titulo_topo || '').length > 22 ? 42 : 47, color: '#fff', letterSpacing: '-0.01em', lineHeight: 1.05, textShadow: '0 3px 12px rgba(0,0,0,0.85), 0 1px 3px rgba(0,0,0,0.9)', maxHeight: 148, overflow: 'hidden' }}>{titulo_topo}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
             {data_label ? <div style={{ fontFamily: DISPLAY_FONT, fontWeight: 800, fontSize: 24, color: 'rgba(255,255,255,0.95)', letterSpacing: '0.04em' }}>{data_label}</div> : null}
             {/* chip persistente do dia ativo (só no modo 2-dias) */}
@@ -628,8 +643,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = (props) => {
 
       {/* badge de credibilidade: hora da atualização (canto direito do header) */}
       {updated_label ? (
-        <div style={{ position: 'absolute', top: 112, right: 44, zIndex: 82, background: 'rgba(6,12,26,0.55)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 999, padding: '6px 14px' }}>
-          <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 19, color: 'rgba(255,255,255,0.92)' }}>Atualizado {updated_label}</span>
+        <div style={{ position: 'absolute', top: 112, right: 44, zIndex: 82, background: 'rgba(6,12,26,0.82)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 999, padding: '6px 14px', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+          <span style={{ fontFamily: DISPLAY_FONT, fontWeight: 700, fontSize: 20, color: '#fff' }}>Atualizado {updated_label}</span>
         </div>
       ) : null}
 
