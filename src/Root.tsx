@@ -33,6 +33,7 @@ import { LandscapeLong, landscapeLongDefaultProps, landscapeLongParaFrames } fro
 import { VerticalLong, verticalLongDefaultProps, verticalLongParaFrames } from './VerticalLong';
 import { Dossie, dossieDefaultProps, dossieParaFrames } from './Dossie';
 import { TalkingHeadShort, talkingHeadShortDefaultProps, talkingHeadShortParaFrames } from './TalkingHeadShort';
+import { Plantao, plantaoDefaultProps, PlantaoParaFrames } from './Plantao';
 import { WeatherMap, weatherMapDefaultProps, weatherMapParaFrames } from './WeatherMap';
 
 const FPS = 30;
@@ -229,6 +230,28 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={talkingHeadShortDefaultProps}
         calculateMetadata={({ props }) => ({
           durationInFrames: Math.max(1, talkingHeadShortParaFrames(props)),
+        })}
+      />
+
+      {/* Plantao — formato PLANTÃO GuyFolkz (news híbrido de lançamento). UMA composition
+          renderizada em 2 geometrias: o backend (plantao_montador) manda orientation/width/
+          height nas props e o calculateMetadata as aplica (16:9=1920x1080 / 9:16=1080x1920).
+          Intercala VO (voz clonada TTS + karaokê + b-roll) com CLIPES REAIS do apresentador. */}
+      <Composition
+        id="Plantao"
+        component={Plantao}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={600}
+        defaultProps={plantaoDefaultProps}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: Math.max(1, PlantaoParaFrames(props)),
+          // orientation define a geometria: o backend manda width/height explícitos; o fallback
+          // deriva do orientation (portrait=1080x1920, landscape=1920x1080).
+          width: props.width ?? (props.orientation === 'portrait' ? 1080 : 1920),
+          height: props.height ?? (props.orientation === 'portrait' ? 1920 : 1080),
+          fps: props.fps ?? 30,
         })}
       />
 

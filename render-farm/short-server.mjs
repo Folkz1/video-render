@@ -38,6 +38,10 @@ const DATA_DIR = process.env.WORKER_DATA_DIR || path.join(ROOT, 'data');
 const SHORTS_DIR = path.join(DATA_DIR, 'shorts');
 const CLIPS_DIR = path.join(DATA_DIR, 'clips');
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
+// BANCO DE CLIPES do apresentador (PLANTÃO / E1): cortes reais .mp4 já hospedados aqui pelo
+// loader do backend. O montador (E5) monta videoUrl = {base}/api/v1/bank/{key}/video e o
+// Remotion (Plantao.tsx) puxa via OffthreadVideo. Servido do volume /data compartilhado.
+const BANK_CLIPS_DIR = path.join(UPLOADS_DIR, 'bank', 'clips');
 const PORT = Number(process.env.PORT || 3002);
 // public-dir embarcado: fallback p/ props com caminhos RELATIVOS (staticFile).
 // Props com URLs http/data: NAO dependem disto (resolveSrc do ShortV2 usa direto).
@@ -104,6 +108,7 @@ async function ensureDirs() {
   await mkdir(SHORTS_DIR, { recursive: true });
   await mkdir(CLIPS_DIR, { recursive: true });
   await mkdir(UPLOADS_DIR, { recursive: true });
+  await mkdir(BANK_CLIPS_DIR, { recursive: true });
 }
 
 // Clip-to-Short: baixa o TRECHO de um vídeo do YouTube (yt-dlp) e corta em 9:16.
@@ -721,6 +726,17 @@ const server = http.createServer(async (req, res) => {
         log('upload error', err?.message || err);
         return jsonResponse(res, 500, { error: 'upload failed', detail: String(err?.message || err).slice(0, 300) });
       }
+    }
+
+    // BANCO DE CLIPES (PLANTÃO): stream do corte real do apresentador. O :key é sanitizado
+    // contra path traversal — só [a-z0-9-] (convenção clip-bank-<cat>-<slug>-t<take>). Arquivo
+    // fixo em /data/uploads/bank/clips/<key>.mp4 (loader do backend). 404 se não existir.
+    if ((req.method === 'GET' || req.method === 'HEAD') && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'bank' && parts[3] && parts[4] === 'video') {
+      const key = String(parts[3]).toLowerCase();
+      if (!/^[a-z0-9-]+$/.test(key)) return jsonResponse(res, 400, { error: 'invalid clip key' });
+      const f = path.join(BANK_CLIPS_DIR, `${key}.mp4`);
+      if (!fs.existsSync(f)) return jsonResponse(res, 404, { error: 'bank clip not found' });
+      return streamVideo(req, res, f);
     }
 
     if ((req.method === 'GET' || req.method === 'HEAD') && parts[0] === 'api' && parts[1] === 'v1' && parts[2] === 'uploads' && parts[3] && parts[4] === 'video') {
