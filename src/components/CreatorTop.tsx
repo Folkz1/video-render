@@ -32,6 +32,10 @@ export type CreatorTopProps = {
   creator_zoom?: number; // zoom base do painel (default 1.0)
   creator_punches?: { from: number; to: number }[]; // janelas (s) de punch-in na ênfase
   creator_face_keyframes?: { t: number; cx: number; cy: number; scale: number }[]; // face-tracking
+  // ── REACT (screencast): a fonte-topo é uma GRAVAÇÃO DE TELA 16:9 (não rosto-retrato). 'cover'
+  // corta ~37% da largura e come a facecam do canto → 'contain' mostra a tela INTEIRA (rosto
+  // preservado, letterbox no fundo dark). Opt-in: default 'cover' NÃO muda talking-head/Fiel.
+  creator_fit?: 'cover' | 'contain';
   // ── FIEL IA: o clip-fonte tem overlays QUEIMADOS do canal (faixa INSCREVA-SE/LIKE + legenda
   // da fonte) nos ~13% de baixo. source_crop>0 dá leve zoom + empurra pra cima p/ tirá-los do
   // frame. Opt-in (só Fiel); GuyFolkz (gravação própria) passa 0 e NÃO muda de comportamento.
@@ -52,11 +56,24 @@ const KenBurns: React.FC<{ src: string }> = ({ src }) => {
 };
 
 // assinatura anti-repost: handle repetido em diagonal, bem sutil, atrás do criador
+//
+// 30/08/2026 — DENSIDADE E OPACIDADE REDUZIDAS. O "bem sutil" não era sutil sobre superfícies
+// GRANDES E UNIFORMES (gramado, céu, parede): branco puro a 0.045 sobre gramado (luminância
+// ~125) sobe o pixel ~6 níveis, e tanto o olho quanto a visão computacional do QA detectam
+// padrão REGULAR repetido já a ~1-2 níveis. Daí aparecer em plano aberto e sumir em corredor,
+// o que fazia o defeito parecer intermitente e sem causa.
+//
+// Custo medido no @fiel.ia: QA reclamou 29/08 (severidade BAIXA) e 30/08 (ALTA, 2 ocorrências);
+// nesse dia a trava (b) reprovou o render inteiro, custando um ciclo completo de produção.
+//
+// Mantida a FUNÇÃO (identificar a origem num repost), reduzida a INTENSIDADE: 0.045 -> 0.02
+// (delta ~2,6 níveis) e densidade menor (gap 64 -> 110, 12 -> 9 linhas), que é o que o QA
+// chama de "cobrir a imagem". O badge sólido do canto fica intacto — é ele que assina.
 const HandleTile: React.FC<{ handle: string }> = ({ handle }) => {
   const row = (handle + '   ').repeat(8);
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.045, zIndex: 1, transform: 'rotate(-30deg) scale(1.7)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 64, pointerEvents: 'none' }}>
-      {Array.from({ length: 12 }).map((_, i) => (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.02, zIndex: 1, transform: 'rotate(-30deg) scale(1.7)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 110, pointerEvents: 'none' }}>
+      {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} style={{ whiteSpace: 'nowrap', color: '#fff', fontFamily: 'monospace', fontSize: 40, fontWeight: 700 }}>{row}</div>
       ))}
     </div>
@@ -76,6 +93,7 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
   creator_zoom = 1.0,
   creator_punches,
   creator_face_keyframes,
+  creator_fit = 'cover',
   source_crop = 0,
 }) => {
   const frame = useCurrentFrame();
@@ -120,7 +138,7 @@ export const CreatorTop: React.FC<CreatorTopProps> = ({
       {/* TOPO criador (contínuo, fixo) */}
       <div style={{ position: 'absolute', top: 0, left: 0, width: 1080, height: splitY, overflow: 'hidden', backgroundColor: '#0a0f1c' }}>
         {creator_url ? (
-          <OffthreadVideo src={resolveSrc(creator_url)} muted={!creator_live_audio} loop={!creator_live_audio} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: objPos, transform: `scale(${creatorScale})` }} />
+          <OffthreadVideo src={resolveSrc(creator_url)} muted={!creator_live_audio} loop={!creator_live_audio} style={{ width: '100%', height: '100%', objectFit: creator_fit, objectPosition: objPos, transform: `scale(${creatorScale})` }} />
         ) : creator_avatar ? (
           <KenBurns src={creator_avatar} />
         ) : null}

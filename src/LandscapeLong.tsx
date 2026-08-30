@@ -28,18 +28,23 @@ const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent 
   );
   return (
     <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 130 }}>
+      {/* pílula ESCURA própria: contraste garantido sobre a cena do criador / cutaway,
+          claro ou escuro. Antes o texto accent sumia sobre fundo da mesma cor. */}
       <div
         style={{
           opacity: op,
           transform: `scale(${scale}) rotate(-3deg)`,
+          background: 'rgba(6,8,12,0.86)',
+          border: `3px solid ${accent}`,
+          borderRadius: 26,
+          padding: '16px 46px',
+          boxShadow: `0 0 34px ${accent}66, 0 12px 34px rgba(0,0,0,0.55)`,
           fontFamily: 'Inter, Arial, sans-serif',
           fontWeight: 900,
-          fontSize: 112,
+          fontSize: 104,
           lineHeight: 1,
           color: accent,
-          WebkitTextStroke: '3px rgba(5,6,10,0.65)',
-          paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
-          textShadow: `0 0 26px ${accent}, 0 6px 20px rgba(0,0,0,0.6)`,
+          textShadow: '0 2px 10px rgba(0,0,0,0.7)',
           letterSpacing: '0.01em',
           textTransform: 'uppercase',
           textAlign: 'center',
@@ -295,7 +300,33 @@ const Cutaway: React.FC<{
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : imageUrl ? (
-          <Img src={resolveSrc(imageUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <>
+            {/* fundo: cópia BORRADA preenchendo (blurred letterbox) — evita o corte feio
+                de imagens RETRATO forçadas em cover no 16:9 (mostrava a camisa, não o rosto). */}
+            <Img
+              src={resolveSrc(imageUrl)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: 'blur(30px) brightness(0.5)',
+                transform: 'scale(1.12)',
+              }}
+            />
+            {/* frente: imagem INTEIRA (contain), sem corte — landscape preenche igual, retrato aparece todo */}
+            <Img
+              src={resolveSrc(imageUrl)}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </>
         ) : null}
         {/* vinheta sutil pra integrar com o plano base */}
         <div

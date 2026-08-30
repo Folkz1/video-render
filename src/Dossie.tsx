@@ -57,6 +57,8 @@ export type DossieProps = {
   // Dentaly/Eduardo não levam). Renderiza SÓ na janela do último segmento (fecho),
   // quando a fala do CTA toca. {text, handle}: derivados do cta_oferta no backend.
   cta?: { text?: string; handle?: string } | null;
+  // Selo de assinatura do watermark (multi-tenant). Ausente = 'DIEGO' (retrocompat GuyFolkz).
+  byline?: string;
 };
 
 // IDENTIDADE Terminal-Noir: entidade/heroi usam o VERDE-terminal aprovado (#3DF07A);
@@ -210,7 +212,9 @@ const FechoCard: React.FC<{ seg: SegFecho; pal: typeof DEF_PAL; handle?: string;
 };
 
 export const Dossie: React.FC<DossieProps> = (props) => {
-  const { segmentos = [], narration_url, paleta, handle = '@GuyFolkz', tagline, music_url, words, cta } = props;
+  // byline: selo de assinatura do canal no watermark/fecho. Default 'DIEGO' = retrocompat
+  // GuyFolkz (era hardcoded); multi-tenant manda o seu via props (ex Fiel: 'FIEL.IA').
+  const { segmentos = [], narration_url, paleta, handle = '@GuyFolkz', tagline, music_url, words, cta, byline = 'DIEGO' } = props;
   const pal = { ...DEF_PAL, ...(paleta || {}) };
   const total = dossieParaFrames(props);
   // duracao em segundos (fallback uniforme da legenda quando words[] vier vazio).
@@ -299,7 +303,7 @@ export const Dossie: React.FC<DossieProps> = (props) => {
       <div style={{ position: 'absolute', left: 28, bottom: 26, display: 'flex', alignItems: 'center', gap: 10, zIndex: 50 }}>
         {/* badge de marca usa o VERDE (heroi) com texto ESCURO — verde+escuro legivel e on-brand.
             (Antes ambar+branco, o clash que o Diego apontou; ambar fica RESERVADO pra tensao.) */}
-        <span style={{ background: pal.heroi, color: '#05060a', fontFamily: SANS, fontWeight: 900, fontSize: 18, padding: '3px 8px', borderRadius: 5 }}>DIEGO</span>
+        <span style={{ background: pal.heroi, color: '#05060a', fontFamily: SANS, fontWeight: 900, fontSize: 18, padding: '3px 8px', borderRadius: 5 }}>{byline}</span>
         <span style={{ color: 'rgba(255,255,255,0.6)', fontFamily: SANS, fontSize: 18, fontWeight: 600 }}>{handle}</span>
       </div>
 

@@ -324,8 +324,11 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
           vazarem sobre o corte. Usamos a 1ª janela como base; em 3-atos o handle reaparece
           no ATO 3 via a janela win3 abaixo. Sem fonte_fala, win1 == duração total. */}
       <Sequence from={win1.from} durationInFrames={win1.dur}>
-        {/* handle badge — canto superior esquerdo (fora da costura: não colide com a legenda karaokê) */}
-        <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
+        {/* handle badge — À ESQUERDA, LOGO ACIMA DA COSTURA (fix 2026-08-12): no topo-esquerdo
+            ele cobria o ROSTO do criador (apontamento recorrente do QA nos 2 tenants, severidade
+            alta). Acima da costura é peito/mesa — nunca rosto —, a legenda karaokê é centrada e
+            a UI do Reels não alcança. */}
+        <div style={{ position: 'absolute', top: splitY - 78, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
           {handle.toUpperCase()}
         </div>
 
@@ -352,7 +355,8 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
       {/* handle badge também no ATO 3 COMENTÁRIO (3-atos) — a 1ª janela cobre só o HOOK */}
       {win3dur > 0 ? (
         <Sequence from={win3from} durationInFrames={win3dur}>
-          <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
+          {/* mesma posição segura acima da costura (ver comentário do badge da win1) */}
+          <div style={{ position: 'absolute', top: splitY - 78, left: 30, zIndex: 41, color: paleta_hex, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 30, letterSpacing: '0.04em', WebkitTextStroke: '4px #000', paintOrder: 'stroke fill' }}>
             {handle.toUpperCase()}
           </div>
         </Sequence>

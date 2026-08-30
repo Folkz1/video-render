@@ -52,6 +52,7 @@ export type TalkingHeadShortProps = {
   sfx_whoosh?: string;           // whoosh tocado na entrada de cada cutaway
   voice_windows?: VoiceWindow[]; // janelas (s) com fala → a trilha abaixa (ducking)
   silence_windows?: SilenceWindow[]; // janelas (s) de silêncio estratégico (trilha → 0)
+  music_dips?: { atSec: number; durSec: number; rampSec: number }[]; // "silêncio-pontuação": dip pontual de -18dB (default [])
   room_tone?: boolean;           // leito de presença ~-44dB sob a voz (default true)
   durTotalSec: number; // duração total (durationInFrames = durTotalSec*30)
 };
@@ -100,7 +101,19 @@ const Cutaway: React.FC<{
         {videoUrl ? (
           <OffthreadVideo src={resolveSrc(videoUrl)} muted loop style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})` }} />
         ) : imageUrl ? (
-          <Img src={resolveSrc(imageUrl)} style={{ width: '100%', height: '100%', objectFit: 'cover', transform: `scale(${scale})` }} />
+          <>
+            {/* fundo: cópia BORRADA preenchendo (blurred letterbox) — evita o corte feio de
+                imagens RETRATO/landscape forçadas em cover no 9:16 (cortava o rosto/torso). */}
+            <Img
+              src={resolveSrc(imageUrl)}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(30px) brightness(0.5)', transform: `scale(${(scale + 0.08).toFixed(4)})` }}
+            />
+            {/* frente: imagem INTEIRA (contain), sem corte — retrato aparece todo, landscape preenche igual */}
+            <Img
+              src={resolveSrc(imageUrl)}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', transform: `scale(${scale})` }}
+            />
+          </>
         ) : null}
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 52%, rgba(5,6,10,0.5) 100%)' }} />
         <div style={{ position: 'absolute', inset: 0, border: `5px solid ${accent}`, boxShadow: `inset 0 0 50px ${accent}55`, pointerEvents: 'none' }} />
@@ -123,8 +136,32 @@ const EnfasePop: React.FC<{ texto: string; accent: string }> = ({ texto, accent 
   const op = interpolate(frame, [0, 5, Math.max(6, durationInFrames - 8), durationInFrames], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
   return (
     <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 560, zIndex: 45 }}>
-      <div style={{ opacity: op, transform: `scale(${scale}) rotate(-3deg)`, fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: 104, lineHeight: 1, color: accent, WebkitTextStroke: '4px rgba(5,6,10,0.7)', paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'], textShadow: `0 0 26px ${accent}, 0 6px 20px rgba(0,0,0,0.6)`, textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' }}>
-        {texto}
+      <div style={{ opacity: op, transform: `scale(${scale}) rotate(-3deg)`, display: 'flex', justifyContent: 'center' }}>
+        {/* pílula ESCURA própria (padrão VerticalLong): garante contraste sobre QUALQUER fundo
+            (cutaway de imagem, cena do criador). Antes era só cor accent + glow accent e sumia
+            sobre fundo da mesma cor (ex.: amarelo-no-amarelo). */}
+        <div
+          style={{
+            background: 'rgba(6,8,12,0.86)',
+            border: `3px solid ${accent}`,
+            borderRadius: 24,
+            padding: '14px 40px',
+            boxShadow: `0 0 34px ${accent}66, 0 12px 34px rgba(0,0,0,0.55)`,
+            fontFamily: 'Montserrat, Inter, sans-serif',
+            fontWeight: 900,
+            fontSize: 88,
+            lineHeight: 1.0,
+            color: accent,
+            textShadow: '0 2px 10px rgba(0,0,0,0.7)',
+            letterSpacing: '0.01em',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            maxWidth: 900,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {texto}
+        </div>
       </div>
     </AbsoluteFill>
   );
@@ -196,6 +233,43 @@ const ColdOpenTitle: React.FC<{ text: string; accent: string; textColor: string 
   );
 };
 
+// ── "Silêncio-pontuação": envelope de MUSIC DIPS (music_dips) ──
+// Cada dip abaixa a música pra ~-18dB (fator ~0.125) na janela [atSec-durSec, atSec] — o
+// "silêncio antes da revelação" — com ATTACK curto (0.15s) na entrada (evita clique) e
+// volta com rampa LINEAR de rampSec segundos depois de atSec. Combina com o ducking por
+// voice_windows pelo MÍNIMO dos dois ganhos (o mais quieto vence): como este fator é sempre
+// ≤1, multiplicar pelo ganho de ducking já É o mínimo (x*y ≤ x quando y≤1).
+const DIP_FLOOR = 0.125; // ~-18dB
+const DIP_ATTACK_S = 0.15;
+const buildMusicDipGain = (
+  dips: { atSec: number; durSec: number; rampSec: number }[] | undefined,
+  fps: number,
+) => (f: number): number => {
+  if (!Array.isArray(dips) || dips.length === 0) return 1;
+  const t = f / fps;
+  let gain = 1;
+  for (const d of dips) {
+    const dropStart = d.atSec - d.durSec;
+    const attackEnd = dropStart + DIP_ATTACK_S;
+    const rampEnd = d.atSec + Math.max(0, d.rampSec ?? 0.6);
+    let g = 1;
+    if (t < dropStart) g = 1;
+    else if (t < attackEnd) {
+      g = interpolate(t, [dropStart, attackEnd], [1, DIP_FLOOR], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    } else if (t < d.atSec) g = DIP_FLOOR;
+    else if (t < rampEnd) {
+      g = interpolate(t, [d.atSec, rampEnd], [DIP_FLOOR, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    } else g = 1;
+    gain = Math.min(gain, g);
+  }
+  return gain;
+};
 export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
   const {
     creatorVideoUrl,
@@ -213,6 +287,7 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
     sfx_whoosh,
     voice_windows,
     silence_windows,
+    music_dips,
     room_tone = true,
     durTotalSec,
   } = props;
@@ -297,14 +372,19 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
         <Audio
           src={resolveSrc(music_url)}
           loop
-          volume={buildMusicVolume({
-            fps: FPS,
-            totalFrames: total,
-            voiceWindows: voice_windows,
-            silenceWindows: silence_windows,
-            duckVoice: 0.07, // talking-head: voz é quase contínua → trilha um pouco mais presente sob a fala
-            duckPause: 0.17, // respira mais alto nas pausas (acabamento sem competir com a voz)
-          })}
+          volume={(() => {
+            const ducking = buildMusicVolume({
+              fps: FPS,
+              totalFrames: total,
+              voiceWindows: voice_windows,
+              silenceWindows: silence_windows,
+              duckVoice: 0.07, // talking-head: voz é quase contínua → trilha um pouco mais presente sob a fala
+              duckPause: 0.17, // respira mais alto nas pausas (acabamento sem competir com a voz)
+            });
+            const dipGain = buildMusicDipGain(music_dips, FPS);
+            // ganho final = MÍNIMO dos dois (ducking por voz × dip pontual) — o mais quieto vence.
+            return (f: number) => ducking(f) * dipGain(f);
+          })()}
         />
       ) : null}
       {room_tone ? (
@@ -320,7 +400,7 @@ export const TalkingHeadShort: React.FC<TalkingHeadShortProps> = (props) => {
               durationInFrames={16}
               layout="none"
             >
-              <Audio src={resolveSrc(sfx_whoosh)} volume={0.4} />
+              <Audio src={resolveSrc(sfx_whoosh)} volume={0.12} />
             </Sequence>
           ))
         : null}

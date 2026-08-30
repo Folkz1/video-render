@@ -167,6 +167,7 @@ export type CaptionClipProps = {
   sfx_plan?: SfxCue[]; // cues de riser/sting tocados de sfx.riser_url/sting_url
   riser_url?: string; // asset do riser (do kit) — sem isto, cue 'riser' não toca
   sting_url?: string; // asset do sting (do kit) — sem isto, cue 'sting' não toca
+  music_dips?: { atSec: number; durSec: number; rampSec: number }[]; // "silêncio-pontuação": dip pontual de -18dB (default [])
   tema_linhas?: string[]; // faixa-tese (entra/sai)
   tema_y?: number;
   titulo_topo?: string;
@@ -462,10 +463,47 @@ const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accen
   );
 };
 
+// ── "Silêncio-pontuação": envelope de MUSIC DIPS (music_dips) ──
+// Cada dip abaixa a música pra ~-18dB (fator ~0.125) na janela [atSec-durSec, atSec] — o
+// "silêncio antes da revelação" — com ATTACK curto (0.15s) na entrada (evita clique) e
+// volta com rampa LINEAR de rampSec segundos depois de atSec. Combina com o ducking por
+// voice_windows pelo MÍNIMO dos dois ganhos (o mais quieto vence): como este fator é sempre
+// ≤1, multiplicar pelo ganho de ducking já É o mínimo (x*y ≤ x quando y≤1).
+const DIP_FLOOR = 0.125; // ~-18dB
+const DIP_ATTACK_S = 0.15;
+const buildMusicDipGain = (
+  dips: { atSec: number; durSec: number; rampSec: number }[] | undefined,
+  fps: number,
+) => (f: number): number => {
+  if (!Array.isArray(dips) || dips.length === 0) return 1;
+  const t = f / fps;
+  let gain = 1;
+  for (const d of dips) {
+    const dropStart = d.atSec - d.durSec;
+    const attackEnd = dropStart + DIP_ATTACK_S;
+    const rampEnd = d.atSec + Math.max(0, d.rampSec ?? 0.6);
+    let g = 1;
+    if (t < dropStart) g = 1;
+    else if (t < attackEnd) {
+      g = interpolate(t, [dropStart, attackEnd], [1, DIP_FLOOR], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    } else if (t < d.atSec) g = DIP_FLOOR;
+    else if (t < rampEnd) {
+      g = interpolate(t, [d.atSec, rampEnd], [DIP_FLOOR, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    } else g = 1;
+    gain = Math.min(gain, g);
+  }
+  return gain;
+};
 export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
   const { audio_url, words, texto, paleta_hex, accent2, logo_url, handle, duracao_s, mute_video = true, music_url, sfx, tema_linhas, tema_y = 1080, titulo_topo, keyword_hero, circulo_em,
     show_creator_panel = false, creator_url, creator_avatar, creator_live_audio, split_ratio = 0.5,
-    voice_windows, silence_windows, sfx_plan, riser_url, sting_url, cta } = props;
+    voice_windows, silence_windows, sfx_plan, riser_url, sting_url, music_dips, cta } = props;
   const total = captionClipParaFrames(props);
   // accent2 (âmbar de RISCO) — DEFENSIVO: ausente => cai no accent principal (sem âmbar).
   const accent2Resolved = accent2 || GUYFOLKZ_ACCENT2 || paleta_hex;
@@ -614,7 +652,12 @@ export const CaptionClip: React.FC<CaptionClipProps> = (props) => {
         <Audio
           src={resolveSrc(music_url)}
           loop
-          volume={buildMusicVolume({ fps: FPS, totalFrames: total, voiceWindows: voice_windows, silenceWindows: silence_windows })}
+          volume={(() => {
+            const ducking = buildMusicVolume({ fps: FPS, totalFrames: total, voiceWindows: voice_windows, silenceWindows: silence_windows });
+            const dipGain = buildMusicDipGain(music_dips, FPS);
+            // ganho final = MÍNIMO dos dois (ducking por voz × dip pontual) — o mais quieto vence.
+            return (f: number) => ducking(f) * dipGain(f);
+          })()}
         />
       ) : null}
       {/* SFX plan: riser/sting tocados dos assets do kit nas janelas calculadas (vol 0.3). */}
@@ -675,11 +718,6 @@ const BrandLowerThird: React.FC<{ handle: string; logo_url?: string; accent: str
   // cursor block: ON ~0.55s, OFF ~0.45s (ciclo ~1s = 30 frames), borda dura (step-end).
   const cyc = frame % 30;
   const cursorOn = cyc < 17 ? 1 : 0;
-  // TERMINAL-NOIR é a IDENTIDADE do GuyFolkz — o accent verde-terminal (GUYFOLKZ_ACCENT) É a marca.
-  // Pra clientes com PALETA PRÓPRIA (Dentaly teal, Fiel, etc) o prompt `<slug>:~$` não faz sentido
-  // (feedback Diego 2026-07-06): o topo fica LIMPO, só com o logo da marca. Sem logo E não-terminal,
-  // cai num @handle discreto (evita canto vazio). GuyFolkz (verde) segue com logo + prompt como hoje.
-  const isTerminalBrand = (accent || '').trim().toLowerCase() === GUYFOLKZ_ACCENT.toLowerCase();
   return (
     <div style={{ position: 'absolute', top: 70, left: 56, zIndex: 50, display: 'flex', alignItems: 'center', gap: 14 }}>
       {logo_url ? (
@@ -687,58 +725,39 @@ const BrandLowerThird: React.FC<{ handle: string; logo_url?: string; accent: str
           <Img src={resolveSrc(logo_url)} style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
         </div>
       ) : null}
-      {isTerminalBrand ? (
-        <div
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 2,
+          background: 'rgba(8,10,16,0.62)',
+          border: `1px solid ${accent}55`,
+          borderRadius: 8,
+          padding: '7px 14px',
+          fontFamily: MONO_FONT,
+          fontWeight: 500,
+          fontSize: 30,
+          letterSpacing: '0.01em',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+        }}
+      >
+        <span style={{ color: accent }}>{slug}</span>
+        <span style={{ color: 'rgba(255,255,255,0.65)' }}>{':~'}</span>
+        <span style={{ color: accent }}>{'$'}</span>
+        {/* cursor block piscando */}
+        <span
           style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 2,
-            background: 'rgba(8,10,16,0.62)',
-            border: `1px solid ${accent}55`,
-            borderRadius: 8,
-            padding: '7px 14px',
-            fontFamily: MONO_FONT,
-            fontWeight: 500,
-            fontSize: 30,
-            letterSpacing: '0.01em',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
+            display: 'inline-block',
+            width: 16,
+            height: 30,
+            marginLeft: 8,
+            transform: 'translateY(4px)',
+            background: accent,
+            opacity: cursorOn,
+            boxShadow: `0 0 10px ${accent}88`,
           }}
-        >
-          <span style={{ color: accent }}>{slug}</span>
-          <span style={{ color: 'rgba(255,255,255,0.65)' }}>{':~'}</span>
-          <span style={{ color: accent }}>{'$'}</span>
-          {/* cursor block piscando */}
-          <span
-            style={{
-              display: 'inline-block',
-              width: 16,
-              height: 30,
-              marginLeft: 8,
-              transform: 'translateY(4px)',
-              background: accent,
-              opacity: cursorOn,
-              boxShadow: `0 0 10px ${accent}88`,
-            }}
-          />
-        </div>
-      ) : !logo_url ? (
-        <div
-          style={{
-            background: 'rgba(8,10,16,0.55)',
-            border: `1px solid ${accent}44`,
-            borderRadius: 8,
-            padding: '7px 14px',
-            fontFamily: MONO_FONT,
-            fontWeight: 600,
-            fontSize: 28,
-            letterSpacing: '0.01em',
-            color: accent,
-            boxShadow: '0 2px 12px rgba(0,0,0,0.6)',
-          }}
-        >
-          {'@' + slug}
-        </div>
-      ) : null}
+        />
+      </div>
     </div>
   );
 };

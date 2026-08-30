@@ -76,6 +76,7 @@ export type VerticalLongProps = LandscapeLongProps & {
   music_url?: string; // música de fundo (com ducking sob a voz). Ausente ⇒ só áudio do criador
   voice_windows?: { from: number; to: number }[]; // janelas (s) com fala → música abaixa
   sfx_url?: string; // whoosh nos cortes dos cutaways
+  music_dips?: { atSec: number; durSec: number; rampSec: number }[]; // "silêncio-pontuação": dip de -18dB antes de um beat/revelação (default [])
   // ── DIRETOR MUSICAL (Fase 1; opcionais, ausentes = comportamento atual) ──
   silence_windows?: { from: number; to: number }[]; // janelas (s) onde a música vai a 0 com fade 1.2s
   sfx_plan?: { at_s: number; type: 'riser' | 'sting' }[]; // cues de riser/sting (de riser_url/sting_url)
@@ -198,22 +199,34 @@ const EnfasePopVertical: React.FC<{ texto: string; accent: string; anchorY: numb
         transformOrigin: 'center',
         opacity: op,
         zIndex: 58,
-        width: 940,
-        maxWidth: 940,
-        fontFamily: 'Inter, Arial, sans-serif',
-        fontWeight: 900,
-        fontSize: 96,
-        lineHeight: 0.98,
-        color: accent,
-        WebkitTextStroke: '3px rgba(5,6,10,0.65)',
-        paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
-        textShadow: `0 0 26px ${accent}, 0 6px 20px rgba(0,0,0,0.6)`,
-        letterSpacing: '0.01em',
-        textTransform: 'uppercase',
-        textAlign: 'center',
+        maxWidth: 960,
+        display: 'flex',
+        justifyContent: 'center',
       }}
     >
-      {texto}
+      {/* pílula ESCURA própria: garante contraste do destaque sobre QUALQUER fundo
+          (imagem clara, painel de marca, cena do criador). Antes o texto usava só a
+          cor accent + glow accent, e sumia sobre fundo da mesma cor (verde-no-verde). */}
+      <div
+        style={{
+          background: 'rgba(6,8,12,0.86)',
+          border: `3px solid ${accent}`,
+          borderRadius: 24,
+          padding: '14px 40px',
+          boxShadow: `0 0 34px ${accent}66, 0 12px 34px rgba(0,0,0,0.55)`,
+          fontFamily: 'Inter, Arial, sans-serif',
+          fontWeight: 900,
+          fontSize: 92,
+          lineHeight: 1.0,
+          color: accent,
+          textShadow: '0 2px 10px rgba(0,0,0,0.7)',
+          letterSpacing: '0.01em',
+          textTransform: 'uppercase',
+          textAlign: 'center',
+        }}
+      >
+        {texto}
+      </div>
     </div>
   );
 };
@@ -425,6 +438,43 @@ const SupportCutaway: React.FC<{
 const isFullscreenCutaway = (label?: string): boolean =>
   /\b(punch|fullscreen|tela\s*cheia|full)\b/i.test(label ?? '');
 
+// ── "Silêncio-pontuação": envelope de MUSIC DIPS (music_dips) ──
+// Cada dip abaixa a música pra ~-18dB (fator ~0.125) na janela [atSec-durSec, atSec] — o
+// "silêncio antes da revelação" — com ATTACK curto (0.15s) na entrada (evita clique) e
+// volta com rampa LINEAR de rampSec segundos depois de atSec. Combina com o ducking por
+// voice_windows pelo MÍNIMO dos dois ganhos (o mais quieto vence): como este fator é sempre
+// ≤1, multiplicar pelo ganho de ducking já É o mínimo (x*y ≤ x quando y≤1).
+const DIP_FLOOR = 0.125; // ~-18dB
+const DIP_ATTACK_S = 0.15;
+const buildMusicDipGain = (
+  dips: { atSec: number; durSec: number; rampSec: number }[] | undefined,
+  fps: number,
+) => (f: number): number => {
+  if (!Array.isArray(dips) || dips.length === 0) return 1;
+  const t = f / fps;
+  let gain = 1;
+  for (const d of dips) {
+    const dropStart = d.atSec - d.durSec;
+    const attackEnd = dropStart + DIP_ATTACK_S;
+    const rampEnd = d.atSec + Math.max(0, d.rampSec ?? 0.6);
+    let g = 1;
+    if (t < dropStart) g = 1;
+    else if (t < attackEnd) {
+      g = interpolate(t, [dropStart, attackEnd], [1, DIP_FLOOR], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    } else if (t < d.atSec) g = DIP_FLOOR;
+    else if (t < rampEnd) {
+      g = interpolate(t, [d.atSec, rampEnd], [DIP_FLOOR, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
+      });
+    } else g = 1;
+    gain = Math.min(gain, g);
+  }
+  return gain;
+};
 export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
   const {
     creatorVideoUrl,
@@ -447,6 +497,7 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
     music_url,
     voice_windows,
     sfx_url,
+    music_dips,
     silence_windows,
     sfx_plan,
     riser_url,
@@ -478,13 +529,16 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
 
   // ducking sob a voz (igual SplitReaction) + silêncio estratégico (silence_windows).
   // buildMusicVolume já cobre o vídeo inteiro com fades; o Audio entra com loop (from=0).
-  const musicVol = buildMusicVolume({
+  const musicVolDucking = buildMusicVolume({
     fps: FPS,
     totalFrames: total,
     baseVolume: 0.12,
     voiceWindows: voice_windows,
     silenceWindows: silence_windows,
   });
+  const musicDipGain = buildMusicDipGain(music_dips, FPS);
+  // ganho final = MÍNIMO dos dois (ducking por voz × dip pontual) — o mais quieto vence.
+  const musicVol = (f: number) => musicVolDucking(f) * musicDipGain(f);
 
   return (
     <AbsoluteFill style={{ backgroundColor: bg }}>
@@ -620,7 +674,7 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
       {sfx_url
         ? cuts.map((c) => (
             <Sequence key={`sfx${c.i}`} from={Math.max(0, c.from - 5)} durationInFrames={18}>
-              <Audio src={resolveSrc(sfx_url)} volume={0.3} />
+              <Audio src={resolveSrc(sfx_url)} volume={0.12} />
             </Sequence>
           ))
         : null}
@@ -632,7 +686,7 @@ export const VerticalLong: React.FC<VerticalLongProps> = (props) => {
             const w = sfxCueWindow(cue, FPS);
             return (
               <Sequence key={`sfxp${i}`} from={w.from} durationInFrames={w.durationInFrames}>
-                <Audio src={resolveSrc(src)} volume={0.3} />
+                <Audio src={resolveSrc(src)} volume={0.12} />
               </Sequence>
             );
           })
