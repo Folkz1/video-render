@@ -147,7 +147,20 @@ const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }>
         </TransitionScene>
       ) : null}
     </div>
-    <WordCaptions words={cena.words} text={cena.texto} durSec={cena.duracao_s} fromSec={0} anchorY={splitY} accent={accent} fontSize={72} maxWordsPerGroup={2} variant="solta" allCaps />
+    {/* LEGIBILIDADE INDEPENDENTE DO FUNDO (fix 2026-08-31, 2ª ocorrência da mesma classe em 2 dias).
+        `plate` estava AUSENTE aqui, então valia o gate por luminância do accent: o vermelho do Fiel
+        (#E30613, luminância ~0,21) caía em isLightAccent=false => placa DESLIGADA. Sobrava só o
+        stroke, e a palavra ATIVA (vermelha) sobre fundo vermelho — a camisa, a linha divisória da
+        costura (paleta_hex, zIndex 35) e o glow dela — ficava ilegível; as NÃO-ativas (brancas)
+        sumiam sobre fundo claro (o mármore branco do estadio2_2.jpg). Trocar a COR por caso falha na
+        combinação seguinte; a placa resolve TODA combinação de uma vez, porque o contraste passa a
+        ser contra a própria placa e não contra o b-roll.
+        `plate` é EXPLÍCITO (não o gate por luminância) pela mesma razão do CaptionClip: aqui a
+        legenda compõe SEMPRE sobre mídia não controlada (b-roll no painel de baixo + a costura
+        acima) — o fundo nunca é garantido escuro, então a placa vale pra qualquer accent.
+        A legenda tem zIndex 40 > 35 da divisória, então a placa opaca também tampa a linha vermelha
+        que atravessava os glifos. */}
+    <WordCaptions words={cena.words} text={cena.texto} durSec={cena.duracao_s} fromSec={0} anchorY={splitY} accent={accent} fontSize={72} maxWordsPerGroup={2} variant="solta" allCaps plate />
   </>
 );
 
@@ -186,11 +199,31 @@ const SyncedSourceCaption: React.FC<{ words: { t: number; text: string }[]; durS
         position: 'absolute', left: '50%', top: 1500, transform: 'translate(-50%, -50%)',
         width: 920, maxWidth: 920, textAlign: 'center', zIndex: 40,
         fontFamily: 'Montserrat, Poppins, Inter, Segoe UI, sans-serif', fontWeight: 600,
-        fontSize: 62, lineHeight: 1.1, color: '#FFFFFF',
-        textShadow: '0 2px 8px rgba(0,0,0,0.92), 0 1px 3px rgba(0,0,0,0.97)',
+        fontSize: 62, lineHeight: 1.45,
       }}
     >
-      {txt}
+      {/* MESMA CLASSE do fix da karaokê (2026-08-31): este texto era branco puro com só um
+          textShadow suave, composto sobre o vídeo da FONTE em tela cheia — mídia de terceiro,
+          fundo NÃO controlável (aqui a coletiva tem um telão claro atrás). Branco sobre claro
+          é a mesma falha de "cor do texto ≈ cor do fundo" que reprovou a karaokê. A vinheta
+          inferior do FonteFala ajuda, mas é gradiente: não garante contraste onde o texto está.
+          Placa por LINHA (boxDecorationBreak: clone) + stroke: contraste próprio, independente
+          do que a fonte mostrar. */}
+      <span
+        style={{
+          background: 'rgba(8,10,16,0.82)',
+          borderRadius: 14,
+          padding: '4px 22px',
+          boxDecorationBreak: 'clone' as React.CSSProperties['boxDecorationBreak'],
+          WebkitBoxDecorationBreak: 'clone' as React.CSSProperties['WebkitBoxDecorationBreak'],
+          color: '#FFFFFF',
+          WebkitTextStroke: '4px #000',
+          paintOrder: 'stroke fill' as React.CSSProperties['paintOrder'],
+          textShadow: '0 2px 8px rgba(0,0,0,0.92), 0 1px 3px rgba(0,0,0,0.97)',
+        }}
+      >
+        {txt}
+      </span>
     </div>
   );
 };

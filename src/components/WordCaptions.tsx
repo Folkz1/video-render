@@ -152,9 +152,17 @@ export const WordCaptions: React.FC<WordCaptionsProps> = ({
   // um override EXPLÍCITO: plate=true força ON (CaptionClip), plate=false força OFF (CaptionBold,
   // faixa sólida clara). Sem o prop, mantém o gate antigo por luminância (retrocompat).
   const plateOn = variant === 'solta' && (plate === undefined ? isLightAccent(accent) : plate);
+  // OPACIDADE DA PLACA por LUMINÂNCIA DO ACCENT (fix 2026-08-31, medido em frame no @fiel.ia):
+  // com accent CLARO (verde-terminal #3DF07A do CaptionClip) a placa a 0,82 já entrega ~15:1 — fica
+  // como está, zero mudança visual. Com accent ESCURO (o vermelho #E30613 do Fiel, luminância 0,21)
+  // a palavra ativa contra a placa translúcida mediu 3,68:1 e a LINHA DIVISÓRIA vermelha da costura
+  // ainda aparecia ATRAVÉS da placa — que é literalmente o defeito reportado ("legenda vermelha
+  // sobre fundo vermelho"). Placa OPACA leva a 4,05:1 e tampa a linha: o contraste deixa de depender
+  // do que estiver atrás.
+  const plateBg = isLightAccent(accent) ? 'rgba(8,10,16,0.82)' : '#05060a';
   const plateStyle: React.CSSProperties = plateOn
     ? {
-        background: 'rgba(8,10,16,0.82)',
+        background: plateBg,
         borderRadius: 18,
         padding: '6px 26px',
         border: '2px solid rgba(0,0,0,0.55)',
