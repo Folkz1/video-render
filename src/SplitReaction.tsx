@@ -54,6 +54,10 @@ export type CenaSplit = {
 
 export type SplitReactionProps = {
   cenas: CenaSplit[];
+  // GANCHO (14/10/2026, regra de todos os vídeos: a frase do gancho cheia e grande já no quadro 0).
+  // Título de até 6 palavras sobre o b-roll, opaco desde o frame 0, até o fim da 1ª frase da cena 0.
+  // Ausente: usa a 1ª frase do hook (cenas[0].texto) se ela tiver até 7 palavras e for 3-atos (hook_n > 0).
+  hook_tela?: string;
   creator_url?: string; // clip do criador (topo, contínuo) — OffthreadVideo
   creator_avatar?: string; // fallback: imagem do criador (topo)
   creator_live_audio?: boolean; // gravação real: topo toca o áudio (não muta, não loopa)
@@ -125,7 +129,7 @@ const LogoBadge: React.FC<{ src: string; accent: string }> = ({ src, accent }) =
   );
 };
 
-const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }> = ({ cena, splitY, accent }) => (
+const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string; semLegendaAte?: number }> = ({ cena, splitY, accent, semLegendaAte = 0 }) => (
   <>
     <div style={{ position: 'absolute', top: splitY, left: 0, width: 1080, height: 1920 - splitY, overflow: 'hidden', backgroundColor: '#05060a' }}>
       {cena.video_url ? (
@@ -147,9 +151,28 @@ const BottomBroll: React.FC<{ cena: CenaSplit; splitY: number; accent: string }>
         </TransitionScene>
       ) : null}
     </div>
-    <WordCaptions words={cena.words} text={cena.texto} durSec={cena.duracao_s} fromSec={0} anchorY={splitY} accent={accent} fontSize={72} maxWordsPerGroup={2} variant="solta" allCaps />
+    <WordCaptions words={semLegendaAte > 0 && cena.words ? cena.words.filter((w) => w.start >= semLegendaAte) : cena.words} text={cena.texto} durSec={cena.duracao_s} fromSec={0} anchorY={splitY} accent={accent} fontSize={72} maxWordsPerGroup={2} variant="solta" allCaps />
   </>
 );
+
+// GANCHO (14/10/2026): título do quadro 0. Sem animação de entrada (opaco no frame 0), letra grande, centrado na
+// costura (a zona segura da legenda karaokê: acima é peito do criador, nunca rosto; fix de 12/08), com faixa escura
+// para ler sem som. A última palavra leva a cor da marca.
+const HookTitle: React.FC<{ text: string; splitY: number; accent: string }> = ({ text, splitY, accent }) => {
+  const ws = text.trim().split(/\s+/);
+  const fs = ws.length <= 3 ? 150 : ws.length <= 5 ? 132 : 120;
+  return (
+    <div style={{ position: 'absolute', left: 0, right: 0, top: splitY - 40, transform: 'translateY(-50%)', zIndex: 46, padding: '56px 50px', textAlign: 'center',
+      background: 'linear-gradient(180deg, rgba(5,6,10,0), rgba(5,6,10,0.84) 22%, rgba(5,6,10,0.84) 78%, rgba(5,6,10,0))' }}>
+      <div style={{ color: '#fff', fontFamily: 'Montserrat, Inter, sans-serif', fontWeight: 900, fontSize: fs, lineHeight: 0.98,
+        letterSpacing: '-0.01em', textTransform: 'uppercase', WebkitTextStroke: '8px #000', paintOrder: 'stroke fill', textWrap: 'balance' as never }}>
+        {ws.map((w, i) => (
+          <span key={i} style={{ color: i === ws.length - 1 ? accent : '#fff' }}>{w}{i < ws.length - 1 ? ' ' : ''}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const ProgressBar: React.FC<{ total: number; accent: string }> = ({ total, accent }) => {
   const frame = useCurrentFrame();
@@ -212,8 +235,14 @@ const FonteFala: React.FC<{ creator_url?: string; legenda?: string; words?: { t:
 );
 
 export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
-  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops, fonte_fala, hook_n = 0 } = props;
+  const { cenas, creator_url, creator_avatar, creator_live_audio, paleta_hex, logo_url, handle, split_ratio = 0.5, faixa_tese, sfx_url, music_url, creator_focus_x, creator_focus_y, creator_zoom, creator_punches, creator_face_keyframes, voice_windows, keyword_pops, fonte_fala, hook_n = 0, hook_tela } = props;
   const splitY = Math.round(clamp(split_ratio, 0.42, 0.62) * 1920);
+  // GANCHO (14/10/2026): o título do quadro 0 e até quando ele fica (fim da 1ª frase da cena 0 + 0,3 s)
+  const c0 = (cenas ?? [])[0];
+  const frase1 = ((c0?.texto ?? '').match(/^[^.?!]+[.?!]?/)?.[0] ?? '').trim();
+  const tituloHook = (hook_tela ?? (hook_n > 0 && frase1 && frase1.split(/\s+/).length <= 7 ? frase1 : '')).trim();
+  const fimFrase1 = (c0?.words ?? []).find((w) => /[.?!]$/.test(w.word))?.end ?? (c0?.duracao_s ?? 3);
+  const hookAte = tituloHook ? clamp(fimFrase1 + 0.3, 1.5, c0?.duracao_s ?? 3) : 0;
 
   // CORTE (fonte_fala) em frames; quando 3-atos (hook_n>0) ele entra ENTRE as cenas.
   const corteFrames = fonte_fala && fonte_fala.dur_s > 0 ? Math.max(1, Math.round(fonte_fala.dur_s * FPS)) : 0;
@@ -316,9 +345,16 @@ export const SplitReaction: React.FC<SplitReactionProps> = (props) => {
       {/* BAIXO: b-roll + legenda por cena */}
       {build.map((b, i) => (
         <Sequence key={`v${i}`} from={b.from} durationInFrames={b.dur}>
-          <BottomBroll cena={b.cena} splitY={splitY} accent={paleta_hex} />
+          <BottomBroll cena={b.cena} splitY={splitY} accent={paleta_hex} semLegendaAte={i === 0 ? hookAte : 0} />
         </Sequence>
       ))}
+
+      {/* GANCHO (14/10/2026): título cheio desde o frame 0 até o fim da 1ª frase */}
+      {tituloHook && hookAte > 0 ? (
+        <Sequence from={0} durationInFrames={Math.max(1, Math.round(hookAte * FPS))}>
+          <HookTitle text={tituloHook} splitY={splitY} accent={paleta_hex} />
+        </Sequence>
+      ) : null}
 
       {/* Overlays (handle / faixa-tese / KeywordPop): rendem nas janelas de SPLIT p/ não
           vazarem sobre o corte. Usamos a 1ª janela como base; em 3-atos o handle reaparece
